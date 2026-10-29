@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bit2Beat — Interactive UI Prototype</title>
+  <!-- Google Fonts: Plus Jakarta Sans (Smooth 'Beat' UI) & JetBrains Mono (Digital 'Bit' Telemetry) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tone.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. BRAND TOKENS (Extracted directly from the Bit2Beat Logo Suite)
+       ========================================================================== */
+    :root {
+      /* Core Logo Colors */
+      --brand-navy: #141E30;
+      --brand-navy-deep: #0C1320;
+      --brand-navy-light: #1E2C44;
+      --brand-slate: #7B8598;
+      --brand-amber: #E89B31;
+      --brand-amber-hover: #F4AD49;
+      --brand-amber-glow: rgba(232, 155, 49, 0.22);
+      --brand-cream: #F5F1E6;
+      --brand-cream-card: #EFE9DA;
+
+      /* Semantic Tokens - Default Dark Navy Studio */
+      --bg-canvas: var(--brand-navy-deep);
+      --bg-surface: var(--brand-navy);
+      --bg-elevated: var(--brand-navy-light);
+      --text-primary: #F5F1E6;
+      --text-secondary: #9BA5B7;
+      --border-color: rgba(123, 133, 152, 0.22);
+      --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.35);
+
+      /* Typography */
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      /* Layout & Radii */
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+
+      color-scheme: dark;
+      accent-color: var(--brand-amber);
+    }
+
+    /* Warm Cream Theme (Matches the B2B Badge Card Background) */
+    [data-theme="cream"] {
+      --bg-canvas: #F5F1E6;
+      --bg-surface: #FFFFFF;
+      --bg-elevated: #ECE6D6;
+      --text-primary: #141E30;
+      --text-secondary: #5A6578;
+      --border-color: rgba(20, 30, 48, 0.12);
+      --shadow-card: 0 10px 28px rgba(20, 30, 48, 0.08);
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    ::selection {
+      background: var(--brand-amber);
+      color: var(--brand-navy-deep);
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      transition: background-color 0.25s ease, color 0.25s ease;
+      scrollbar-color: var(--brand-slate) var(--bg-surface);
+      scrollbar-width: thin;
+    }
+
+    /* ==========================================================================
+       2. LOADING SPLASH ANIMATION (Bit -> 2 -> Beat)
+       ========================================================================== */
+    .splash-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: var(--brand-navy-deep);
+      color: var(--brand-cream);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.75rem;
+      transition: opacity 0.55s ease, visibility 0.55s ease;
+    }
+
+    .splash-screen.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .splash-logo-stage {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.5rem 2.25rem;
+      background: var(--brand-cream);
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(232, 155, 49, 0.25);
+      animation: badgePop 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes badgePop {
+      from {
+        opacity: 0;
+        transform: scale(0.88) translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    /* Animated Pixel Blocks in Splash */
+    .splash-pixel {
+      animation: pixelPulse 1.4s ease-in-out infinite alternate;
+    }
+    .splash-pixel:nth-child(odd) {
+      animation-delay: 0.15s;
+    }
+    .splash-pixel:nth-child(3n) {
+      animation-delay: 0.3s;
+    }
+
+    @keyframes pixelPulse {
+      0% { opacity: 0.45; transform: scale(0.92); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Animated Soundwave Bars */
+    .wave-bar {
+      transform-origin: center;
+      animation: waveBounce 0.9s ease-in-out infinite alternate;
+    }
+    .wave-bar:nth-child(1) { animation-delay: 0.0s; }
+    .wave-bar:nth-child(2) { animation-delay: 0.15s; }
+    .wave-bar:nth-child(3) { animation-delay: 0.3s; }
+    .wave-bar:nth-child(4) { animation-delay: 0.15s; }
+    .wave-bar:nth-child(5) { animation-delay: 0.0s; }
+
+    @keyframes waveBounce {
+      0% { transform: scaleY(0.45); }
+      100% { transform: scaleY(1.12); }
+    }
+
+    .splash-progress-track {
+      width: 220px;
+      height: 6px;
+      background: rgba(245, 241, 230, 0.12);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .splash-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--brand-amber);
+      border-radius: 99px;
+      transition: width 1.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .splash-subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--brand-slate);
+    }
+
+    /* ==========================================================================
+       3. TOP NAVIGATION & BRAND HEADER
+       ========================================================================== */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1.75rem;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo-pill {
+      display: flex;
+      align-items: center;
+      padding: 0.35rem 0.75rem;
+      background: var(--brand-cream);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .brand-tag {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: 6px;
+      background: var(--brand-amber-glow);
+      color: var(--brand-amber);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    /* Mode Selector Tabs (Simple, clean, zero clutter) */
+    .mode-tabs {
+      display: flex;
+      background: var(--bg-canvas);
+      padding: 0.3rem;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      gap: 0.25rem;
+    }
+
+    .mode-tab {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 9px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+    }
+
+    .mode-tab input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .mode-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .mode-tab:has(input:checked) {
+      background: var(--brand-amber);
+      color: var(--brand-navy-deep);
+      font-weight: 700;
+      box-shadow: 0 2px 10px rgba(232, 155, 49, 0.35);
+    }
+
+    /* Header Right Actions */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.48rem 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.15s ease, transform 0.1s ease;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--brand-amber);
+    }
+
+    /* ==========================================================================
+       4. MAIN WORKSPACE GRID
+       ========================================================================== */
+    .workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1.25rem;
+      padding: 1.25rem 1.75rem;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1024px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+      .topbar {
+        flex-wrap: wrap;
+      }
+    }
+
+    /* Stage Card (Left / Center) */
+    .stage-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: var(--shadow-card);
+    }
+
+    .stage-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .stage-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .stage-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    /* Quick Preset Pills */
+    .preset-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .preset-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-right: 0.25rem;
+    }
+
+    .preset-chip {
+      padding: 0.32rem 0.7rem;
+      border-radius: 99px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-canvas);
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .preset-chip:hover,
+    .preset-chip.active {
+      border-color: var(--brand-amber);
+      color: var(--brand-amber);
+      background: var(--brand-amber-glow);
+    }
+
+    /* Interactive Canvas Container */
+    .canvas-stage {
+      position: relative;
+      background: #080D17;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      height: 390px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #main-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    /* Live Telemetry Overlay HUD (Simple, crisp numbers) */
+    .hud-overlay {
+      position: absolute;
+      top: 0.85rem;
+      left: 0.85rem;
+      right: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .hud-pills {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .hud-pill {
+      background: rgba(12, 19, 32, 0.82);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(232, 155, 49, 0.3);
+      padding: 0.35rem 0.65rem;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #F5F1E6;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .hud-pill strong {
+      color: var(--brand-amber);
+    }
+
+    /* Earcons Interactive Pad Grid (Shown when Earcons mode is active) */
+    .earcon-grid {
+      position: absolute;
+      inset: 0;
+      background: rgba(12, 19, 32, 0.94);
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      align-content: center;
+      transition: opacity 0.3s ease, display 0.3s;
+      transition-behavior: allow-discrete;
+    }
+
+    @starting-style {
+      .earcon-grid {
+        opacity: 0;
+      }
+    }
+
+    .earcon-grid[hidden] {
+      display: none;
+      opacity: 0;
+    }
+
+    .earcon-pad {
+      background: var(--brand-navy);
+      border: 1px solid rgba(123, 133, 152, 0.25);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+      cursor: pointer;
+      color: #F5F1E6;
+      text-align: left;
+      transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .earcon-pad:hover {
+      border-color: var(--brand-amber);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(232, 155, 49, 0.18);
+    }
+
+    .earcon-pad:active,
+    .earcon-pad.playing {
+      background: var(--brand-amber);
+      color: var(--brand-navy-deep);
+      transform: scale(0.97);
+    }
+
+    .earcon-pad-tag {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--brand-amber);
+      text-transform: uppercase;
+    }
+
+    .earcon-pad:active .earcon-pad-tag,
+    .earcon-pad.playing .earcon-pad-tag {
+      color: var(--brand-navy-deep);
+    }
+
+    .earcon-pad-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    /* Bottom Transport Bar inside Stage */
+    .transport-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--bg-canvas);
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .play-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: none;
+      background: var(--brand-amber);
+      color: var(--brand-navy-deep);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(232, 155, 49, 0.35);
+      transition: background-color 0.15s ease, transform 0.1s ease;
+      flex-shrink: 0;
+    }
+
+    .play-btn:hover {
+      background: var(--brand-amber-hover);
+    }
+
+    .play-btn:active {
+      transform: scale(0.95);
+    }
+
+    .stop-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .timeline-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .timeline-meta {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+    }
+
+    .scrub-slider {
+      width: 100%;
+      cursor: pointer;
+      height: 6px;
+    }
+
+    /* Mini Live Soundwave Indicator */
+    .mini-wave {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 26px;
+      padding: 0 0.5rem;
+    }
+
+    .mini-wave span {
+      width: 4px;
+      border-radius: 99px;
+      background: var(--brand-amber);
+      height: 6px;
+      transition: height 0.15s ease;
+    }
+
+    .mini-wave.active span {
+      animation: waveBounce 0.55s ease-in-out infinite alternate;
+    }
+    .mini-wave.active span:nth-child(2) { animation-delay: 0.12s; height: 16px; }
+    .mini-wave.active span:nth-child(3) { animation-delay: 0.24s; height: 24px; }
+    .mini-wave.active span:nth-child(4) { animation-delay: 0.12s; height: 16px; }
+
+    /* ==========================================================================
+       5. RIGHT SIDEBAR CONTROLS (Clean, Scannable, Tactile)
+       ========================================================================== */
+    .sidebar-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.15rem;
+      box-shadow: var(--shadow-card);
+    }
+
+    .panel-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      padding-bottom: 1.1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .panel-section:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .section-heading {
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--brand-amber);
+      font-weight: 700;
+    }
+
+    /* File Dropzone */
+    .dropzone {
+      border: 1.5px dashed var(--brand-slate);
+      border-radius: var(--radius-md);
+      padding: 1.1rem;
+      text-align: center;
+      background: var(--bg-canvas);
+      cursor: pointer;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--brand-amber);
+      background: var(--brand-amber-glow);
+    }
+
+    .dropzone-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .dropzone-sub {
+      font-size: 0.73rem;
+      color: var(--text-secondary);
+    }
+
+    /* Form Controls */
+    .control-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .control-value {
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+    }
+
+    select {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Scale Pills */
+    .scale-pills {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.4rem;
+    }
+
+    .scale-pill {
+      text-align: center;
+      padding: 0.45rem 0.3rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-canvas);
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.15s ease;
+    }
+
+    .scale-pill input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .scale-pill:has(input:checked) {
+      border-color: var(--brand-amber);
+      background: var(--brand-amber-glow);
+      color: var(--brand-amber);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      cursor: pointer;
+    }
+
+    /* Brand Kit Showcase Footer Strip (For UI inspection) */
+    .brand-showcase-bar {
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto 1.5rem;
+      padding: 0 1.75rem;
+    }
+
+    .brand-showcase-inner {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.9rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .logo-variants {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .logo-card-preview {
+      background: #F5F1E6;
+      padding: 0.45rem 0.9rem;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid rgba(20, 30, 48, 0.1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .splash-pixel,
+      .wave-bar,
+      .mini-wave.active span {
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       1. ANIMATED SPLASH SCREEN (Bit 2 Beat Intro)
+       ======================================================================== -->
+  <div id="splash-screen" class="splash-screen">
+    <div class="splash-logo-stage">
+      <!-- Vector SVG of the B -> 2 -> B Badge + Soundwave -->
+      <svg width="240" height="72" viewBox="0 0 240 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Bit2Beat Logo">
+        <!-- Pixelated 'B' (Left - Digital Bits) -->
+        <g fill="#141E30">
+          <!-- Col 1 (7 blocks) -->
+          <rect class="splash-pixel" x="8" y="8" width="7" height="7"/>
+          <rect class="splash-pixel" x="8" y="16" width="7" height="7"/>
+          <rect class="splash-pixel" x="8" y="24" width="7" height="7"/>
+          <rect class="splash-pixel" x="8" y="32" width="7" height="7"/>
+          <rect class="splash-pixel" x="8" y="40" width="7" height="7"/>
+          <rect class="splash-pixel" x="8" y="48" width="7" height="7"/>
+          <rect class="splash-pixel" x="8" y="56" width="7" height="7"/>
+          <!-- Top Bar -->
+          <rect class="splash-pixel" x="16" y="8" width="7" height="7"/>
+          <rect class="splash-pixel" x="24" y="8" width="7" height="7"/>
+          <rect class="splash-pixel" x="32" y="8" width="7" height="7"/>
+          <!-- Mid Bar -->
+          <rect class="splash-pixel" x="16" y="32" width="7" height="7"/>
+          <rect class="splash-pixel" x="24" y="32" width="7" height="7"/>
+          <rect class="splash-pixel" x="32" y="32" width="7" height="7"/>
+          <!-- Bottom Bar -->
+          <rect class="splash-pixel" x="16" y="56" width="7" height="7"/>
+          <rect class="splash-pixel" x="24" y="56" width="7" height="7"/>
+          <rect class="splash-pixel" x="32" y="56" width="7" height="7"/>
+          <!-- Right Loops -->
+          <rect class="splash-pixel" x="40" y="16" width="7" height="7"/>
+          <rect class="splash-pixel" x="40" y="24" width="7" height="7"/>
+          <rect class="splash-pixel" x="40" y="40" width="7" height="7"/>
+          <rect class="splash-pixel" x="40" y="48" width="7" height="7"/>
+        </g>
+
+        <!-- Golden '2' with Arrowhead (Center Transformation) -->
+        <path d="M68 24C68 15.5 74.5 10 83 10C91.5 10 97.5 15.5 97.5 23.5C97.5 30 93.5 34.5 85 42L70 56H102M94 48L103 56L94 64" stroke="#E89B31" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+        <!-- Smooth 'B' (Right - Musical Beat) -->
+        <path d="M124 11H143C151.5 11 157 15.8 157 22.8C157 28.2 153.5 32.2 148 33.5C154.8 34.8 159 39.5 159 46.2C159 54 152.8 59 143.5 59H124V11Z" stroke="#141E30" stroke-width="6.5" stroke-linejoin="round"/>
+        <line x1="125" y1="34" x2="146" y2="34" stroke="#141E30" stroke-width="6.5"/>
+
+        <!-- Animated Golden Soundwave Bars -->
+        <g fill="#E89B31">
+          <rect class="wave-bar" x="178" y="29" width="6" height="14" rx="3"/>
+          <rect class="wave-bar" x="188" y="19" width="6" height="34" rx="3"/>
+          <rect class="wave-bar" x="198" y="10" width="6" height="52" rx="3"/>
+          <rect class="wave-bar" x="208" y="19" width="6" height="34" rx="3"/>
+          <circle class="wave-bar" cx="221" cy="36" r="3.5"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="splash-progress-track">
+      <div id="splash-bar" class="splash-progress-fill"></div>
+    </div>
+    <p class="splash-subtitle">Converting NASA Data Bits Into Musical Beats</p>
+  </div>
+
+  <!-- ========================================================================
+       2. TOP BAR (Logo + Mode Tabs + Theme Toggle)
+       ======================================================================== -->
+  <header class="topbar">
+    <a href="#" class="brand-lockup" aria-label="Bit2Beat Home">
+      <div class="brand-logo-pill">
+        <!-- SVG Logo 1: Pixel Grid -> Wave -> Bit2Beat -->
+        <svg width="198" height="36" viewBox="0 0 198 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- 2x5 Bit Matrix -->
+          <rect x="2" y="3" width="5.5" height="5.5" fill="#141E30"/>
+          <rect x="8.5" y="3" width="5.5" height="5.5" fill="#7B8598"/>
+          <rect x="2" y="9.2" width="5.5" height="5.5" fill="#7B8598"/>
+          <rect x="8.5" y="9.2" width="5.5" height="5.5" fill="#141E30"/>
+          <rect x="2" y="15.4" width="5.5" height="5.5" fill="#141E30"/>
+          <rect x="8.5" y="15.4" width="5.5" height="5.5" fill="#7B8598"/>
+          <rect x="2" y="21.6" width="5.5" height="5.5" fill="#7B8598"/>
+          <rect x="8.5" y="21.6" width="5.5" height="5.5" fill="#141E30"/>
+          <rect x="2" y="27.8" width="5.5" height="5.5" fill="#141E30"/>
+          <rect x="8.5" y="27.8" width="5.5" height="5.5" fill="#7B8598"/>
+
+          <!-- Mini Arrow -->
+          <path d="M18 18H25M25 18L22 15M25 18L22 21" stroke="#E89B31" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- 5-Bar Soundwave -->
+          <rect x="29" y="14" width="3.2" height="8" rx="1.6" fill="#E89B31"/>
+          <rect x="34" y="9" width="3.2" height="18" rx="1.6" fill="#E89B31"/>
+          <rect x="39" y="4" width="3.2" height="28" rx="1.6" fill="#E89B31"/>
+          <rect x="44" y="9" width="3.2" height="18" rx="1.6" fill="#E89B31"/>
+          <circle cx="50.5" cy="18" r="2" fill="#E89B31"/>
+
+          <!-- Wordmark: Bit2Beat -->
+          <text x="60" y="25" font-family="'Plus Jakarta Sans', sans-serif" font-weight="800" font-size="22" letter-spacing="-0.5">
+            <tspan fill="#141E30">Bit</tspan><tspan fill="#E89B31">2</tspan><tspan fill="#141E30">Beat</tspan>
+          </text>
+        </svg>
+      </div>
+      <span class="brand-tag">NASA SPACE APPS</span>
+    </a>
+
+    <!-- Mode Switcher (3 Core Algorithms) -->
+    <nav class="mode-tabs" aria-label="Sonification Mode">
+      <label class="mode-tab">
+        <input type="radio" name="mode" value="pms" checked>
+        <span>1. Data ➔ Note (PMS)</span>
+      </label>
+      <label class="mode-tab">
+        <input type="radio" name="mode" value="spatial-scan">
+        <span>2. Image ➔ Wave (Scan)</span>
+      </label>
+      <label class="mode-tab">
+        <input type="radio" name="mode" value="earcons">
+        <span>3. Earcons &amp; Alerts</span>
+      </label>
+    </nav>
+
+    <!-- Actions -->
+    <div class="header-actions">
+      <button type="button" id="btn-replay-splash" class="icon-btn" title="Replay Loading Intro">
+        <span>↻ Intro</span>
+      </button>
+      <button type="button" id="btn-theme" class="icon-btn" title="Switch Navy / Cream Theme">
+        <span id="theme-label">☀ Cream Theme</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       3. MAIN STUDIO WORKSPACE
+       ======================================================================== -->
+  <main class="workspace">
+    <!-- LEFT: Interactive Visualizer & Transport -->
+    <section class="stage-card">
+      <div class="stage-header">
+        <div class="stage-title-group">
+          <h1 id="stage-mode-title" class="stage-title">Parameter Mapping — CSV to Musical Pitch</h1>
+        </div>
+
+        <!-- 1-Click NASA Presets -->
+        <div class="preset-bar">
+          <span class="preset-label">Sample Data:</span>
+          <button type="button" class="preset-chip active" data-preset="solar">Solar Flares</button>
+          <button type="button" class="preset-chip" data-preset="nebula">Carina Nebula</button>
+          <button type="button" class="preset-chip" data-preset="mars">Mars Seismic</button>
+        </div>
+      </div>
+
+      <!-- Canvas & HUD -->
+      <div class="canvas-stage">
+        <canvas id="main-canvas" width="920" height="390"></canvas>
+
+        <!-- Live Telemetry Readout Pills -->
+        <div class="hud-overlay">
+          <div class="hud-pills">
+            <div class="hud-pill">NOTE <strong id="hud-note">C4</strong></div>
+            <div class="hud-pill">FREQ <strong id="hud-freq">261.6 Hz</strong></div>
+            <div class="hud-pill">VALUE <strong id="hud-val">42.5 W/m²</strong></div>
+          </div>
+          <div class="hud-pills">
+            <div class="hud-pill">SCALE <strong id="hud-scale">Pentatonic</strong></div>
+          </div>
+        </div>
+
+        <!-- Earcons Pad Overlay (Only shown when Mode 3 is active) -->
+        <div id="earcon-grid" class="earcon-grid" hidden>
+          <button type="button" class="earcon-pad" data-earcon="flare">
+            <span class="earcon-pad-tag">EARCON 01 · ALERT</span>
+            <span class="earcon-pad-title">Solar Flare Spike</span>
+          </button>
+          <button type="button" class="earcon-pad" data-earcon="threshold">
+            <span class="earcon-pad-tag">EARCON 02 · WARNING</span>
+            <span class="earcon-pad-title">Threshold Exceeded</span>
+          </button>
+          <button type="button" class="earcon-pad" data-earcon="anomaly">
+            <span class="earcon-pad-tag">EARCON 03 · DETECT</span>
+            <span class="earcon-pad-title">Spectral Anomaly</span>
+          </button>
+          <button type="button" class="earcon-pad" data-earcon="lock">
+            <span class="earcon-pad-tag">EARCON 04 · STATUS</span>
+            <span class="earcon-pad-title">Telemetry Lock</span>
+          </button>
+          <button type="button" class="earcon-pad" data-earcon="complete">
+            <span class="earcon-pad-tag">EARCON 05 · SUCCESS</span>
+            <span class="earcon-pad-title">Scan Complete</span>
+          </button>
+          <button type="button" class="earcon-pad" data-earcon="ping">
+            <span class="earcon-pad-tag">EARCON 06 · PULSE</span>
+            <span class="earcon-pad-title">Marker Beacon</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Audio Transport Controls -->
+      <div class="transport-bar">
+        <button type="button" id="btn-play" class="play-btn" aria-label="Play or Pause">
+          <svg id="play-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 4l15 8-15 8V4z"/>
+          </svg>
+        </button>
+        <button type="button" id="btn-stop" class="stop-btn" aria-label="Stop">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="5" y="5" width="14" height="14" rx="2"/>
+          </svg>
+        </button>
+
+        <div class="timeline-wrap">
+          <div class="timeline-meta">
+            <span id="status-text">Ready — Press Play to hear data</span>
+            <span id="time-readout">00:00 / 00:08</span>
+          </div>
+          <input type="range" id="scrub-bar" class="scrub-slider" min="0" max="100" value="0">
+        </div>
+
+        <div id="mini-wave" class="mini-wave" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Simple, Focused Parameter Controls -->
+    <aside class="sidebar-panel">
+      <!-- 1. File Upload -->
+      <div class="panel-section">
+        <span class="section-heading">Input Source</span>
+        <label class="dropzone" id="dropzone">
+          <input type="file" id="file-input" accept=".csv,image/*" hidden>
+          <span class="dropzone-title" id="dropzone-title">Drop CSV or Image Here</span>
+          <span class="dropzone-sub">or click to browse local files</span>
+        </label>
+      </div>
+
+      <!-- 2. Musical Scale -->
+      <div class="panel-section">
+        <span class="section-heading">Musical Harmony</span>
+        <div class="scale-pills">
+          <label class="scale-pill">
+            <input type="radio" name="scale" value="Pentatonic" checked>
+            <span>Pentatonic</span>
+          </label>
+          <label class="scale-pill">
+            <input type="radio" name="scale" value="Major">
+            <span>Major</span>
+          </label>
+          <label class="scale-pill">
+            <input type="radio" name="scale" value="Minor">
+            <span>Cosmic Minor</span>
+          </label>
+        </div>
+
+        <div class="control-row">
+          <label class="control-label" for="synth-select">
+            <span>Instrument Tone</span>
+          </label>
+          <select id="synth-select">
+            <option value="triangle">Warm Space Pad</option>
+            <option value="sine">Pure Sine Wave</option>
+            <option value="fmsine">Crystal Bell Synth</option>
+            <option value="amsine">Harmonic Pulse</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 3. Mapping Parameters -->
+      <div class="panel-section">
+        <span class="section-heading">Sonification Controls</span>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Speed / Tempo</span>
+            <span id="bpm-val" class="control-value">120 BPM</span>
+          </div>
+          <input type="range" id="bpm-slider" min="60" max="220" value="120">
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Base Octave</span>
+            <span id="octave-val" class="control-value">Octave 4</span>
+          </div>
+          <input type="range" id="octave-slider" min="2" max="6" value="4">
+        </div>
+
+        <div class="control-row">
+          <div class="control-label">
+            <span>Master Volume</span>
+            <span id="vol-val" class="control-value">85%</span>
+          </div>
+          <input type="range" id="vol-slider" min="0" max="100" value="85">
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ========================================================================
+       4. VECTOR SVG BRAND BAR (All 3 Uploaded Logos in Clean SVG Format)
+       ======================================================================== -->
+  <footer class="brand-showcase-bar">
+    <div class="brand-showcase-inner">
+      <span style="font-size: 0.78rem; color: var(--text-secondary); font-family: var(--font-mono);">
+        BRAND IDENTITY SUITE (ALL 3 LOGOS VECTORIZED AS INLINE SVG):
+      </span>
+
+      <div class="logo-variants">
+        <!-- Variant A: Pixel Wordmark Bit2Beat -->
+        <div class="logo-card-preview" title="Logo Variant 2: Pixel Bit + Smooth 2Beat">
+          <svg width="145" height="28" viewBox="0 0 185 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Pixel B -->
+            <g fill="#141E30">
+              <rect x="2" y="5" width="3.5" height="3.5"/><rect x="6" y="5" width="3.5" height="3.5"/><rect x="10" y="5" width="3.5" height="3.5"/><rect x="14" y="5" width="3.5" height="3.5"/>
+              <rect x="2" y="9" width="3.5" height="3.5"/><rect x="18" y="9" width="3.5" height="3.5"/>
+              <rect x="2" y="13" width="3.5" height="3.5"/><rect x="18" y="13" width="3.5" height="3.5"/>
+              <rect x="2" y="17" width="3.5" height="3.5"/><rect x="6" y="17" width="3.5" height="3.5"/><rect x="10" y="17" width="3.5" height="3.5"/><rect x="14" y="17" width="3.5" height="3.5"/>
+              <rect x="2" y="21" width="3.5" height="3.5"/><rect x="18" y="21" width="3.5" height="3.5"/>
+              <rect x="2" y="25" width="3.5" height="3.5"/><rect x="18" y="25" width="3.5" height="3.5"/>
+              <rect x="2" y="29" width="3.5" height="3.5"/><rect x="6" y="29" width="3.5" height="3.5"/><rect x="10" y="29" width="3.5" height="3.5"/><rect x="14" y="29" width="3.5" height="3.5"/>
+              <!-- Pixel i stem -->
+              <rect x="28" y="13" width="4" height="4"/>
+              <rect x="28" y="18" width="4" height="4"/>
+              <rect x="28" y="23" width="4" height="4"/>
+              <rect x="28" y="28" width="4" height="4.5"/>
+              <!-- Pixel t -->
+              <rect x="42" y="5" width="4" height="4"/>
+              <rect x="42" y="9.5" width="4" height="4"/>
+              <rect x="37.5" y="14" width="4" height="4"/><rect x="42" y="14" width="4" height="4"/><rect x="46.5" y="14" width="4" height="4"/><rect x="51" y="14" width="4" height="4"/>
+              <rect x="42" y="18.5" width="4" height="4"/>
+              <rect x="42" y="23" width="4" height="4"/>
+              <rect x="42" y="28" width="4" height="4.5"/><rect x="46.5" y="28" width="4" height="4.5"/>
+            </g>
+            <!-- Amber dot on i -->
+            <rect x="28" y="5" width="4" height="4" fill="#E89B31"/>
+            <!-- Smooth 2Beat -->
+            <text x="61" y="32" font-family="'Plus Jakarta Sans', sans-serif" font-weight="700" font-size="31" fill="#E89B31">2</text>
+            <text x="83" y="32" font-family="'Plus Jakarta Sans', sans-serif" font-weight="700" font-size="31" fill="#141E30" letter-spacing="-0.8">Beat</text>
+          </svg>
+        </div>
+
+        <!-- Variant B: B -> 2 -> B Badge -->
+        <div class="logo-card-preview" title="Logo Variant 3: B2B Badge">
+          <svg width="72" height="28" viewBox="0 0 170 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g fill="#141E30">
+              <rect x="8" y="8" width="6.5" height="6.5"/><rect x="15.5" y="8" width="6.5" height="6.5"/><rect x="23" y="8" width="6.5" height="6.5"/><rect x="30.5" y="8" width="6.5" height="6.5"/>
+              <rect x="8" y="15.5" width="6.5" height="6.5"/><rect x="38" y="15.5" width="6.5" height="6.5"/>
+              <rect x="8" y="23" width="6.5" height="6.5"/><rect x="38" y="23" width="6.5" height="6.5"/>
+              <rect x="8" y="30.5" width="6.5" height="6.5"/><rect x="15.5" y="30.5" width="6.5" height="6.5"/><rect x="23" y="30.5" width="6.5" height="6.5"/><rect x="30.5" y="30.5" width="6.5" height="6.5"/>
+              <rect x="8" y="38" width="6.5" height="6.5"/><rect x="38" y="38" width="6.5" height="6.5"/>
+              <rect x="8" y="45.5" width="6.5" height="6.5"/><rect x="38" y="45.5" width="6.5" height="6.5"/>
+              <rect x="8" y="53" width="6.5" height="6.5"/><rect x="15.5" y="53" width="6.5" height="6.5"/><rect x="23" y="53" width="6.5" height="6.5"/><rect x="30.5" y="53" width="6.5" height="6.5"/>
+            </g>
+            <path d="M66 23C66 15 72 10 80 10C88 10 94 15 94 22.5C94 29 90 33.5 82 40.5L68 54H98M91 46.5L99.5 54L91 61.5" stroke="#E89B31" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M120 11H138C146 11 151 15.5 151 22C151 27 148 31 142.5 32.2C149 33.5 153 38 153 44.5C153 52 147 57 138.5 57H120V11Z" stroke="#141E30" stroke-width="6" stroke-linejoin="round"/>
+            <line x1="121" y1="33" x2="141" y2="33" stroke="#141E30" stroke-width="6"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================================================
+       5. INTERACTIVE PROTOTYPE CONTROLLER (Canvas + Web Audio / Tone.js)
+       ======================================================================== -->
+  <script>
+    // --- 1. Loading Splash Intro ---
+    const splashScreen = document.getElementById('splash-screen');
+    const splashBar = document.getElementById('splash-bar');
+    const btnReplaySplash = document.getElementById('btn-replay-splash');
+
+    function runSplashIntro() {
+      splashScreen.classList.remove('is-hidden');
+      splashBar.style.transition = 'none';
+      splashBar.style.width = '0%';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          splashBar.style.transition = 'width 1.15s cubic-bezier(0.22, 1, 0.36, 1)';
+          splashBar.style.width = '100%';
+        });
+      });
+      setTimeout(() => {
+        splashScreen.classList.add('is-hidden');
+      }, 1350);
+    }
+
+    window.addEventListener('DOMContentLoaded', runSplashIntro);
+    btnReplaySplash.addEventListener('click', runSplashIntro);
+
+    // --- 2. Theme Switcher (Deep Navy Studio <-> Warm Cream Badge Theme) ---
+    const btnTheme = document.getElementById('btn-theme');
+    const themeLabel = document.getElementById('theme-label');
+    btnTheme.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'cream' ? 'dark' : 'cream';
+      document.documentElement.setAttribute('data-theme', next);
+      themeLabel.textContent = next === 'cream' ? '☾ Navy Theme' : '☀ Cream Theme';
+    });
+
+    // --- 3. Datasets & Musical Scales ---
+    const PRESETS = {
+      solar: {
+        name: 'Solar Flares (SDO X-Ray Flux)',
+        unit: 'W/m²',
+        values: [22, 35, 48, 82, 96, 74, 52, 64, 91, 118, 85, 44, 30, 58, 79, 62]
+      },
+      nebula: {
+        name: 'Carina Nebula (JWST Infrared Spectra)',
+        unit: 'MJy/sr',
+        values: [60, 68, 75, 54, 42, 58, 88, 105, 92, 78, 65, 72, 95, 84, 50, 45]
+      },
+      mars: {
+        name: 'Mars InSight Seismic Tremor',
+        unit: 'nm/s²',
+        values: [15, 18, 24, 62, 110, 95, 48, 32, 20, 45, 88, 70, 38, 25, 19, 14]
+      }
+    };
+
+    const SCALES = {
+      Pentatonic: ['C', 'D', 'E', 'G', 'A'],
+      Major: ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+      Minor: ['C', 'D', 'Eb', 'F', 'G', 'Ab', 'Bb']
+    };
+
+    let currentMode = 'pms';
+    let currentPreset = 'solar';
+    let currentScale = 'Pentatonic';
+    let baseOctave = 4;
+    let bpm = 120;
+    let isPlaying = false;
+    let playStep = 0;
+    let scanX = 0;
+    let timerId = null;
+    let synth = null;
+
+    // DOM Elements
+    const canvas = document.getElementById('main-canvas');
+    const ctx = canvas.getContext('2d');
+    const stageTitle = document.getElementById('stage-mode-title');
+    const earconGrid = document.getElementById('earcon-grid');
+    const hudNote = document.getElementById('hud-note');
+    const hudFreq = document.getElementById('hud-freq');
+    const hudVal = document.getElementById('hud-val');
+    const hudScale = document.getElementById('hud-scale');
+    const btnPlay = document.getElementById('btn-play');
+    const playIcon = document.getElementById('play-icon');
+    const btnStop = document.getElementById('btn-stop');
+    const scrubBar = document.getElementById('scrub-bar');
+    const statusText = document.getElementById('status-text');
+    const timeReadout = document.getElementById('time-readout');
+    const miniWave = document.getElementById('mini-wave');
+
+    // Initialize Tone.js Synth lazily on user interaction
+    async function ensureAudio() {
+      if (!window.Tone) return;
+      if (Tone.context.state !== 'running') {
+        await Tone.start();
+      }
+      if (!synth) {
+        synth = new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: document.getElementById('synth-select').value },
+          envelope: { attack: 0.03, decay: 0.2, sustain: 0.25, release: 0.6 }
+        }).toDestination();
+      }
+    }
+
+    // Map a numeric value to a musical note
+    function mapValueToNote(val, min, max) {
+      const notes = SCALES[currentScale] || SCALES.Pentatonic;
+      const norm = Math.max(0, Math.min(1, (val - min) / (max - min || 1)));
+      const totalSteps = notes.length * 2;
+      const idx = Math.min(totalSteps - 1, Math.floor(norm * totalSteps));
+      const noteName = notes[idx % notes.length];
+      const oct = baseOctave + Math.floor(idx / notes.length);
+      return `${noteName}${oct}`;
+    }
+
+    // --- 4. Canvas Rendering (PMS Chart & Spatial Image Scanner) ---
+    function drawStage() {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      // Subtle pixel grid background
+      ctx.strokeStyle = 'rgba(123, 133, 152, 0.1)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let y = 0; y < h; y += 40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+
+      const data = PRESETS[currentPreset].values;
+      const min = Math.min(...data);
+      const max = Math.max(...data);
+
+      if (currentMode === 'pms') {
+        // Draw smooth connecting curve + discrete pixel data blocks
+        const padX = 56;
+        const padY = 58;
+        const plotW = w - padX * 2;
+        const plotH = h - padY * 2;
+
+        // Area fill under curve
+        ctx.beginPath();
+        data.forEach((v, i) => {
+          const x = padX + (i / (data.length - 1)) * plotW;
+          const y = padY + plotH - ((v - min) / (max - min || 1)) * plotH;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = '#E89B31';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Draw discrete square nodes (matching 'Bit' pixel aesthetic)
+        data.forEach((v, i) => {
+          const x = padX + (i / (data.length - 1)) * plotW;
+          const y = padY + plotH - ((v - min) / (max - min || 1)) * plotH;
+          const isCurrent = isPlaying && i === playStep;
+
+          if (isCurrent) {
+            // Vertical playhead line
+            ctx.strokeStyle = 'rgba(232, 155, 49, 0.45)';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+
+            // Outer glow
+            ctx.fillStyle = 'rgba(232, 155, 49, 0.3)';
+            ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI * 2); ctx.fill();
+          }
+
+          ctx.fillStyle = isCurrent ? '#F5F1E6' : '#E89B31';
+          const size = isCurrent ? 14 : 9;
+          ctx.fillRect(x - size / 2, y - size / 2, size, size);
+        });
+      } else if (currentMode === 'spatial-scan') {
+        // Procedural Cosmic Nebula / Starfield for 2D Spatial Scanning
+        const grad = ctx.createRadialGradient(w * 0.48, h * 0.5, 20, w * 0.5, h * 0.5, w * 0.55);
+        grad.addColorStop(0, 'rgba(232, 155, 49, 0.45)');
+        grad.addColorStop(0.45, 'rgba(56, 108, 180, 0.32)');
+        grad.addColorStop(1, 'rgba(8, 13, 23, 0.95)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Star clusters / Pixel hotspots
+        data.forEach((v, i) => {
+          const sx = 60 + (i / (data.length - 1)) * (w - 120);
+          const sy = h - 60 - ((v - min) / (max - min || 1)) * (h - 120);
+          ctx.fillStyle = 'rgba(245, 241, 230, 0.85)';
+          ctx.fillRect(sx - 4, sy - 4, 8, 8);
+          ctx.fillStyle = 'rgba(232, 155, 49, 0.28)';
+          ctx.beginPath(); ctx.arc(sx, sy, 18, 0, Math.PI * 2); ctx.fill();
+        });
+
+        // Active Left-to-Right Scan Line
+        const lineX = (scanX / 100) * w;
+        ctx.strokeStyle = '#E89B31';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(lineX, 0); ctx.lineTo(lineX, h); ctx.stroke();
+
+        // Scan glow
+        const scanGrad = ctx.createLinearGradient(lineX - 40, 0, lineX, 0);
+        scanGrad.addColorStop(0, 'rgba(232, 155, 49, 0)');
+        scanGrad.addColorStop(1, 'rgba(232, 155, 49, 0.28)');
+        ctx.fillStyle = scanGrad;
+        ctx.fillRect(lineX - 40, 0, 40, h);
+      }
+    }
+
+    // --- 5. Playback Engine ---
+    function stepPlayback() {
+      const preset = PRESETS[currentPreset];
+      const data = preset.values;
+      const min = Math.min(...data);
+      const max = Math.max(...data);
+
+      const val = data[playStep % data.length];
+      const note = mapValueToNote(val, min, max);
+
+      if (synth && window.Tone) {
+        synth.triggerAttackRelease(note, '8n');
+        const freq = Tone.Frequency(note).toFrequency();
+        hudFreq.textContent = `${freq.toFixed(1)} Hz`;
+      }
+
+      hudNote.textContent = note;
+      hudVal.textContent = `${val} ${preset.unit}`;
+
+      const pct = Math.round((playStep / (data.length - 1)) * 100);
+      scrubBar.value = pct;
+      scanX = pct;
+      timeReadout.textContent = `00:0${Math.floor(playStep / 2)} / 00:08`;
+
+      drawStage();
+
+      playStep = (playStep + 1) % data.length;
+    }
+
+    function startPlayback() {
+      isPlaying = true;
+      playIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+      statusText.textContent = `Sonifying ${PRESETS[currentPreset].name}...`;
+      miniWave.classList.add('active');
+
+      const intervalMs = Math.round((60 / bpm) * 500);
+      clearInterval(timerId);
+      stepPlayback();
+      timerId = setInterval(stepPlayback, intervalMs);
+    }
+
+    function stopPlayback() {
+      isPlaying = false;
+      clearInterval(timerId);
+      playIcon.innerHTML = '<path d="M6 4l15 8-15 8V4z"/>';
+      statusText.textContent = 'Paused — Ready';
+      miniWave.classList.remove('active');
+      drawStage();
+    }
+
+    btnPlay.addEventListener('click', async () => {
+      await ensureAudio();
+      if (isPlaying) stopPlayback();
+      else startPlayback();
+    });
+
+    btnStop.addEventListener('click', () => {
+      playStep = 0;
+      scanX = 0;
+      scrubBar.value = 0;
+      stopPlayback();
+    });
+
+    // Mode Switching
+    document.querySelectorAll('input[name="mode"]').forEach((radio) => {
+      radio.addEventListener('change', (e) => {
+        currentMode = e.target.value;
+        if (currentMode === 'pms') {
+          stageTitle.textContent = 'Parameter Mapping — CSV to Musical Pitch';
+          earconGrid.hidden = true;
+        } else if (currentMode === 'spatial-scan') {
+          stageTitle.textContent = 'Spatial Scanning — Left-to-Right 2D Image Sonification';
+          earconGrid.hidden = true;
+        } else {
+          stageTitle.textContent = 'Earcons & Auditory Icons — Event Triggers';
+          earconGrid.hidden = false;
+        }
+        drawStage();
+      });
+    });
+
+    // Preset Switching
+    document.querySelectorAll('.preset-chip').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        currentPreset = chip.dataset.preset;
+        playStep = 0;
+        drawStage();
+      });
+    });
+
+    // Scale Switching
+    document.querySelectorAll('input[name="scale"]').forEach((radio) => {
+      radio.addEventListener('change', (e) => {
+        currentScale = e.target.value;
+        hudScale.textContent = currentScale;
+      });
+    });
+
+    // Synth Instrument Switching
+    document.getElementById('synth-select').addEventListener('change', (e) => {
+      if (synth) {
+        synth.set({ oscillator: { type: e.target.value } });
+      }
+    });
+
+    // Sliders
+    document.getElementById('bpm-slider').addEventListener('input', (e) => {
+      bpm = Number(e.target.value);
+      document.getElementById('bpm-val').textContent = `${bpm} BPM`;
+      if (isPlaying) startPlayback();
+    });
+
+    document.getElementById('octave-slider').addEventListener('input', (e) => {
+      baseOctave = Number(e.target.value);
+      document.getElementById('octave-val').textContent = `Octave ${baseOctave}`;
+    });
+
+    document.getElementById('vol-slider').addEventListener('input', (e) => {
+      const v = Number(e.target.value);
+      document.getElementById('vol-val').textContent = `${v}%`;
+      if (window.Tone) {
+        Tone.Destination.volume.value = v === 0 ? -Infinity : (v - 85) * 0.3;
+      }
+    });
+
+    scrubBar.addEventListener('input', (e) => {
+      const pct = Number(e.target.value);
+      scanX = pct;
+      const data = PRESETS[currentPreset].values;
+      playStep = Math.floor((pct / 100) * (data.length - 1));
+      drawStage();
+    });
+
+    // Interactive Canvas Click to Audition Any Point
+    canvas.addEventListener('click', async (e) => {
+      await ensureAudio();
+      const rect = canvas.getBoundingClientRect();
+      const relX = (e.clientX - rect.left) / rect.width;
+      const data = PRESETS[currentPreset].values;
+      playStep = Math.min(data.length - 1, Math.max(0, Math.floor(relX * data.length)));
+      scanX = Math.round(relX * 100);
+      stepPlayback();
+    });
+
+    // Earcon Pads Audio Motifs
+    const EARCON_MOTIFS = {
+      flare: ['C5', 'G5', 'C6'],
+      threshold: ['F4', 'B4', 'F5'],
+      anomaly: ['E4', 'G4', 'Bb4', 'Db5'],
+      lock: ['C4', 'G4'],
+      complete: ['C4', 'E4', 'G4', 'C5'],
+      ping: ['A5']
+    };
+
+    document.querySelectorAll('.earcon-pad').forEach((pad) => {
+      pad.addEventListener('click', async () => {
+        await ensureAudio();
+        const type = pad.dataset.earcon;
+        const notes = EARCON_MOTIFS[type] || ['C5'];
+        pad.classList.add('playing');
+        setTimeout(() => pad.classList.remove('playing'), 350);
+
+        notes.forEach((n, idx) => {
+          setTimeout(() => {
+            synth?.triggerAttackRelease(n, '16n');
+            hudNote.textContent = n;
+          }, idx * 90);
+        });
+      });
+    });
+
+    // File Upload Feedback
+    const fileInput = document.getElementById('file-input');
+    const dropzoneTitle = document.getElementById('dropzone-title');
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        dropzoneTitle.textContent = `Loaded: ${file.name}`;
+        statusText.textContent = `File ready: ${file.name}`;
+      }
+    });
+
+    // Initial render
+    drawStage();
+  </script>
+</body>
+</html>

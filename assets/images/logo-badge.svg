@@ -1,0 +1,20 @@
+<svg width="180" height="96" viewBox="0 0 180 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="180" height="96" rx="20" fill="#F5F1E6"/>
+  <g transform="translate(8, 14)">
+    <!-- Pixelated B -->
+    <g fill="#141E30">
+      <rect x="8" y="8" width="6.5" height="6.5"/><rect x="15.5" y="8" width="6.5" height="6.5"/><rect x="23" y="8" width="6.5" height="6.5"/><rect x="30.5" y="8" width="6.5" height="6.5"/>
+      <rect x="8" y="15.5" width="6.5" height="6.5"/><rect x="38" y="15.5" width="6.5" height="6.5"/>
+      <rect x="8" y="23" width="6.5" height="6.5"/><rect x="38" y="23" width="6.5" height="6.5"/>
+      <rect x="8" y="30.5" width="6.5" height="6.5"/><rect x="15.5" y="30.5" width="6.5" height="6.5"/><rect x="23" y="30.5" width="6.5" height="6.5"/><rect x="30.5" y="30.5" width="6.5" height="6.5"/>
+      <rect x="8" y="38" width="6.5" height="6.5"/><rect x="38" y="38" width="6.5" height="6.5"/>
+      <rect x="8" y="45.5" width="6.5" height="6.5"/><rect x="38" y="45.5" width="6.5" height="6.5"/>
+      <rect x="8" y="53" width="6.5" height="6.5"/><rect x="15.5" y="53" width="6.5" height="6.5"/><rect x="23" y="53" width="6.5" height="6.5"/><rect x="30.5" y="53" width="6.5" height="6.5"/>
+    </g>
+    <!-- Amber 2 with Arrow -->
+    <path d="M66 23C66 15 72 10 80 10C88 10 94 15 94 22.5C94 29 90 33.5 82 40.5L68 54H98M91 46.5L99.5 54L91 61.5" stroke="#E89B31" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Smooth B -->
+    <path d="M120 11H138C146 11 151 15.5 151 22C151 27 148 31 142.5 32.2C149 33.5 153 38 153 44.5C153 52 147 57 138.5 57H120V11Z" stroke="#141E30" stroke-width="6" stroke-linejoin="round"/>
+    <line x1="121" y1="33" x2="141" y2="33" stroke="#141E30" stroke-width="6"/>
+  </g>
+</svg>

@@ -1,0 +1,28 @@
+<svg width="220" height="44" viewBox="0 0 198 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 2x5 Bit Matrix -->
+  <rect x="2" y="3" width="5.5" height="5.5" fill="#141E30"/>
+  <rect x="8.5" y="3" width="5.5" height="5.5" fill="#7B8598"/>
+  <rect x="2" y="9.2" width="5.5" height="5.5" fill="#7B8598"/>
+  <rect x="8.5" y="9.2" width="5.5" height="5.5" fill="#141E30"/>
+  <rect x="2" y="15.4" width="5.5" height="5.5" fill="#141E30"/>
+  <rect x="8.5" y="15.4" width="5.5" height="5.5" fill="#7B8598"/>
+  <rect x="2" y="21.6" width="5.5" height="5.5" fill="#7B8598"/>
+  <rect x="8.5" y="21.6" width="5.5" height="5.5" fill="#141E30"/>
+  <rect x="2" y="27.8" width="5.5" height="5.5" fill="#141E30"/>
+  <rect x="8.5" y="27.8" width="5.5" height="5.5" fill="#7B8598"/>
+
+  <!-- Transformation Arrow -->
+  <path d="M18 18H25M25 18L22 15M25 18L22 21" stroke="#E89B31" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- 5-Bar Soundwave -->
+  <rect x="29" y="14" width="3.2" height="8" rx="1.6" fill="#E89B31"/>
+  <rect x="34" y="9" width="3.2" height="18" rx="1.6" fill="#E89B31"/>
+  <rect x="39" y="4" width="3.2" height="28" rx="1.6" fill="#E89B31"/>
+  <rect x="44" y="9" width="3.2" height="18" rx="1.6" fill="#E89B31"/>
+  <circle cx="50.5" cy="18" r="2" fill="#E89B31"/>
+
+  <!-- Wordmark: Bit2Beat -->
+  <text x="60" y="25" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-weight="800" font-size="22" letter-spacing="-0.5">
+    <tspan fill="#141E30">Bit</tspan><tspan fill="#E89B31">2</tspan><tspan fill="#141E30">Beat</tspan>
+  </text>
+</svg>

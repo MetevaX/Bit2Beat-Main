@@ -1,0 +1,29 @@
+<svg width="220" height="44" viewBox="0 0 185 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Pixel B -->
+  <g fill="#141E30">
+    <rect x="2" y="5" width="3.5" height="3.5"/><rect x="6" y="5" width="3.5" height="3.5"/><rect x="10" y="5" width="3.5" height="3.5"/><rect x="14" y="5" width="3.5" height="3.5"/>
+    <rect x="2" y="9" width="3.5" height="3.5"/><rect x="18" y="9" width="3.5" height="3.5"/>
+    <rect x="2" y="13" width="3.5" height="3.5"/><rect x="18" y="13" width="3.5" height="3.5"/>
+    <rect x="2" y="17" width="3.5" height="3.5"/><rect x="6" y="17" width="3.5" height="3.5"/><rect x="10" y="17" width="3.5" height="3.5"/><rect x="14" y="17" width="3.5" height="3.5"/>
+    <rect x="2" y="21" width="3.5" height="3.5"/><rect x="18" y="21" width="3.5" height="3.5"/>
+    <rect x="2" y="25" width="3.5" height="3.5"/><rect x="18" y="25" width="3.5" height="3.5"/>
+    <rect x="2" y="29" width="3.5" height="3.5"/><rect x="6" y="29" width="3.5" height="3.5"/><rect x="10" y="29" width="3.5" height="3.5"/><rect x="14" y="29" width="3.5" height="3.5"/>
+    <!-- Pixel i stem -->
+    <rect x="28" y="13" width="4" height="4"/>
+    <rect x="28" y="18" width="4" height="4"/>
+    <rect x="28" y="23" width="4" height="4"/>
+    <rect x="28" y="28" width="4" height="4.5"/>
+    <!-- Pixel t -->
+    <rect x="42" y="5" width="4" height="4"/>
+    <rect x="42" y="9.5" width="4" height="4"/>
+    <rect x="37.5" y="14" width="4" height="4"/><rect x="42" y="14" width="4" height="4"/><rect x="46.5" y="14" width="4" height="4"/><rect x="51" y="14" width="4" height="4"/>
+    <rect x="42" y="18.5" width="4" height="4"/>
+    <rect x="42" y="23" width="4" height="4"/>
+    <rect x="42" y="28" width="4" height="4.5"/><rect x="46.5" y="28" width="4" height="4.5"/>
+  </g>
+  <!-- Amber dot on i -->
+  <rect x="28" y="5" width="4" height="4" fill="#E89B31"/>
+  <!-- Smooth 2Beat -->
+  <text x="61" y="32" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-weight="700" font-size="31" fill="#E89B31">2</text>
+  <text x="83" y="32" font-family="'Plus Jakarta Sans', system-ui, sans-serif" font-weight="700" font-size="31" fill="#141E30" letter-spacing="-0.8">Beat</text>
+</svg>
