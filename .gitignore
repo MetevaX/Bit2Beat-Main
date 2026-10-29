@@ -1,9 +1,29 @@
-   node_modules/
-   .env
-   .env.*
-   !.env.example
-   dist/
-   build/
-   *.log
-   .DS_Store
-   .vscode/
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Build and distribution outputs
+dist/
+build/
+
+# Logs
+*.log
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# IDE and Editor configurations
+.vscode/
+.idea/
+
+# Large media files (hosted on external storage / Google Drive)
+*.mp4
+*.mov
+*.psd
+*.avi
+*.mkv

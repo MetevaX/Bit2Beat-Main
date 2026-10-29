@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bit2Beat — Data & Image Sonification</title>
+  <link rel="stylesheet" href="src/ui/styles.css">
+  <!-- Tone.js CDN for Web Audio synthesis and sequencing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-container">
+      <h1>Bit2Beat</h1>
+      <p class="tagline">NASA Space Apps Challenge — Data & Image to Audio Sonification</p>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- Controls Section -->
+    <section class="panel controls-panel">
+      <h2>Input & Modes</h2>
+      
+      <div class="control-group">
+        <label for="mode-select">Sonification Mode:</label>
+        <select id="mode-select">
+          <option value="pms">Parameter Mapping (CSV Data)</option>
+          <option value="spatial-scan">Spatial Scanning (2D Image)</option>
+          <option value="earcons">Earcons & Event Alerts</option>
+        </select>
+      </div>
+
+      <!-- CSV Data Upload Group -->
+      <div id="pms-controls" class="mode-controls">
+        <label for="csv-input">Upload CSV Dataset:</label>
+        <input type="file" id="csv-input" accept=".csv">
+      </div>
+
+      <!-- Image Upload Group -->
+      <div id="image-controls" class="mode-controls hidden">
+        <label for="image-input">Upload Image:</label>
+        <input type="file" id="image-input" accept="image/*">
+      </div>
+
+      <!-- Playback Controls -->
+      <div class="playback-controls">
+        <button id="btn-play" class="btn primary">Play</button>
+        <button id="btn-stop" class="btn secondary">Stop</button>
+        <button id="btn-test-earcon" class="btn outline">Trigger Alert Earcon</button>
+      </div>
+    </section>
+
+    <!-- Visualizer / Canvas Section -->
+    <section class="panel visualizer-panel">
+      <h2>Visualizer & Spatial Display</h2>
+      <div class="canvas-wrapper">
+        <canvas id="visualizer-canvas" width="640" height="360"></canvas>
+      </div>
+      <div id="status-bar" class="status-bar">Status: Ready. Load a dataset or image to begin.</div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Bit2Beat &copy; 2026 — NASA Space Apps Challenge Team Bit2Beat</p>
+  </footer>
+
+  <!-- Main ES Module Bootstrap -->
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
