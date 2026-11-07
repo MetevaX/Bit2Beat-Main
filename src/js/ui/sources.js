@@ -9,10 +9,28 @@
   const { storage } = B.dom;
 
   const EARTH_MENU = [
+    ['sample:eonet', 'NASA natural events · offline sample'],
+    ['sample:quakes', 'USGS earthquakes · offline sample'],
     ['quakes', 'Earthquakes (USGS)'],
     ['eonet', 'Natural events (NASA EONET)'],
   ];
+  const VIDEO_MENU = [['gedi', 'NASA EIC · GEDI forest height'], ['co2', 'NASA EIC · Global carbon dioxide']];
+  function earthSample(id) {
+    const source = B.feeds.offline[id.slice(7)]();
+    source.name += ' · sample';
+    source.origin.note = (source.origin.note || '') + ' Bundled historical sample; choose a live source for current events.';
+    return source;
+  }
+  function videoPreset(id) {
+    const item = B.nasaMedia[id];
+    if (!item) throw new Error('Unknown video preset.');
+    const source = JSON.parse(JSON.stringify(item.source));
+    source.videoUrl = B.assets?.[id + 'Video'] || `assets/nasa/${id}.mp4`;
+    source.key = B.nasaKeys?.[id] || null;
+    return source;
+  }
   const IMAGE_MENU = [
+    ['NASA EIC · works offline', [['nasa:gedi', 'GEDI forest height'], ['nasa:co2', 'Global carbon dioxide']]],
     ['Live NASA satellite view', [['sat:world', 'Whole Earth today (VIIRS NOAA-20)'], ['sat:lights', 'Earth at night, city lights (VIIRS Black Marble)'], ['sat:amazon', 'Amazon rainforest (MODIS)'], ['sat:himalaya', 'Himalaya and Tibetan Plateau (MODIS)'], ['sat:greenland', 'Greenland ice sheet (MODIS)'], ['sat:sahara', 'Western Sahara desert (MODIS)']]],
     ['Works offline', [['map:world', 'World relief map'], ['gen:storm', 'Storm spiral (generated illustration)'], ['gen:aurora', 'Aurora (generated illustration)']]],
   ];
@@ -55,7 +73,8 @@
     const g = canvas.getContext('2d', { willReadFrequently: true });
     const px = g.getImageData(0, 0, canvas.width, canvas.height).data;
     const path = scan === 'radar' ? 'radar' : 'line';
-    const res = B.image.scan(px, canvas.width, canvas.height, { steps, path, analysis });
+    const key = analysis === 'key' ? meta.key || null : null;
+    const res = B.image.scan(px, canvas.width, canvas.height, { steps, path, analysis: key ? 'key' : analysis === 'key' ? 'light' : analysis, key });
     return {
       name: meta.name,
       kind: 'image',
@@ -67,6 +86,7 @@
       bounds: res.bounds || null,
       channels: res.channels.map((c, i) => ({ ...c, instrument: ['soft', 'strings', 'flute'][i % 3] })),
       shared: analysis === 'color',
+      key,
     };
   }
 
@@ -86,6 +106,21 @@
 
   async function imageCanvas(id, date) {
     const I = B.illustrations;
+    if (id.startsWith('nasa:')) {
+      const key = id.slice(5);
+      const item = B.nasaMedia[key];
+      if (!item) throw new Error('Unknown NASA image preset.');
+      const canvas = await I.loadToCanvas(B.assets?.[key + 'Image'] || `assets/nasa/${key}.jpg`, 1200);
+      const k = B.nasaKeys?.[key] || null;
+      return {
+        canvas,
+        meta: {
+          name: item.source.name + ' · still image',
+          key: k,
+          origin: { ...item.source.origin, note: k ? `NASA SVS visualization from the EIC gallery. “Colour key” reads ${/^[A-Z][a-z]/.test(k.name) ? k.name.toLowerCase() : k.name} (${k.unit}) back out of the picture through its own colour bar.` : 'NASA SVS visualization from the EIC gallery.' },
+        },
+      };
+    }
     if (id.startsWith('gen:')) {
       const kind = id.slice(4);
       return { canvas: I.generate(kind), meta: { name: kind === 'storm' ? 'Storm spiral' : 'Aurora', origin: { source: 'Generated illustration (not satellite data)', url: '', fetched: '', live: false } } };
@@ -133,5 +168,108 @@
     }
   }
 
-  B.sources = { EARTH_MENU, IMAGE_MENU, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile };
+  /** Decode a bounded number of small frames locally, keeping only two pixel buffers. */
+  async function fromVideoFile(file, { signal, onProgress = () => {} } = {}) {
+    if (file.size > 200 * 1024 * 1024) throw new Error('Please choose a video smaller than 200 MB.');
+    const video = document.createElement('video');
+    video.muted = true;
+    video.preload = 'auto';
+    video.playsInline = true;
+    const url = URL.createObjectURL(file);
+    const aborted = () => new DOMException('Video analysis cancelled.', 'AbortError');
+    function waitFor(event, action) {
+      return new Promise((resolve, reject) => {
+        const cleanup = () => {
+          clearTimeout(timer);
+          video.removeEventListener(event, done);
+          video.removeEventListener('error', fail);
+          signal?.removeEventListener('abort', cancel);
+        };
+        const done = () => { cleanup(); resolve(); };
+        const fail = () => { cleanup(); reject(new Error('Could not decode this video. Try an MP4 or WebM supported by your browser.')); };
+        const cancel = () => { cleanup(); reject(aborted()); };
+        const timer = setTimeout(() => { cleanup(); reject(new Error('Video decoding timed out. Try a shorter clip.')); }, 15000);
+        video.addEventListener(event, done, { once: true });
+        video.addEventListener('error', fail, { once: true });
+        signal?.addEventListener('abort', cancel, { once: true });
+        if (signal?.aborted) return cancel();
+        try { action(); } catch (e) { cleanup(); reject(e); }
+      });
+    }
+    try {
+      await waitFor('loadeddata', () => { video.src = url; video.load(); });
+      const times = B.video.sampleTimes(video.duration);
+      if (!video.videoWidth || !video.videoHeight) throw new Error('This file has no readable video frames.');
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(1, 160 / Math.max(video.videoWidth, video.videoHeight));
+      canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+      canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const grab = async (t) => {
+        if (signal?.aborted) throw aborted();
+        await waitFor('seeked', () => {
+          video.currentTime = t;
+        });
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        return ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      };
+      // one background for the whole video, taken from the middle frame
+      const bg = B.image.background(await grab(video.duration / 2), canvas.width, canvas.height);
+      const channels = B.video.channels().map((c) => ({ ...c, values: [] }));
+      // two moments per sample, averaged (anti-aliasing, see video.windowTimes)
+      const windows = B.video.windowTimes(video.duration, times.length, 2);
+      for (let i = 0; i < windows.length; i++) {
+        const rows = [];
+        for (const t of windows[i]) {
+          const before = await grab(B.video.motionTime(t));
+          rows.push(B.video.measure(await grab(t), canvas.width, canvas.height, before, bg));
+        }
+        B.video.average(rows).forEach((v, j) => channels[j].values.push(v));
+        onProgress(i + 1, windows.length);
+      }
+      return {
+        name: file.name.replace(/\.[a-z0-9]+$/i, ''), kind: 'video', view: 'chart',
+        labels: times.map((t) => `${t.toFixed(1)} s`), times, duration: video.duration, channels,
+        origin: { source: 'Your video · ' + file.name, url: '', fetched: '', live: false,
+          note: `${times.length} frames over ${video.duration.toFixed(1)} s (two per second): brightness, colour and motion of the picture, background left out. Original sound is ignored. Reopen the file after a refresh.` },
+      };
+    } finally {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  function fillSourceSelect(state, uploads, src, sel) {
+    sel.replaceChildren();
+    const add = (parent, [v, t]) => parent.append(new Option(t, v));
+    if (state.mode === 'data') {
+      B.presets.DATA_MENU.forEach(([label, items]) => {
+        const og = document.createElement('optgroup');
+        og.label = label;
+        items.forEach((it) => add(og, it));
+        sel.append(og);
+      });
+      if (uploads.data) add(sel, ['upload', 'Your file: ' + uploads.data.name]);
+      if (state.choice.data === 'custom') add(sel, ['custom', src?.name || 'Saved session data']);
+      if (state.choice.data === 'power') add(sel, ['power', src?.name || 'NASA POWER data']);
+    } else if (state.mode === 'video') {
+      B.sources.VIDEO_MENU.forEach((it) => add(sel, it));
+      if (uploads.video) add(sel, ['upload', 'Your video: ' + uploads.video.name]);
+      if (state.choice.video === 'custom') add(sel, ['custom', src?.name || 'Saved video analysis']);
+    } else if (state.mode === 'earth') B.sources.EARTH_MENU.forEach((it) => add(sel, it));
+    else {
+      B.sources.IMAGE_MENU.forEach(([label, items]) => {
+        const og = document.createElement('optgroup');
+        og.label = label;
+        items.forEach((it) => add(og, it));
+        sel.append(og);
+      });
+      if (uploads.image) add(sel, ['upload', 'Your picture: ' + uploads.image.meta.name]);
+    }
+    sel.value = state.choice[state.mode];
+  }
+
+  B.sources = { fillSourceSelect, EARTH_MENU, IMAGE_MENU, VIDEO_MENU, earthSample, videoPreset, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile, fromVideoFile };
 })(typeof self !== 'undefined' ? self : this);

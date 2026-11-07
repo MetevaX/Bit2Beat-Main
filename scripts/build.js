@@ -11,7 +11,7 @@ const root = path.resolve(__dirname, '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 const dataUri = (rel) => {
   const ext = path.extname(rel).slice(1).toLowerCase();
-  const mime = { svg: 'image/svg+xml', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }[ext];
+  const mime = { svg: 'image/svg+xml', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', mp4: 'video/mp4' }[ext];
   return `data:${mime};base64,${fs.readFileSync(path.join(root, rel)).toString('base64')}`;
 };
 
@@ -24,7 +24,9 @@ html = html.replace(/<link rel="stylesheet" href="([^"]+)">\n?/g, (_, href) => `
 html = html.replace(/(src|href)="(assets\/[^"]+)"/g, (_, attr, rel) => `${attr}="${dataUri(decodeURIComponent(rel))}"`);
 
 // Scripts, plus the world map for code that loads it at run time
-const assets = `<script>(self.Bit2Beat = self.Bit2Beat || {}).assets = { worldMap: ${JSON.stringify(dataUri('assets/img/world-map.jpg'))} };</script>\n`;
+const bundled = { worldMap: dataUri('assets/img/world-map.jpg') };
+for (const key of ['gedi', 'co2']) { bundled[key + 'Video'] = dataUri(`assets/nasa/${key}.mp4`); bundled[key + 'Image'] = dataUri(`assets/nasa/${key}.jpg`); }
+const assets = `<script>(self.Bit2Beat = self.Bit2Beat || {}).assets = ${JSON.stringify(bundled)};</script>\n`;
 let first = true;
 html = html.replace(/<script src="([^"]+)"><\/script>\n?/g, (_, src) => {
   const code = read(src).replace(/<\/script/gi, '<\\/script');

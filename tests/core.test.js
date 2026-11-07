@@ -274,3 +274,116 @@ test('BitPet notes: 20 offline notes over every topic, sentence-safe excerpts', 
   assert.ok(e.length <= 300 && /\.$/.test(e), 'ends at a full stop');
   assert.ok(e.startsWith('On Oct. 26, 2015, a magnitude 7.5'), 'does not cut at "Oct." or "7.5"');
 });
+
+test('video: two samples per second, content only, motion, colour keys and minimum pitch span', () => {
+  const video = require('../src/js/core/video.js');
+  assert.deepEqual(video.sampleTimes(4, 4), [0.5, 1.5, 2.5, 3.5]);
+  assert.equal(video.stepsFor(51.5), 103);
+  assert.equal(video.stepsFor(5), 24, 'at least 24 samples');
+  assert.equal(video.stepsFor(1000), 160, 'at most 160 samples');
+  assert.throws(() => video.sampleTimes(Infinity));
+  assert.throws(() => video.sampleTimes(0));
+  assert.throws(() => video.sampleTimes(1, 241));
+  assert.ok(Math.abs(video.motionTime(1) - (1 - 1 / 12)) < 1e-9);
+  // 20 × 20 frames: black background with a coloured square in the middle
+  const W = 20;
+  const frame = (rgb, inner = true) => {
+    const px = new Uint8ClampedArray(W * W * 4);
+    for (let y = 0; y < W; y++)
+      for (let x = 0; x < W; x++) {
+        const i = (y * W + x) * 4;
+        const on = inner && x >= 6 && x < 14 && y >= 6 && y < 14;
+        px[i] = on ? rgb[0] : 0;
+        px[i + 1] = on ? rgb[1] : 0;
+        px[i + 2] = on ? rgb[2] : 0;
+        px[i + 3] = 255;
+      }
+    return px;
+  };
+  const white = frame([255, 255, 255]);
+  const [L, C, M] = video.measure(white, W, W, white);
+  assert.ok(Math.abs(L - 100) < 0.01, 'brightness ignores the black background');
+  assert.ok(C < 1, 'white has no colour');
+  assert.equal(M, 0, 'no motion between identical frames');
+  assert.ok(video.measure(white, W, W, frame([0, 0, 0], false))[2] > 0, 'a change is motion');
+  assert.deepEqual(video.measure(frame([0, 0, 0], false), W, W, null).slice(0, 2), [null, null], 'an empty frame is silent');
+  assert.equal(video.measure(white, W, W, null)[2], null, 'no motion without a previous frame');
+  assert.throws(() => video.measure(white, 1, 1));
+  // colour key: green = 0, red = 100
+  const key = image.makeKey({ ramp: [[0, 160, 0, 0], [160, 160, 0, 50], [200, 0, 0, 100]], tol: 25 });
+  const [v, cover] = video.measure(frame([200, 0, 0]), W, W, null, undefined, key);
+  assert.equal(v, 100);
+  assert.equal(cover, 100);
+  assert.equal(video.measure(frame([0, 160, 0]), W, W, null, undefined, key)[0], 0);
+  assert.equal(video.measure(frame([255, 255, 255]), W, W, null, undefined, key)[1], 0, 'white is not on the colour bar');
+  // minSpan: a 1-unit wobble stays near one note instead of filling every octave
+  const wobble = { name: 'v', kind: 'video', view: 'chart', labels: ['a', 'b'], channels: [{ name: 'Brightness', unit: 'L*', values: [30, 31], minSpan: 20 }] };
+  const p1 = plan.build(wobble, [{ gain: 0.7 }], { scale: 'chromatic' });
+  assert.ok(Math.abs(p1.channels[0].midi[1] - p1.channels[0].midi[0]) <= 2);
+  wobble.channels[0].minSpan = 0;
+  const p2 = plan.build(wobble, [{ gain: 0.7 }], { scale: 'chromatic' });
+  assert.equal(p2.channels[0].midi[1] - p2.channels[0].midi[0], 24);
+});
+
+test('image: background is left out and colour keys read data from a picture', () => {
+  const W = 40;
+  const H = 20;
+  const px = new Uint8ClampedArray(W * H * 4);
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      const inside = y >= 4 && y < 16 && x >= 4 && x < 36;
+      px[i] = inside && x >= 20 ? 200 : 0;
+      px[i + 1] = inside && x < 20 ? 160 : 0;
+      px[i + 3] = 255;
+    }
+  assert.deepEqual(image.background(px, W, H), [0, 0, 0]);
+  const light = image.scan(px, W, H, { steps: 10 });
+  assert.equal(light.channels[0].values[0], null, 'a band of pure background is silent');
+  assert.ok(light.channels[0].values[2] > 50, 'content bands are measured');
+  const keyed = image.scan(px, W, H, { steps: 10, analysis: 'key', key: { name: 'Height', unit: 'm', ramp: [[0, 160, 0, 0], [200, 0, 0, 50]] } });
+  assert.equal(keyed.channels[0].values[2], 0);
+  assert.equal(keyed.channels[0].values[7], 50);
+  assert.equal(keyed.channels[1].values[7], 100);
+});
+
+test('NASA presets: offline video assets, measured channels, CSV and event plans', () => {
+  const media = require('../src/js/data/nasa-media.js');
+  const vm = require('node:vm');
+  const B = { dom: { storage: { get: () => null } }, feeds, presets, nasaMedia: media, nasaKeys: require('../src/js/data/nasa-keys.js') };
+  const context = { self: { Bit2Beat: B }, URLSearchParams };
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'src/js/ui/sources.js'), 'utf8'), context);
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'src/js/ui/url-state.js'), 'utf8'), context);
+  assert.equal(B.urlState.read('?mode=video&src=co2').mode, 'video');
+  assert.equal(B.urlState.DEFAULT_CHOICE.video, 'gedi');
+  for (const [id] of B.sources.VIDEO_MENU) {
+    const source = B.sources.videoPreset(id);
+    assert.equal(source.labels.length, require('../src/js/core/video.js').stepsFor(source.duration), 'two samples per second');
+    assert.equal(source.times.length, source.labels.length);
+    assert.equal(source.channels.length, 3);
+    assert.ok(source.key && source.key.ramp.length > 20, 'presets are read through their colour bar');
+    assert.ok(fs.statSync(path.join(root, source.videoUrl)).size > 1000);
+    assert.ok(fs.statSync(path.join(root, `assets/nasa/${id}.jpg`)).size > 1000);
+    for (const c of source.channels) {
+      assert.equal(c.values.length, source.labels.length);
+      assert.ok(c.values.filter(Number.isFinite).length > c.values.length * 0.8, `${c.name} mostly measured`);
+      assert.ok(new Set(c.values).size > 1);
+      const v = c.values.filter(Number.isFinite);
+      if (c.unit !== '%' && c.unit !== 'ΔL*') assert.ok(Math.min(...v) >= source.key.min - 1 && Math.max(...v) <= source.key.max + 1, `${c.name} within the colour bar`);
+    }
+    assert.equal(plan.build(source, [], {}).count, source.labels.length);
+    source.channels[0].values[0] = -999;
+    assert.notEqual(B.sources.videoPreset(id).channels[0].values[0], -999, 'presets are isolated from edits');
+  }
+  for (const id of ['sample:eonet', 'sample:quakes']) {
+    const source = B.sources.earthSample(id);
+    assert.equal(source.origin.live, false);
+    assert.ok(plan.build(source, [], {}).count > 0);
+  }
+  for (const [id, factory] of Object.entries(presets.DATA)) assert.ok(plan.build(factory(), [], {}).count > 0, id);
+  const parsed = csv.parseCSV(fs.readFileSync(path.join(root, 'assets/nasa/global-temperature.csv'), 'utf8'));
+  assert.deepEqual(presets.DATA.climateCsv().channels.map(c => c.values), parsed.cols.map(c => c.values));
+  const built = fs.readFileSync(path.join(root, 'dist/Bit2Beat-Studio.html'), 'utf8');
+  assert.match(built, /gediVideo.*data:video\/mp4;base64,/);
+  assert.match(built, /co2Video.*data:video\/mp4;base64,/);
+});

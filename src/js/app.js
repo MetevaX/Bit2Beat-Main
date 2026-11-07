@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   const B = window.Bit2Beat || {};
-  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bitpet', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState'];
+  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bitpet', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys'];
   const missing = need.filter((k) => !B[k]);
   if (missing.length) {
     document.body.insertAdjacentHTML('afterbegin', `<p role="alert" style="padding:16px;background:#fbe9d0;color:#14213d">Bit2Beat could not load: ${missing.join(', ')}. Open the single-file build in dist/ or serve the folder.</p>`);
@@ -43,6 +43,7 @@
     const valid = {
       data: [...B.presets.DATA_MENU.flatMap(([, items]) => items.map((it) => it[0])), 'power'],
       earth: B.sources.EARTH_MENU.map((it) => it[0]),
+      video: B.sources.VIDEO_MENU.map((it) => it[0]),
       image: B.sources.IMAGE_MENU.flatMap(([, items]) => items.map((it) => it[0])),
     };
     if (valid[state.mode].includes(fromUrl.choice)) state.choice[state.mode] = fromUrl.choice;
@@ -51,8 +52,10 @@
   let pending = { mix: fromUrl.mix, position: fromUrl.position };
   let src = null;
   let plan = null;
-  let uploads = { data: null, image: null };
+  let uploads = { data: null, image: null, video: null };
   let loadToken = 0;
+  let videoImport = null;
+  let tempoBeforeVideo = 0;
 
   const syncUrl = () => B.urlState.write(app);
   const persist = () => {
@@ -161,6 +164,7 @@
     $('seek').value = i;
     $('elapsed').textContent = music.seconds(plan.times[i] || 0);
     B.panels.renderNow(app, i);
+    videoView.sync(i, player.playing);
     if (!(fromPlayback && state.prefs.reduceMotion)) drawAll();
     B.scoreView.preview(plan, i);
     if ($('scoreDialog').open) B.scoreView.paper(plan, i, true);
@@ -193,6 +197,7 @@
     $('playBtn').classList.toggle('is-playing', on);
     spectrumLoop(); // keeps running while playing, then lets the bars fall back
     if (!on) recorder.stop();
+    if (plan) videoView.sync(Math.min(state.position, plan.count - 1), on);
   }
   async function togglePlay() {
     if (player.playing) return player.pause();
@@ -230,6 +235,7 @@
   /** Which BitPet topic fits a source. */
   function topicFor(s) {
     if (s.kind === 'earth') return s.feed === 'quakes' ? 'quakes' : 'events';
+    if (s.kind === 'video') return 'image';
     if (s.kind === 'image') return /Greenland/.test(s.name) ? 'arctic' : 'image';
     return /Arctic|Svalbard/.test(s.name) ? 'arctic' : 'climate';
   }
@@ -237,7 +243,20 @@
   /** Install a new source; resets the mix and position. */
   function setSource(next, { keepMix = false, keepPosition = false } = {}) {
     player.pause();
+    const src0 = src;
     src = next;
+    videoView.show(next);
+    // a new video plays in real time unless the link asked for a tempo
+    const rt = next.kind === 'video' && !(pending && fromUrl.settings.tempo) ? videoView.realTimeTempo(next) : null;
+    if (rt && rt !== state.settings.tempo && next !== src0) {
+      if (src0?.kind !== 'video') tempoBeforeVideo = state.settings.tempo;
+      state.settings.tempo = rt;
+      app.syncControls?.();
+    } else if (next.kind !== 'video' && src0?.kind === 'video' && tempoBeforeVideo) {
+      state.settings.tempo = tempoBeforeVideo; // leaving a video: back to the tempo used before
+      tempoBeforeVideo = 0;
+      app.syncControls?.();
+    }
     if (!keepMix || state.mix.length !== src.channels.length) initMix();
     if (!keepPosition) state.position = 0;
     // first load after a refresh: restore the mix and position from the address bar
@@ -253,33 +272,11 @@
   }
 
   function fillSourceSelect() {
-    const sel = $('sourceSelect');
-    sel.replaceChildren();
-    const add = (parent, [v, t]) => parent.append(new Option(t, v));
-    if (state.mode === 'data') {
-      B.presets.DATA_MENU.forEach(([label, items]) => {
-        const og = document.createElement('optgroup');
-        og.label = label;
-        items.forEach((it) => add(og, it));
-        sel.append(og);
-      });
-      if (uploads.data) add(sel, ['upload', 'Your file: ' + uploads.data.name]);
-      if (state.choice.data === 'custom') add(sel, ['custom', src?.name || 'Saved session data']);
-      if (state.choice.data === 'power') add(sel, ['power', src?.name || 'NASA POWER data']);
-    } else if (state.mode === 'earth') B.sources.EARTH_MENU.forEach((it) => add(sel, it));
-    else {
-      B.sources.IMAGE_MENU.forEach(([label, items]) => {
-        const og = document.createElement('optgroup');
-        og.label = label;
-        items.forEach((it) => add(og, it));
-        sel.append(og);
-      });
-      if (uploads.image) add(sel, ['upload', 'Your picture: ' + uploads.image.meta.name]);
-    }
-    sel.value = state.choice[state.mode];
+    B.sources.fillSourceSelect(state, uploads, src, $('sourceSelect'));
   }
 
   async function loadChoice() {
+    videoImport?.abort();
     const token = ++loadToken;
     const id = state.choice[state.mode];
     try {
@@ -291,7 +288,13 @@
         fillSourceSelect();
         return setSource(B.presets.DATA.gistemp());
       }
+      if (state.mode === 'video') {
+        if (id === 'custom') return;
+        if (id === 'upload' && uploads.video) return setSource(uploads.video);
+        return setSource(B.sources.videoPreset(id));
+      }
       if (state.mode === 'earth') {
+        if (id.startsWith('sample:')) return setSource(B.sources.earthSample(id));
         const arg = id === 'quakes' ? state.earth.quakeFeed : id === 'eonet' ? state.earth.eonetDays : undefined;
         setSource(B.sources.earthOffline(id, arg));
         return fetchLatest(true);
@@ -305,7 +308,10 @@
         if (token !== loadToken) return;
         if (res.warning) toast(res.warning, 5000);
       }
+      // pictures with a colour bar are read through it, unless the link chose another analysis
+      if (res.meta?.key && !(pending && fromUrl.image.analysis) && imageBase?.meta !== res.meta) state.image.analysis = 'key';
       imageBase = res;
+      syncImageOptions();
       analyseImage();
     } catch (e) {
       if (token !== loadToken) return;
@@ -335,7 +341,7 @@
 
   /** Try the live feed for the current Earth source (quietly when `auto`). */
   async function fetchLatest(auto = false) {
-    if (state.mode !== 'earth') return;
+    if (state.mode !== 'earth' || state.choice.earth.startsWith('sample:')) return;
     const id = state.choice.earth;
     const arg = id === 'quakes' ? state.earth.quakeFeed : id === 'eonet' ? state.earth.eonetDays : undefined;
     const token = loadToken;
@@ -362,16 +368,18 @@
   }
 
   function setMode(mode) {
+    videoImport?.abort();
+    videoView.show(null);
     state.mode = mode;
     $$('[data-mode]').forEach((b) => {
       const on = b.dataset.mode === mode;
       b.setAttribute('aria-selected', String(on));
       b.tabIndex = on ? 0 : -1;
     });
-    ['data', 'earth', 'image'].forEach((m) => ($('opts-' + m).hidden = m !== mode));
+    ['data', 'earth', 'image', 'video'].forEach((m) => ($('opts-' + m).hidden = m !== mode));
     $('uploadBtn').hidden = mode === 'earth';
-    $('uploadLabel').textContent = mode === 'image' ? 'Open picture' : 'Open CSV';
-    $('fileInput').accept = mode === 'image' ? 'image/png,image/jpeg,image/webp' : '.csv,.tsv,.txt,text/csv';
+    $('uploadLabel').textContent = mode === 'video' ? 'Open video' : mode === 'image' ? 'Open picture' : 'Open CSV';
+    $('fileInput').accept = mode === 'video' ? 'video/*,.mp4,.webm,.mov,.m4v' : mode === 'image' ? 'image/png,image/jpeg,image/webp' : '.csv,.tsv,.txt,text/csv';
     fillSourceSelect();
     syncEarthOptions();
     syncImageOptions();
@@ -380,20 +388,43 @@
 
   function syncEarthOptions() {
     const id = state.choice.earth;
+    $('fetchBtn').hidden = id.startsWith('sample:');
     $('quakeFeedField').hidden = id !== 'quakes';
     $('eonetDaysField').hidden = id !== 'eonet';
   }
   function syncImageOptions() {
     $('satDateField').hidden = !state.choice.image.startsWith('sat:') || state.choice.image === 'sat:lights';
+    const hasKey = !!imageBase?.meta?.key;
+    $('keyBtn').hidden = !hasKey;
+    if (!hasKey && state.image.analysis === 'key') state.image.analysis = 'light';
+    pressOne($('analysisGroup'), $('analysisGroup').querySelector(`[data-analysis="${state.image.analysis}"]`));
   }
 
   // ------------------------------------------------------------------ files
   async function openFile(file) {
     if (!file) return;
+    ++loadToken;
+    videoImport?.abort();
+    const controller = new AbortController();
+    videoImport = controller;
     const isCsv = /\.(csv|tsv|txt)$/i.test(file.name) || /csv|tab-separated|text\/plain/.test(file.type);
     const isImage = /^image\/(png|jpe?g|webp)$/.test(file.type) || /\.(png|jpe?g|webp)$/i.test(file.name);
     try {
-      if (isCsv) {
+      if (/^video\//.test(file.type) || /\.(mp4|webm|mov|m4v|ogv)$/i.test(file.name)) {
+        player.pause();
+        setBusy(true, 'Analysing video…');
+        const next = await B.sources.fromVideoFile(file, {
+          signal: controller.signal,
+          onProgress: (n, total) => setBusy(true, `Analysing video… ${n}/${total}`),
+        });
+        if (controller.signal.aborted) return;
+        if (uploads.video?.videoUrl) URL.revokeObjectURL(uploads.video.videoUrl);
+        next.videoUrl = URL.createObjectURL(file);
+        uploads.video = next;
+        state.choice.video = 'upload';
+        setMode('video');
+        toast(`Video ready: ${next.labels.length} frames, two per second. Press Play: the picture follows the music.`, 5000);
+      } else if (isCsv) {
         if (file.size > B.csv.LIMITS.maxBytes) throw new Error('Please choose a CSV smaller than 2 MB.');
         const { src: s, parsed } = B.sources.fromCsv(await file.text(), file.name);
         uploads.data = s;
@@ -414,10 +445,11 @@
           imageBase = uploads.image;
           analyseImage();
         }
-      } else throw new Error('Choose a CSV file or a PNG, JPG or WebP picture.');
+      } else throw new Error('Choose a CSV, PNG/JPG/WebP picture, or a browser-supported video (MP4 or WebM).');
     } catch (e) {
-      toast(e.message, 5000);
+      if (e.name !== 'AbortError') toast(e.message, 5000);
     } finally {
+      if (videoImport === controller) { videoImport = null; setBusy(false); }
       $('fileInput').value = '';
     }
   }
@@ -442,6 +474,7 @@
 
   // ------------------------------------------------------------------ wiring
   const pet = B.bitpet.createPet(() => state.prefs);
+  const videoView = B.videoView.init(app);
 
   $$('[data-mode]').forEach((b) => {
     b.onclick = () => state.mode !== b.dataset.mode && setMode(b.dataset.mode);
@@ -625,29 +658,7 @@
   }
   $$('[data-page]').forEach((b) => (b.onclick = () => showPage(b.dataset.page)));
 
-  // keyboard
-  document.addEventListener('keydown', (e) => {
-    if (document.querySelector('dialog[open]') || e.altKey || e.ctrlKey || e.metaKey) return;
-    const tag = e.target.tagName;
-    const typing = ['INPUT', 'SELECT', 'TEXTAREA'].includes(tag) || e.target.isContentEditable;
-    if (typing && !(tag === 'INPUT' && e.target.type === 'range' && e.code === 'Space')) return;
-    if (!$('about').hidden) return;
-    const k = e.key;
-    if (e.code === 'Space' && tag !== 'BUTTON') {
-      e.preventDefault();
-      togglePlay();
-    } else if ((k === 'ArrowRight' || k === 'ArrowLeft') && !e.target.closest('[role="tablist"]') && tag !== 'INPUT') {
-      e.preventDefault();
-      if (player.playing) player.pause();
-      seek(state.position + (k === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 8 : 1), { audition: true });
-    } else if ((k === 'Home' || k === 'End') && !e.target.closest('[role="tablist"]') && tag !== 'INPUT') {
-      e.preventDefault();
-      seek(k === 'Home' ? 0 : plan.count - 1, { audition: true });
-    } else if (k === 'l' || k === 'L') $('loopBtn').click();
-    else if (k === 'd' || k === 'D') B.panels.speak(app);
-    else if (k === 't' || k === 'T') B.dialogs.openTable(app);
-    else if (k === '?') $('helpDialog').showModal();
-  });
+  B.keys.init(app);
   document.addEventListener('visibilitychange', () => document.hidden && player.playing && player.pause());
   let resizeTimer = 0;
   window.addEventListener('resize', () => {

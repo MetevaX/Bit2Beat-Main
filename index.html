@@ -53,6 +53,7 @@
       <button role="tab" id="tab-data" data-mode="data" aria-selected="true" aria-controls="sourceCard">Data</button>
       <button role="tab" id="tab-earth" data-mode="earth" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Earth events</button>
       <button role="tab" id="tab-image" data-mode="image" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Image</button>
+      <button role="tab" id="tab-video" data-mode="video" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Video</button>
     </div>
     <label class="source-pick"><span class="sr-only">Source</span><select id="sourceSelect" aria-label="Choose what to listen to"></select></label>
     <button type="button" class="btn" id="uploadBtn"><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Open CSV</span></button>
@@ -66,13 +67,18 @@
           <div>
             <h2 id="sourceName">Loading…</h2>
             <p class="origin" id="sourceOrigin"></p>
+            <a id="sourceCredit" class="card-note" target="_blank" rel="noopener noreferrer" hidden>View original source ↗</a>
           </div>
           <span class="status-pill" id="livePill" hidden></span>
+        </div>
+        <div class="video-box" id="videoBox" hidden>
+          <video id="videoPreview" muted playsinline preload="auto" tabindex="0" aria-label="Source video. It follows the music: press Play to play both."></video>
+          <span class="video-chip" aria-hidden="true">Muted · follows the music</span>
         </div>
         <div class="canvas-wrap" id="dropZone">
           <canvas id="sourceCanvas" width="1200" height="560" role="img" aria-label="Source preview"></canvas>
           <div class="hover-tip" id="hoverTip" hidden></div>
-          <div class="drop-hint" id="dropHint" hidden>Drop a CSV or an image</div>
+          <div class="drop-hint" id="dropHint" hidden>Drop a CSV, image or video</div>
         </div>
 
         <div class="source-options" id="opts-data">
@@ -91,6 +97,10 @@
             <label class="field"><span class="sr-only">Year</span><select id="powerYear" aria-label="Year"></select></label>
             <button type="submit" class="btn" id="powerBtn">Load</button>
           </form>
+        </div>
+
+        <div class="source-options" id="opts-video" hidden>
+          <p class="card-note" id="videoNote">Two frames per second. NASA presets are read through their own colour bar; your videos (MP4 or WebM) play brightness, colour and motion. The picture follows the music.</p>
         </div>
 
         <div class="source-options" id="opts-earth" hidden>
@@ -115,6 +125,7 @@
           <div class="seg" role="group" aria-label="What to measure" id="analysisGroup">
             <button type="button" data-analysis="light" aria-pressed="true">Light</button>
             <button type="button" data-analysis="color" aria-pressed="false">Colour</button>
+            <button type="button" data-analysis="key" aria-pressed="false" id="keyBtn" hidden title="Read the data back out of the picture through its own colour bar">Colour key</button>
           </div>
           <div class="seg" role="group" aria-label="How to scan" id="scanGroup">
             <button type="button" data-scan="line" aria-pressed="true">Left to right</button>
@@ -367,7 +378,7 @@
 <dialog id="helpDialog" aria-labelledby="helpTitle">
   <div class="dlg-head"><h2 id="helpTitle">How to use Bit2Beat</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
   <ol class="help-steps">
-    <li><b>Pick something to hear.</b> Data has NASA climate series and your own CSV files. Earth events has live earthquakes and natural events, played across the map from west to east. Image turns a picture or a satellite view into sound.</li>
+    <li><b>Pick something to hear.</b> Data has NASA climate series and your own CSV files. Video has offline NASA EIC presets and turns uploaded videos into brightness, detail and frame-change melodies. Earth events has live earthquakes and natural events, played across the map from west to east. Image turns a picture or a satellite view into sound.</li>
     <li><b>Press Play.</b> Higher values play higher. The Melody panel and the score show the same notes.</li>
     <li><b>Shape the sound.</b> Change instrument, scale and tempo, mute or solo channels, or press Suggest.</li>
     <li><b>Export.</b> Download audio, the notes as CSV or the score.</li>
@@ -402,10 +413,13 @@
 <script src="src/js/core/adm.js"></script>
 <script src="src/js/core/geo.js"></script>
 <script src="src/js/core/image.js"></script>
+<script src="src/js/core/video.js"></script>
 <script src="src/js/core/score.js"></script>
 <script src="src/js/core/feeds.js"></script>
 <script src="src/js/core/plan.js"></script>
 <script src="src/js/data/presets.js"></script>
+<script src="src/js/data/nasa-keys.js"></script>
+<script src="src/js/data/nasa-media.js"></script>
 <script src="src/js/audio/engine.js"></script>
 <script src="src/js/audio/player.js"></script>
 <script src="src/js/audio/exporter.js"></script>
@@ -422,6 +436,8 @@
 <script src="src/js/ui/canvas-input.js"></script>
 <script src="src/js/ui/recorder.js"></script>
 <script src="src/js/ui/url-state.js"></script>
+<script src="src/js/ui/video-view.js"></script>
+<script src="src/js/ui/keys.js"></script>
 <script src="src/js/app.js"></script>
 </body>
 </html>

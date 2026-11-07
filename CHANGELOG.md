@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.2.0 — 7 November 2026
+- **Video tab and NASA Earth Information Center presets** (GEDI forest height, DYAMOND global CO₂), as videos and as stills.
+- **Colour keys.** The NASA presets are read through their own colour bars: forest height (m) and land in view; CO₂ (ppm) and the area above ~420 ppm. Image tab: new *Colour key* analysis.
+- **Video algorithm.** Two samples per second, each averaged over its half second (no false rhythms from pulsing pictures); empty background left out; *Motion* measured over 1/12 s instead of between distant samples; missing frames are silent instead of a fake zero.
+- **Minimum pitch span** for video and colour-key channels, so a tiny change no longer sounds like a huge swing.
+- **The video follows the music.** One Play button; the muted video keeps in step (playback rate and drift correction), shows the exact frame when paused or stepping; tempo is set for real time and restored when you leave the video.
+- **Pictures:** flat background (the black around a globe) is silent instead of being played as data.
+- Design: video on top, a compact timeline of the music below; Earth events default back to live data.
+- `npm start` now uses a small Node server with Range support (video seeking); keyboard shortcuts moved to `ui/keys.js`.
+
 ## 2.1.0 — 7 November 2026
 - **Earth events play left to right.** Earthquakes and natural events are sorted west → east and heard as one sweep across the map, with a playhead line and a longitude grid. Latitude sets the pitch (north = higher); magnitude or size sets loudness and dot size. “Map distance” keeps the real gaps along the sweep.
 - **Smoother playback.** The map and the melody roll are drawn once into offscreen layers and only the playhead is redrawn; updates during playback are batched per animation frame; theme colours are cached.

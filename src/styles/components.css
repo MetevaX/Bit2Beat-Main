@@ -798,3 +798,5 @@ input[type='range'] {
   overscroll-behavior: contain;
   scrollbar-width: thin;
 }
+
+.modes { flex-wrap: wrap; }

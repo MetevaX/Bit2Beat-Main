@@ -9,7 +9,7 @@
   'use strict';
   const B = root.Bit2Beat;
 
-  const MODES = ['data', 'earth', 'image'];
+  const MODES = ['data', 'earth', 'image', 'video'];
   const num = (v, lo, hi) => {
     const n = Number(v);
     return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : undefined;
@@ -45,7 +45,7 @@
     if (has('quakes')) out.earth.quakeFeed = q.get('quakes');
     if (has('days')) out.earth.eonetDays = oneOf(+q.get('days'), [7, 30, 60]);
 
-    if (has('look')) out.image.analysis = oneOf(q.get('look'), ['light', 'color']);
+    if (has('look')) out.image.analysis = oneOf(q.get('look'), ['light', 'color', 'key']);
     if (has('scan')) out.image.scan = oneOf(q.get('scan'), ['line', 'radar', 'pointer']);
     if (has('steps')) out.image.steps = num(q.get('steps'), 16, 160);
     if (has('date') && /^\d{4}-\d\d-\d\d$/.test(q.get('date'))) out.image.date = q.get('date');
@@ -67,7 +67,7 @@
     return out;
   }
 
-  const DEFAULT_CHOICE = { data: 'gistemp', earth: 'quakes', image: 'sat:world' };
+  const DEFAULT_CHOICE = { data: 'gistemp', earth: 'quakes', image: 'nasa:gedi', video: 'gedi' };
 
   /** Build the query string for the current state. */
   function query(app, page = 'studio') {

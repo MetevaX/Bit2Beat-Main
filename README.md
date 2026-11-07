@@ -1,6 +1,6 @@
 # Bit2Beat
 
-**Listen to Earth data.** Bit2Beat turns NASA climate records, live natural events, your own spreadsheets and pictures into music you can hear, follow as a score, and export as stereo, binaural, surround or ADM BWF audio.
+**Listen to Earth data.** Bit2Beat turns NASA climate records, live natural events, your own spreadsheets, pictures and videos into music you can hear, follow as a score, and export as stereo, binaural, surround or ADM BWF audio.
 
 Built for the NASA Space Apps Challenge 2026, *The Earth Information Jukebox*, by Team Bit2Beat (see [Team](#team)).
 
@@ -9,21 +9,22 @@ Built for the NASA Space Apps Challenge 2026, *The Earth Information Jukebox*, b
 ## Open it
 
 - **No install:** double-click `dist/Bit2Beat-Studio.html`. Everything (code, data, map, photos) is inside that one file, and it works offline.
-- **From the source:** `npm start`, then open <http://localhost:8765>. (Opening `index.html` directly from disk blocks picture analysis in some browsers; use the server or the dist file.)
+- **From the source:** `npm start`, then open <http://localhost:8765>. (The built-in server supports video seeking. Opening `index.html` directly from disk blocks picture analysis in some browsers; use the server or the dist file.)
 
 ```bash
 npm run check   # syntax check of every module
 npm run build   # writes dist/Bit2Beat-Studio.html
-npm test        # 12 test groups: algorithms, file formats, page integrity, build
+npm test        # 15 test groups: algorithms, file formats, page integrity, build
 ```
 
 ## What you can listen to
 
 | Tab | Sources | Notes |
 | --- | --- | --- |
-| **Data** | NASA GISTEMP global temperature 1880–2025 · NASA POWER Arctic (Svalbard) yearly 1981–2024 and daily 2025 · NASA POWER daily data for 18 places around the world and any year since 1981 (online) · your CSV · four practice shapes | CSV: comma, semicolon or tab, quoted cells, decimal commas, up to 6 numeric columns; a year/date/name column becomes the labels, `Temp (°C)` gives the unit. |
-| **Earth events** | USGS earthquakes (past day, week or month) · NASA EONET natural events (wildfires, storms, floods, sea ice…) | Played as one sweep across the map from west to east: further north = higher note, bigger = louder. Live when online. Offline it uses the last live copy saved in the browser, then a real snapshot bundled with the app. The header always says which one you hear. |
-| **Image** | NASA GIBS satellite views (whole Earth today, Earth at night, Amazon, Himalaya, Greenland, Sahara) · bundled world map · two generated illustrations · your picture | Measure **Light** (CIE L* brightness, detail, height of bright areas) or **Colour** (R, G, B). Scan left to right, around the centre, or follow the pointer. |
+| **Data** | NASA GISTEMP global temperature 1880–2025 · NASA POWER Arctic (Svalbard) yearly 1981–2024 and daily 2025 · NASA POWER daily data for 18 places around the world and any year since 1981 (online) · NASA GISTEMP CSV sample · your CSV · four practice shapes | CSV: comma, semicolon or tab, quoted cells, decimal commas, up to 6 numeric columns; a year/date/name column becomes the labels, `Temp (°C)` gives the unit. |
+| **Video** | Bundled NASA Earth Information Center videos: GEDI forest height and global CO₂ · your own MP4/WebM, up to 200 MB | Two samples per second, each averaged over its half second. NASA presets are **read through their own colour bar**: forest height in metres and land in view, CO₂ in ppm and the area above ~420 ppm. Your videos play brightness, colour and motion of the picture, with empty background left out. The muted video follows the music: Play starts both. |
+| **Earth events** | USGS earthquakes (past day, week or month) · NASA EONET natural events (wildfires, storms, floods, sea ice…) | Played as one sweep across the map from west to east: further north = higher note, bigger = louder. Explicit offline samples are available for both feeds. Live sources update when online; if unavailable they use the last live copy saved in the browser, then a real snapshot bundled with the app. The header always says which one you hear. |
+| **Image** | Bundled NASA EIC GEDI forest-height and global CO₂ stills · NASA GIBS satellite views (whole Earth today, Earth at night, Amazon, Himalaya, Greenland, Sahara) · bundled world map · two generated illustrations · your picture | Measure **Light** (CIE L* brightness, detail, height of bright areas), **Colour** (R, G, B) or, for NASA presets, **Colour key** (data values read through the colour bar). Empty background around a globe is silent. Scan left to right, around the centre, or follow the pointer. |
 
 ## How numbers become sound
 

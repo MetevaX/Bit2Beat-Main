@@ -104,7 +104,22 @@
       const m = mix[j] || {};
       const g = groups.get(unitKey(c));
       const shared = g && g.n > 1 && Number.isFinite(g.min);
-      const nz = music.normalize(c.work, shared ? g.min : undefined, shared ? g.max : undefined);
+      let lo = shared ? g.min : undefined;
+      let hi = shared ? g.max : undefined;
+      // minSpan: a small real change (e.g. 2 L* in a video) moves the pitch a little, instead of
+      // being stretched over every octave as if it were a big swing.
+      if (!shared && c.minSpan > 0 && !c.log) {
+        const vals = c.work.filter(Number.isFinite);
+        if (vals.length) {
+          const mn = Math.min(...vals);
+          const mx = Math.max(...vals);
+          if (mx - mn < c.minSpan) {
+            lo = (mn + mx) / 2 - c.minSpan / 2;
+            hi = lo + c.minSpan;
+          }
+        }
+      }
+      const nz = music.normalize(c.work, lo, hi);
       const invert = m.invert ?? !!c.invert;
       const norm = nz.norm.map((v) => (v == null ? null : invert ? 1 - v : v));
       // The app seeds mix[j].instrument from the channel's suggested instrument when a source loads.

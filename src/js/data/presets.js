@@ -6,7 +6,7 @@
 (function (root, factory) {
   const deps =
     typeof module === 'object' && module.exports
-      ? { snapshots: require('./snapshots.js'), feeds: require('../core/feeds.js') }
+      ? { snapshots: require('./snapshots.js'), feeds: require('../core/feeds.js'), csv: require('../core/csv.js') }
       : root.Bit2Beat;
   const mod = factory(deps);
   if (typeof module === 'object' && module.exports) module.exports = mod;
@@ -27,6 +27,13 @@
   });
 
   const DATA = {
+    climateCsv: () => {
+      const text = 'Year,Temperature anomaly (°C),5-year smoothed (°C)\n' + S.gistemp.rows.map((r) => r.join(',')).join('\n');
+      const parsed = deps.csv.parseCSV(text);
+      return { name: 'NASA global temperature · CSV sample', kind: 'data', view: 'chart',
+        origin: { ...origin(S.gistemp), note: 'NASA global temperature CSV sample: yearly anomaly and a five-year smoothed series.' },
+        labels: parsed.labels, channels: parsed.cols.map((c, i) => ({ ...c, instrument: i ? 'strings' : 'soft' })) };
+    },
     gistemp: () => ({
       name: 'Global temperature, 1880–2025',
       kind: 'data',
@@ -60,7 +67,7 @@
   };
 
   const DATA_MENU = [
-    ['NASA data', [['gistemp', 'Global temperature 1880–2025 (GISTEMP)'], ['arcticAnnual', 'Arctic (Svalbard) yearly temperature 1981–2024 (POWER)'], ['arcticDaily', 'Arctic (Svalbard) daily weather 2025 (POWER)']]],
+    ['NASA data', [['climateCsv', 'NASA global temperature · CSV sample'], ['gistemp', 'Global temperature 1880–2025 (GISTEMP)'], ['arcticAnnual', 'Arctic (Svalbard) yearly temperature 1981–2024 (POWER)'], ['arcticDaily', 'Arctic (Svalbard) daily weather 2025 (POWER)']]],
     ['Practice shapes', [['rising', 'Rising line'], ['peak', 'Single peak'], ['wave', 'Two cycles'], ['surge', 'Slow, then fast']]],
   ];
 

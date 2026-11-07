@@ -30,6 +30,23 @@ Pixels are converted from sRGB to linear light and then to **CIE L\*** (0 = blac
 - **Bright-area height** – the L\*²-weighted vertical centre of the band, from the bottom (0 %) to the top (100 %).
 - **Colour** mode gives mean R, G, B instead; the three share one 0–255 scale.
 
+## 2b. Videos and colour keys
+
+**Background.** If the border of a picture or frame is one flat colour (the black space around a globe), that colour is treated as background: pixels within 28 RGB units of it are left out, and a band that is (almost) all background is silent instead of being played as data.
+
+**Colour key.** NASA visualisations encode their data in colour and show a colour bar. Bit2Beat samples that colour bar into a ramp of `[r, g, b, value]` entries and reads every pixel back through it:
+
+- GEDI forest height (SVS 4950): the in-frame *Height Above Ground* bar, 0–50 m. Each pixel is matched to the nearest ramp colour in CIELAB, with lightness weighted ×0.6 (3D shading changes lightness more than hue); matches further than ΔE 14, or greyer than C\* 10, are not data. The colour bar itself is masked out.
+- DYAMOND CO₂ (SVS 5196): the published colour bar, 380–460 ppm, transparent below about 420 ppm. Plumes are semi-transparent over a dark globe, so only the CIELAB hue angle is compared (within 6°, chroma ≥ 18).
+
+For each sample this gives the **mean value shown** (forest height in m, CO₂ in ppm) and the **share of the picture showing data** (land in view, area above ~420 ppm). Without a key (your own videos) the channels are **Brightness** (mean L\* of the content), **Colour** (mean chroma C\*ab) and **Motion** (mean |ΔL\*| against the frame 1/12 s earlier).
+
+**Sampling.** Two samples per second (24–160 in total). Each sample is the average of several moments spread over its half second (every frame for the bundled presets, two moments for uploads), so a picture that pulses faster than the sampling rate — the CO₂ day–night cycle — is not heard as a false, slower rhythm (anti-aliasing).
+
+**Minimum span.** Pitch is normally stretched from a channel's lowest to highest value. For video and colour-key channels a minimum span (a quarter of the colour bar; 20 L\*; 10 %) stops a tiny real change from sounding like a huge swing.
+
+**Timing.** Loading a video sets the tempo so one sample per eighth note runs in real time (two samples per second → 60 BPM). The muted video follows the music: it plays at the speed that keeps the frame on screen equal to the frame being heard, and shows the exact sampled frame when paused or scrubbing.
+
 ## 3. Scaling and pitch
 
 1. Optional averaging to 240/120/60/30 steps (bucket means; labels become ranges).

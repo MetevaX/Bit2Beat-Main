@@ -21,6 +21,8 @@
     const when = parsed && Number.isFinite(parsed.getTime()) ? parsed.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : o.fetched || '';
     const parts = [o.source, when && (o.live ? 'retrieved ' : 'saved ') + when, o.note].filter(Boolean);
     $('sourceOrigin').textContent = parts.join(' · ');
+    $('sourceCredit').hidden = !/^https?:\/\//.test(o.url || '');
+    if (!$('sourceCredit').hidden) $('sourceCredit').href = o.url;
     const pill = $('livePill');
     if (s.kind === 'earth' || (s.kind === 'image' && /GIBS/.test(o.source || ''))) {
       pill.hidden = false;

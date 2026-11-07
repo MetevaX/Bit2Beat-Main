@@ -7,6 +7,7 @@ Bit2Beat turns Earth data into music you can hear, read as a score and export. T
 - [Data tab](#data-tab)
 - [Earth events tab](#earth-events-tab)
 - [Image tab](#image-tab)
+- [Video tab](#video-tab)
 - [Shaping the sound](#shaping-the-sound)
 - [Reading what you hear](#reading-what-you-hear)
 - [Saving, sharing and exporting](#saving-sharing-and-exporting)
@@ -29,7 +30,7 @@ Bit2Beat runs fully in the browser. Nothing is uploaded: CSV files and pictures 
 
 | Area | What it does |
 | --- | --- |
-| **Tabs** (Data · Earth events · Image) | Choose what kind of thing to listen to. The menu beside them picks the source. |
+| **Tabs** (Data · Earth events · Image · Video) | Choose what kind of thing to listen to. The menu beside them picks the source. |
 | **Source card** | The chart, map or picture you are hearing, its source line (where the numbers come from and when), and options for that tab. Hover to read a value; click to hear that step. |
 | **Now playing** (navy panel) | The current step, its note and frequency, the reading behind it and live sound bars. |
 | **Sound** | Instrument, scale, key, range and tempo. **Suggest** picks them from the shape of the data. |
@@ -85,9 +86,19 @@ Events are played **from west to east**, as one sweep across the map, like readi
 
 Options:
 
-- **Light** – three voices: brightness (CIE L\*), detail (how much brightness varies) and the height of bright areas. **Colour** – red, green and blue.
+- **Light** – three voices: brightness (CIE L\*), detail (how much brightness varies) and the height of bright areas. **Colour** – red, green and blue. **Colour key** (NASA EIC stills) – the data value read through the picture's colour bar, and how much of each band shows data. Empty background is silent.
 - **Left to right**, **Around the centre** (like a radar sweep) or **Follow pointer** (hear what is under your mouse or finger).
 - **Steps** – how many bands the picture is cut into (16–160).
+
+## Video tab
+
+- **NASA EIC · GEDI forest height** – a globe of forest height measured by the GEDI lidar (2019–2020). You hear the **forest height shown** (m) and how much **land is in view** as the globe turns: the Amazon, Congo and South-East Asia rise in pitch.
+- **NASA EIC · Global carbon dioxide** – the DYAMOND model of CO₂ in January–March 2020. You hear the **CO₂ shown** (ppm) and the **area above ~420 ppm**: plumes over East Asia and fire regions are louder and higher.
+- **Open video** – your own MP4 or WebM (up to 200 MB). Bit2Beat plays its **brightness**, **colour** and **motion**; the empty background around a subject is left out. Analysis happens on your computer.
+
+The NASA presets are read **through their own colour bar**, so the notes follow the data the visualisation shows, not just how bright it looks. Each note stands for half a second of video.
+
+Press **Play**: the muted video follows the music. Click the picture to play or pause; step with `←` `→` and the video shows that exact moment. The tempo is set so the music runs in real time with the video; change it and the video speeds up or slows down to stay in step. *Motion* starts muted; unmute it in Channels.
 
 ## Shaping the sound
 

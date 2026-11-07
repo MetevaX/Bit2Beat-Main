@@ -11,7 +11,17 @@ Every sound in Bit2Beat comes from public, key-free data. Live requests go strai
 | EONET v3 | NASA Earth Observatory | `https://eonet.gsfc.nasa.gov/api/v3/events` | Wildfires, storms, floods, sea & lake ice, volcanoes… | 164 events, 22 Sep – 5 Nov 2026 |
 | GIBS WMS | NASA Global Imagery Browse Services | `https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi` | Satellite views (MODIS Terra, VIIRS NOAA-20, VIIRS Black Marble) | Last view saved in the browser |
 | Image and Video Library | NASA | `https://images-api.nasa.gov/search` | BitPet’s notes | 20 notes, saved 6–7 Nov 2026 |
+| Earth Information Center gallery | NASA Scientific Visualization Studio | [SVS 4950](https://svs.gsfc.nasa.gov/4950/) GEDI forest height (Kel Elkins), [SVS 5196](https://svs.gsfc.nasa.gov/5196/) DYAMOND global CO₂ (AJ Christensen; science Lesley Ott) | Video and Image presets, read through their colour bars | 640×360 silent previews and print stills in `assets/nasa/` |
 | Earthquake feeds | U.S. Geological Survey | `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/{feed}.geojson` | Earthquakes (2.5+ day, 4.5+ week, 4.5+ month, significant month) | 91 quakes, 30 Oct – 6 Nov 2026 |
+
+## NASA EIC colour bars
+
+| Visualisation | Colour bar | Range | How it is read |
+| --- | --- | --- | --- |
+| GEDI forest height | *Height Above Ground*, drawn in the video (bottom left) | 0–50 m | nearest colour in CIELAB, lightness down-weighted; the bar itself is masked out |
+| DYAMOND CO₂ | `dyamondCbar_6-27-2024a.png` on SVS 5196 | 380–460 ppm, transparent below ~420 ppm | hue angle only (plumes are semi-transparent over a dark globe); the date stamp is masked out |
+
+The ramps are stored in `src/js/data/nasa-keys.js`. Values are what the visualisation *shows* (exaggerated 3D height, model CO₂), not new measurements.
 
 ## NASA POWER places
 

@@ -4,7 +4,7 @@
 
 - A modern browser (Chrome, Edge, Firefox, Safari).
 - Node.js 18 or newer (only for checks, tests and the single-file build).
-- Python 3 (only for `npm start`, a static server; any static server works).
+- ffmpeg (only to regenerate the NASA video presets with `node scripts/prepare-nasa-media.js`).
 
 No packages need to be installed: the project has no runtime or build dependencies.
 
@@ -12,7 +12,7 @@ No packages need to be installed: the project has no runtime or build dependenci
 
 | Command | What it does |
 | --- | --- |
-| `npm start` | Serves the folder at <http://localhost:8765> |
+| `npm start` | Serves the folder at <http://localhost:8765> (supports video seeking) |
 | `npm run check` | Syntax-checks every module in `src/js` |
 | `npm test` | Runs `tests/core.test.js` with Node’s built-in test runner |
 | `npm run build` | Writes `dist/Bit2Beat-Studio.html`, one self-contained offline file |
@@ -26,7 +26,9 @@ CI (`.github/workflows/ci.yml`) runs check, build and test on every push and pul
 - **music** – equal temperament, note names, and a scale mapping that is monotonic and uses every degree evenly.
 - **stats** – trend, sudden-jump detection (no false flags on smooth curves, seasons or trends), resampling, summaries.
 - **csv** – separators, quotes, decimal commas, label and unit detection.
-- **image** – CIE L\*, line and radar scans, pointer probe.
+- **image** – CIE L\*, line and radar scans, pointer probe; background left out; colour keys read values from a picture.
+- **video** – two samples per second, content-only measures, motion, colour keys, minimum pitch span.
+- **NASA presets** – bundled videos and stills exist, every preset is read through its colour bar and stays inside the bar's range.
 - **score** – accidentals within a bar, flats, rests, clef choice.
 - **geo** – projection, land mask, swapped-coordinate repair, distances.
 - **feeds** – events sorted west → east, latitude → pitch, size → loudness, units, corrected positions.

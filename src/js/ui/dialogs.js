@@ -79,10 +79,12 @@
       }
     };
     if (s.custom) {
-      app.state.choice.data = 'custom';
-      document.querySelector(`[data-mode="data"]`).click();
+      const mode = s.custom.kind === 'video' ? 'video' : 'data';
+      app.state.choice[mode] = 'custom';
+      document.querySelector(`[data-mode="${mode}"]`).click();
       setTimeout(() => {
         app.setSource(s.custom);
+        app.fillSourceSelect();
         after();
       }, 0);
     } else {
@@ -167,7 +169,7 @@
     $('saveForm').onsubmit = (e) => {
       e.preventDefault();
       const st = app.state;
-      const custom = st.mode === 'data' && ['custom', 'upload', 'power'].includes(st.choice.data) ? app.src : null;
+      const custom = ['data', 'video'].includes(st.mode) && ['custom', 'upload', 'power'].includes(st.choice[st.mode]) ? { ...app.src, videoUrl: undefined } : null;
       const entry = { name: $('sessionName').value.trim() || 'Session', time: Date.now(), mode: st.mode, choice: st.choice[st.mode], sourceName: app.src.name, settings: { ...st.settings }, audio: JSON.parse(JSON.stringify(st.audio)), image: { ...st.image }, earth: { ...st.earth }, mix: st.mix.map((m) => ({ ...m })), custom };
       if (st.mode === 'image' && st.choice.image === 'upload') entry.choice = 'map:world';
       const all = [entry, ...sessions()].slice(0, 20);

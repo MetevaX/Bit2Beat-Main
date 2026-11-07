@@ -83,7 +83,13 @@
       text(g, fmt((lead.max + lead.min) / 2), P.x - 8, P.y + P.h / 2 + 4, { size: 11, color: t.muted, align: 'right' });
       text(g, fmt(lead.min), P.x - 8, P.y + P.h + 4, { size: 11, color: t.muted, align: 'right' });
       if (lead.unit) text(g, lead.unit, P.x - 8, P.y - 4, { size: 10, color: t.muted, align: 'right', base: 'bottom' });
-    } else if (on.length > 1) text(g, 'Each line is drawn on its own scale', P.x + 6, P.y + 12, { size: 11, color: t.muted });
+    } else if (on.length > 1) {
+      g.fillStyle = t.bg;
+      g.globalAlpha = 0.85;
+      g.fillRect(P.x + 2, P.y + 1, 196, 16);
+      g.globalAlpha = 1;
+      text(g, 'Each line is drawn on its own scale', P.x + 6, P.y + 13, { size: 11, color: t.muted });
+    }
     // x-axis labels
     const L = plan.labels;
     if (L.length) {

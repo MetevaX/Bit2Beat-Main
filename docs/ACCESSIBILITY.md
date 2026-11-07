@@ -11,6 +11,7 @@ Bit2Beat exists to make Earth data available to people who cannot see a chart, s
 - **Readings table** (`T`) lists every value, note, frequency and time as a real HTML table.
 - **Canvas descriptions.** The chart, map and picture have text alternatives that name the source and the number of steps and point to the table and summary.
 - **Reference tone** and **ticks on sudden jumps** turn visual features (a baseline, an outlier) into sound.
+- **Videos** are described by their data (forest height, CO₂) rather than only by brightness, and every sample can be stepped through with the keyboard while the picture shows the matching frame.
 
 ## Seeing more clearly
 

@@ -72,7 +72,7 @@
     function probe(pt) {
       const src = app.src;
       const plan = app.plan;
-      const vals = B.image.probe(src.pixels, src.canvas.width, src.canvas.height, pt.x, pt.y, state.image.analysis);
+      const vals = B.image.probe(src.pixels, src.canvas.width, src.canvas.height, pt.x, pt.y, state.image.analysis, src.key);
       if (!vals) return;
       const list = [];
       plan.channels.forEach((c, j) => {
