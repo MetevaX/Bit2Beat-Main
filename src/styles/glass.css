@@ -1,0 +1,132 @@
+/* Bit2Beat · "liquid glass" player: a floating, frosted navy bar the page scrolls under,
+   with glossy round controls and an amber play button. Falls back to solid navy when the
+   browser cannot blur (or when Higher contrast / Reduce motion is on). */
+.transport {
+  background: rgba(20, 33, 61, 0.68);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  backdrop-filter: blur(22px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 12px 32px rgba(20, 33, 61, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+.transport::before {
+  /* soft specular sheen across the top half */
+  content: '';
+  position: absolute;
+  inset: 0 0 50% 0;
+  border-radius: 20px 20px 0 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+:root[data-theme='dark'] .transport {
+  background: rgba(9, 15, 30, 0.62);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* glossy round buttons */
+.round-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: background 0.15s, transform 0.15s;
+}
+.round-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+.round-btn[aria-pressed='true'] {
+  background: rgba(246, 241, 231, 0.92);
+  color: var(--navy);
+}
+
+/* liquid amber play button */
+.play-btn {
+  position: relative;
+  background: radial-gradient(120% 120% at 30% 20%, #ffd98f 0%, #e8a33d 48%, #c78522 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.7),
+    inset 0 -3px 6px rgba(120, 70, 0, 0.25),
+    0 6px 16px rgba(232, 163, 61, 0.45);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.play-btn::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  top: 8%;
+  width: 64%;
+  height: 34%;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+.play-btn:hover {
+  background: radial-gradient(120% 120% at 30% 20%, #ffe2a8 0%, #eeb04f 48%, #cf8c28 100%);
+  transform: translateY(-1px);
+}
+.play-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+.play-btn.is-playing {
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.7),
+    inset 0 -3px 6px rgba(120, 70, 0, 0.25),
+    0 0 0 6px rgba(232, 163, 61, 0.18),
+    0 6px 18px rgba(232, 163, 61, 0.55);
+}
+
+/* glass buttons on the bar */
+.transport .btn-ghost {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.transport .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.transport .btn-primary {
+  background: linear-gradient(180deg, #f2b65a, #e8a33d);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 4px 12px rgba(232, 163, 61, 0.35);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* the toast and the chart read-out use the same frosted glass */
+.toast,
+.hover-tip {
+  background: rgba(20, 33, 61, 0.78);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--cream);
+}
+.toast {
+  bottom: 96px;
+  border-radius: 12px;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .transport,
+  .toast,
+  .hover-tip {
+    background: var(--navy);
+  }
+}
+:root.contrast .transport {
+  background: var(--navy);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+:root.reduce-motion .play-btn,
+:root.reduce-motion .round-btn {
+  transition: none;
+}
+@media (max-width: 760px) {
+  .transport::before {
+    inset: 0 0 70% 0;
+  }
+  .toast {
+    bottom: 180px;
+  }
+}

@@ -1,0 +1,53 @@
+/* Bit2Beat · design tokens. Palette taken from the logo: navy #14213D, cream #F6F1E7, amber #E8A33D. */
+:root {
+  --navy: #14213d;
+  --navy-2: #1d2d50;
+  --cream: #f6f1e7;
+  --amber: #e8a33d;
+  --amber-ink: #8a5a12; /* amber dark enough for text on cream (AA) */
+
+  --bg: #f6f1e7;
+  --surface: #fcfaf5;
+  --surface-2: #f0e9db;
+  --line: #ddd3c0;
+  --grid: #ece5d6;
+  --text: #14213d;
+  --muted: #586174;
+  --sea: #e4e8e6;
+  --land: #efe3c8;
+  --river: #4f7cab;
+  --danger: #a3402a;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+  --gap: 12px;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --focus: 0 0 0 3px rgba(232, 163, 61, 0.55);
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --bg: #0e1729;
+  --surface: #14213d;
+  --surface-2: #1b2a4a;
+  --line: #2a3a5e;
+  --grid: #213152;
+  --text: #f6f1e7;
+  --muted: #aab3c5;
+  --amber-ink: #f0b85e;
+  --sea: #172644;
+  --land: #2a3858;
+  --river: #7fa6d6;
+  color-scheme: dark;
+}
+
+:root.contrast {
+  --line: #8d8471;
+  --muted: #2f3747;
+  --grid: #d6ccb6;
+}
+:root.contrast[data-theme='dark'] {
+  --line: #6d7fa6;
+  --muted: #dfe4ee;
+}

@@ -1,94 +1,97 @@
 # Bit2Beat
 
-**Team:** Bit2Beat  
-**Challenge:** NASA International Space Apps Challenge  
+**Listen to Earth data.** Bit2Beat turns NASA climate records, live natural events, your own spreadsheets and pictures into music you can hear, follow as a score, and export as stereo, binaural, surround or ADM BWF audio.
 
-## Project Overview
+Built for the NASA Space Apps Challenge 2026, *The Earth Information Jukebox*, by Team Bit2Beat (see [Team](#team)).
 
-**Bit2Beat** is a browser-based sonification application that transforms scientific images and tabular datasets (CSV) into pleasant, meaningful audio. By mapping data points and spatial image properties to musical scales, frequencies, and timbres, Bit2Beat enables both auditory analysis and musical appreciation of NASA scientific datasets.
+![Bit2Beat studio](docs/screenshots/studio.png)
 
-### Tech Stack
-- **Architecture:** Static website (client-side only, no backend, no build step)
-- **Languages:** Vanilla JavaScript (ES Modules), HTML5, CSS3
-- **Audio & Visuals:** Web Audio API, [Tone.js](https://tonejs.github.io/) (via CDN), HTML5 Canvas
+## Open it
 
-### Core Sonification Algorithms
-- **Parameter Mapping Sonification (PMS):** Maps numerical data dimensions (e.g. CSV values) to musical parameters like pitch, scale degrees, and note duration.
-- **Spatial Scanning:** Scans 2D images horizontally (left-to-right), mapping vertical pixel position and RGB color channels to pitch, amplitude, and spatial stereo panning.
-- **Earcons & Auditory Icons:** Short, distinct melodic/harmonic cues designed for event triggers, anomalies, and threshold alerts.
+- **No install:** double-click `dist/Bit2Beat-Studio.html`. Everything (code, data, map, photos) is inside that one file, and it works offline.
+- **From the source:** `npm start`, then open <http://localhost:8765>. (Opening `index.html` directly from disk blocks picture analysis in some browsers; use the server or the dist file.)
 
----
+```bash
+npm run check   # syntax check of every module
+npm run build   # writes dist/Bit2Beat-Studio.html
+npm test        # 12 test groups: algorithms, file formats, page integrity, build
+```
 
-## Folder Structure
+## What you can listen to
+
+| Tab | Sources | Notes |
+| --- | --- | --- |
+| **Data** | NASA GISTEMP global temperature 1880–2025 · NASA POWER Arctic (Svalbard) yearly 1981–2024 and daily 2025 · NASA POWER daily data for 18 places around the world and any year since 1981 (online) · your CSV · four practice shapes | CSV: comma, semicolon or tab, quoted cells, decimal commas, up to 6 numeric columns; a year/date/name column becomes the labels, `Temp (°C)` gives the unit. |
+| **Earth events** | USGS earthquakes (past day, week or month) · NASA EONET natural events (wildfires, storms, floods, sea ice…) | Played as one sweep across the map from west to east: further north = higher note, bigger = louder. Live when online. Offline it uses the last live copy saved in the browser, then a real snapshot bundled with the app. The header always says which one you hear. |
+| **Image** | NASA GIBS satellite views (whole Earth today, Earth at night, Amazon, Himalaya, Greenland, Sahara) · bundled world map · two generated illustrations · your picture | Measure **Light** (CIE L* brightness, detail, height of bright areas) or **Colour** (R, G, B). Scan left to right, around the centre, or follow the pointer. |
+
+## How numbers become sound
+
+1. **Scaling.** Each series is scaled between its lowest and highest value. Series that share a unit (e.g. max, mean and min °C) share one range, so their real distance apart is kept. Event sizes that span orders of magnitude (wildfire area, iceberg area) use a log scale.
+2. **Pitch.** The scaled value picks a note from the chosen key and scale over 1–3 octaves from C3: `index = round(v × (n − 1))` in the list of scale notes. This is monotonic and gives every scale degree the same share of the data range, so equal steps in the data sound like equal steps in the melody. Frequency is equal-tempered, A4 = 440 Hz.
+3. **Time.** One step is an eighth note at the chosen tempo. Long series can be averaged into 240/120/60/30 steps (bucket means). Earth events are played west to east; with **Map distance** the gaps follow the real distance between events along the sweep.
+4. **Loudness and direction.** For events, latitude sets the pitch (north = higher) and size (magnitude, area, wind) sets loudness and dot size. Any channel’s pitch direction can be flipped.
+5. **Space.** Every channel is an audio object in a room (x left–right, y back–front, z height). Data moves left to right (or circles you); events sit where they happened on Earth; depth or value sets height. The same positions feed live binaural (HRTF) audio, 5.1/7.1/7.1.4 speaker panning (constant power, LFE kept clear) and the ADM BWF metadata.
+
+### Listening aids
+
+- **What the data says** – trend (least-squares slope, R² check), highest/lowest with labels, and sudden jumps, in plain sentences you can have read aloud (`D`).
+- **Tick on sudden jumps** – a quiet click on readings that jump away from their neighbours. Detection uses a leave-one-out local line and the modified z-score (|z| ≥ 3.5, Iglewicz & Hoaglin), refitted without the flagged points, so smooth curves, seasons and steady trends are not flagged.
+- **Reference tone** – a soft drone at the data’s baseline (e.g. GISTEMP’s 1951–1980 average) or its mean, so you hear above vs. below.
+- **Links remember everything** – mode, source, sound settings, mix and play position live in the address bar, so a refresh or a shared link opens the same view.
+- Keyboard scrubbing (`←` `→`, `Shift` for bars, `Home`/`End`), live captions, screen-reader updates, high contrast, dark theme, text size, larger buttons, reduced motion, mono audio.
+
+## Export
+
+Stereo WAV (16-bit), binaural WAV, 5.1 / 7.1 / 7.1.4 WAV (24-bit, WAVE_FORMAT_EXTENSIBLE with the correct channel masks), an **ADM BWF** object master (48 kHz / 24-bit, ITU-R BS.2076-2 `axml` + BS.2088 `chna`, one track per channel with its 3D path), the notes as CSV (every step, value, note, Hz, start time, x/y/z) and the score as ABC or PNG. Files are rendered offline from the same plan you hear and normalised to −1 dBFS peak.
+
+Bit2Beat is not affiliated with Dolby Laboratories; the ADM file is an interchange master for Atmos-capable tools, not an encoded Atmos stream.
+
+## Code layout
 
 ```text
-Bit2Beat-Main/
-├── index.html              # Main application entry point (loads Tone.js and src/main.js)
-├── README.md               # Project documentation and guidelines
-├── .gitignore              # Ignored files, dependencies, logs, and large media
-├── src/
-│   ├── main.js             # Application bootstrap & event orchestration
-│   ├── pms.js              # Parameter Mapping Sonification (PMS) module
-│   ├── spatial-scan.js     # 2D Image Spatial Scanning sonification module
-│   ├── earcons.js          # Earcons and auditory icons module
-│   └── ui/
-│       ├── styles.css      # Core styles and responsive layout
-│       └── ui.js           # UI controllers, file inputs, and DOM event listeners
-├── assets/
-│   ├── images/             # Sample images for spatial scanning
-│   ├── sounds/             # Audio samples and earcon assets
-│   └── data/               # Sample scientific CSV datasets
-└── docs/
-    └── README.md           # Documentation guidelines (large media hosted on Google Drive)
+index.html                  page markup (no inline logic)
+src/styles/                 tokens · base · layout · components · dialogs · glass · polish
+src/js/core/                pure, Node-testable logic
+  music.js   scales, keys, value → note, normalisation
+  stats.js   trend, sudden jumps, resampling, plain-language summary, suggestions
+  plan.js    builds the full note plan (pitch, loudness, time, 3D position) used everywhere
+  image.js   L* and colour analysis of pixels
+  csv.js     CSV parser with label and unit detection
+  feeds.js   USGS, NASA EONET, NASA POWER (live + offline)
+  geo.js     projection, land mask, coordinate repair
+  score.js   ABC notation with correct accidentals and clefs
+  spatial.js wav.js adm.js   3D panning, WAV and ADM BWF writers
+src/js/audio/               engine (synth, renderers) · player (scheduler) · exporter
+src/js/ui/                  one file per part of the page
+src/js/data/                bundled real data snapshots and presets
+src/js/app.js               state and wiring
+scripts/build.js            single-file build
+tests/core.test.js          tests
 ```
 
-> **Note:** Each algorithm is modularized in its own file in `src/` so team members can work simultaneously without merge conflicts.
+## Documentation
 
----
+| Document | What is inside |
+| --- | --- |
+| [User guide](docs/USER-GUIDE.md) | Every tab, control and shortcut; sharing links; exporting; troubleshooting |
+| [How it works](docs/HOW-IT-WORKS.md) | Every step from a number to a sound, with the formulas |
+| [Data sources](docs/DATA-SOURCES.md) | Providers, endpoints, offline snapshots, data-quality fixes |
+| [Accessibility](docs/ACCESSIBILITY.md) | Listening without seeing, visual and hearing options |
+| [Architecture](docs/ARCHITECTURE.md) | Modules, data flow, URL state, performance, build |
+| [Development](docs/DEVELOPMENT.md) | Scripts, tests, adding a data source, publishing |
+| [Changelog](CHANGELOG.md) | What changed in each version |
 
-## How to Run Locally
+## Team
 
-Because Bit2Beat uses native ES Modules (`type="module"`), files must be served over an HTTP/HTTPS server (browsers restrict ES module loading via direct `file://` protocol).
+| Name | Role |
+| --- | --- |
+| George Hany | Team leader |
+| Mina Helal | Data Analyst |
+| Steven Joseph | Integration lead |
+| Mostafa Ragab | UI Specialist & Engine |
+| Mostafa Mohammed | Core |
 
-### Option 1: Python HTTP Server (Built-in)
-```bash
-# Python 3
-python3 -m http.server 8000
-```
-Then open your browser at: [http://localhost:8000](http://localhost:8000)
+## Data credits
 
-### Option 2: Node.js (npx serve)
-```bash
-npx serve .
-```
-
-### Option 3: VS Code Live Server
-Right-click `index.html` and select **"Open with Live Server"**.
-
----
-
-## Branching & Collaboration Workflow
-
-To maintain code stability and prevent merge conflicts, all development follows feature-based branching:
-
-- `main`: Production-ready, stable codebase.
-- `feature/ui`: User interface, layouts, visualizer canvas, and styling.
-- `feature/pms`: Parameter Mapping Sonification (CSV to musical notes).
-- `feature/spatial-scan`: Spatial 2D image scan algorithm.
-- `feature/earcons`: Auditory alert triggers and earcon sounds.
-- `docs`: Documentation, slides reference, and project report materials.
-
-### Working with Branches
-1. Pull the latest `main`:
-   ```bash
-   git checkout main
-   git pull origin main
-   ```
-2. Switch to your assigned feature branch:
-   ```bash
-   git checkout feature/<your-feature>
-   ```
-3. Commit your changes and push to your upstream branch:
-   ```bash
-   git push -u origin feature/<your-feature>
-   ```
+NASA GISS (GISTEMP v4), NASA POWER, NASA EONET, NASA GIBS, NASA Image and Video Library, USGS Earthquake Hazards Program. Music engraving by [abcjs](https://www.abcjs.net/) (MIT). Code released under the [MIT licence](LICENSE).

@@ -1,0 +1,16 @@
+{
+  "name": "bit2beat",
+  "version": "2.1.0",
+  "description": "Listen to Earth data: NASA climate series, live natural events and pictures turned into music, scores and spatial audio. NASA Space Apps 2026 — Earth Information Jukebox.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8765",
+    "check": "node -e \"const fs=require('fs');const p=require('path');const walk=d=>fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(p.join(d,e.name)):e.name.endsWith('.js')?[p.join(d,e.name)]:[]);for(const f of walk('src/js'))require('child_process').execFileSync(process.execPath,['--check',f]);console.log('syntax ok')\"",
+    "test": "node --test tests/core.test.js",
+    "build": "node scripts/build.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

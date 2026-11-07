@@ -1,70 +1,427 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bit2Beat — Data & Image Sonification</title>
-  <link rel="stylesheet" href="src/ui/styles.css">
-  <!-- Tone.js CDN for Web Audio synthesis and sequencing -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14213D">
+<title>Bit2Beat — listen to Earth data</title>
+<meta name="description" content="Bit2Beat turns NASA Earth data, live natural events, spreadsheets and pictures into music you can hear, read as a score and export as stereo, binaural, surround or ADM BWF audio.">
+<link rel="icon" href="assets/img/icon.svg">
+<link rel="stylesheet" href="src/styles/tokens.css">
+<link rel="stylesheet" href="src/styles/base.css">
+<link rel="stylesheet" href="src/styles/layout.css">
+<link rel="stylesheet" href="src/styles/components.css">
+<link rel="stylesheet" href="src/styles/dialogs.css">
+<link rel="stylesheet" href="src/styles/glass.css">
+<link rel="stylesheet" href="src/styles/polish.css">
 </head>
 <body>
-  <header class="app-header">
-    <div class="header-container">
-      <h1>Bit2Beat</h1>
-      <p class="tagline">NASA Space Apps Challenge — Data & Image to Audio Sonification</p>
+<a class="skip" href="#studio">Skip to the studio</a>
+
+<svg class="icons" aria-hidden="true" focusable="false">
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-restart" viewBox="0 0 24 24"><path d="M6 5v14M19 5.5 9 12l10 6.5z"/></symbol>
+  <symbol id="i-loop" viewBox="0 0 24 24"><path d="M4 11V9a3 3 0 0 1 3-3h12m-3-3 3 3-3 3M20 13v2a3 3 0 0 1-3 3H5m3 3-3-3 3-3"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4zM16 9.5l5 5m0-5-5 5"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4m-4.5 4.5L12 4l4.5 4.5M4.5 15v3.5a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5V15"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M4.5 15v3.5a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5V15"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 10h16M4 14.5h16M10 5v14"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5m0 0-4 6m4-6 4 6"/></symbol>
+</svg>
+
+<header class="topbar">
+  <a class="brand" href="#studio" aria-label="Bit2Beat home"><img src="assets/img/wordmark.svg" alt="Bit2Beat" width="168" height="41"></a>
+  <nav class="topnav" aria-label="Pages">
+    <button type="button" class="topnav-link" data-page="studio" aria-current="page">Studio</button>
+    <button type="button" class="topnav-link" data-page="about">About the team</button>
+  </nav>
+  <div class="topbar-actions">
+    <button type="button" class="top-btn" id="sessionsBtn">Sessions</button>
+    <button type="button" class="top-btn" id="helpBtn" aria-label="Help and keyboard shortcuts">Help</button>
+    <button type="button" class="top-btn" id="accessBtn" aria-label="Accessibility"><svg class="i" aria-hidden="true"><use href="#i-person"/></svg><span>Accessibility</span></button>
+  </div>
+</header>
+
+<main id="studio" tabindex="-1">
+  <h1 class="sr-only">Bit2Beat studio</h1>
+  <div class="toolbar">
+    <div class="modes" role="tablist" aria-label="What to listen to">
+      <button role="tab" id="tab-data" data-mode="data" aria-selected="true" aria-controls="sourceCard">Data</button>
+      <button role="tab" id="tab-earth" data-mode="earth" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Earth events</button>
+      <button role="tab" id="tab-image" data-mode="image" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Image</button>
     </div>
-  </header>
+    <label class="source-pick"><span class="sr-only">Source</span><select id="sourceSelect" aria-label="Choose what to listen to"></select></label>
+    <button type="button" class="btn" id="uploadBtn"><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Open CSV</span></button>
+    <input type="file" id="fileInput" hidden>
+  </div>
 
-  <main class="app-main">
-    <!-- Controls Section -->
-    <section class="panel controls-panel">
-      <h2>Input & Modes</h2>
-      
-      <div class="control-group">
-        <label for="mode-select">Sonification Mode:</label>
-        <select id="mode-select">
-          <option value="pms">Parameter Mapping (CSV Data)</option>
-          <option value="spatial-scan">Spatial Scanning (2D Image)</option>
-          <option value="earcons">Earcons & Event Alerts</option>
-        </select>
+  <div class="studio-grid">
+    <div class="col-main">
+      <section class="card source-card" id="sourceCard" role="tabpanel" aria-labelledby="sourceName">
+        <div class="card-head">
+          <div>
+            <h2 id="sourceName">Loading…</h2>
+            <p class="origin" id="sourceOrigin"></p>
+          </div>
+          <span class="status-pill" id="livePill" hidden></span>
+        </div>
+        <div class="canvas-wrap" id="dropZone">
+          <canvas id="sourceCanvas" width="1200" height="560" role="img" aria-label="Source preview"></canvas>
+          <div class="hover-tip" id="hoverTip" hidden></div>
+          <div class="drop-hint" id="dropHint" hidden>Drop a CSV or an image</div>
+        </div>
+
+        <div class="source-options" id="opts-data">
+          <label class="field">Points to play
+            <select id="lengthSelect">
+              <option value="0">Every point</option>
+              <option value="240">240 (averaged)</option>
+              <option value="120">120 (averaged)</option>
+              <option value="60">60 (averaged)</option>
+              <option value="30">30 (averaged)</option>
+            </select>
+          </label>
+          <form class="power-form" id="powerForm">
+            <span class="power-title">NASA POWER daily data</span>
+            <label class="field"><span class="sr-only">Place</span><select id="powerPlace" aria-label="Place"></select></label>
+            <label class="field"><span class="sr-only">Year</span><select id="powerYear" aria-label="Year"></select></label>
+            <button type="submit" class="btn" id="powerBtn">Load</button>
+          </form>
+        </div>
+
+        <div class="source-options" id="opts-earth" hidden>
+          <label class="field" id="quakeFeedField">Period
+            <select id="quakeFeed"></select>
+          </label>
+          <label class="field" id="eonetDaysField" hidden>Period
+            <select id="eonetDays">
+              <option value="7">Past 7 days</option>
+              <option value="30" selected>Past 30 days</option>
+              <option value="60">Past 60 days</option>
+            </select>
+          </label>
+          <div class="seg" role="group" aria-label="Rhythm of the sweep" id="spacingGroup">
+            <button type="button" data-spacing="even" aria-pressed="true" title="One event per eighth note">Even steps</button>
+            <button type="button" data-spacing="time" aria-pressed="false" title="Gaps follow the real distance between events on the map">Map distance</button>
+          </div>
+          <button type="button" class="btn" id="fetchBtn"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Get latest</button>
+        </div>
+
+        <div class="source-options" id="opts-image" hidden>
+          <div class="seg" role="group" aria-label="What to measure" id="analysisGroup">
+            <button type="button" data-analysis="light" aria-pressed="true">Light</button>
+            <button type="button" data-analysis="color" aria-pressed="false">Colour</button>
+          </div>
+          <div class="seg" role="group" aria-label="How to scan" id="scanGroup">
+            <button type="button" data-scan="line" aria-pressed="true">Left to right</button>
+            <button type="button" data-scan="radar" aria-pressed="false">Around the centre</button>
+            <button type="button" data-scan="pointer" aria-pressed="false">Follow pointer</button>
+          </div>
+          <label class="field field-range">Steps <output id="stepsOut">48</output>
+            <input type="range" id="stepsRange" min="16" max="160" step="8" value="48">
+          </label>
+          <label class="field" id="satDateField" hidden>Date <input type="date" id="satDate"></label>
+        </div>
+      </section>
+
+      <div class="duo">
+      <section class="card" aria-labelledby="melodyTitle">
+        <div class="card-head"><h2 id="melodyTitle">Melody</h2><p class="card-note" id="melodyNote"></p></div>
+        <canvas id="pitchCanvas" width="1200" height="200" role="img" aria-label="Notes over time"></canvas>
+        <div class="legend" id="legend"></div>
+      </section>
+
+      <section class="card" aria-labelledby="insightTitle">
+        <div class="card-head">
+          <h2 id="insightTitle">What the data says</h2>
+          <button type="button" class="btn btn-quiet" id="speakBtn">Read aloud</button>
+        </div>
+        <div id="insights" class="insights"></div>
+      </section>
       </div>
 
-      <!-- CSV Data Upload Group -->
-      <div id="pms-controls" class="mode-controls">
-        <label for="csv-input">Upload CSV Dataset:</label>
-        <input type="file" id="csv-input" accept=".csv">
+      <div class="duo duo-score">
+      <section class="card" aria-labelledby="scoreTitle">
+        <div class="card-head">
+          <h2 id="scoreTitle">Score</h2>
+          <div class="btn-row">
+            <button type="button" class="btn btn-quiet" id="fullScoreBtn">Full score</button>
+            <button type="button" class="btn btn-quiet" id="scorePngBtn"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>PNG</button>
+          </div>
+        </div>
+        <p class="card-note" id="scoreLabel"></p>
+        <div id="scorePreview" class="score-preview"></div>
+      </section>
+
+      <section class="card bitpet" id="bitPet" aria-labelledby="petTitle">
+        <button type="button" class="pet-face" id="petFace" aria-label="Say hello to BitPet"></button>
+        <div class="pet-body">
+          <div class="pet-head"><h2 id="petTitle">BitPet’s NASA note</h2><button type="button" class="link-btn" id="petHide">Hide</button></div>
+          <p id="petFact"></p>
+          <div class="pet-foot"><a id="petSource" href="https://images.nasa.gov" target="_blank" rel="noopener noreferrer">Source</a>
+            <span><button type="button" class="link-btn" id="petPrev" aria-label="Previous note">Prev</button> <span id="petPage"></span> <button type="button" class="link-btn" id="petNext" aria-label="Next note">Next</button></span></div>
+        </div>
+      </section>
       </div>
+    </div>
 
-      <!-- Image Upload Group -->
-      <div id="image-controls" class="mode-controls hidden">
-        <label for="image-input">Upload Image:</label>
-        <input type="file" id="image-input" accept="image/*">
-      </div>
+    <aside class="col-side" aria-label="Sound controls">
+      <section class="card now" aria-labelledby="nowTitle">
+        <h2 id="nowTitle" class="sr-only">Now playing</h2>
+        <p class="now-step" id="nowStep">Ready</p>
+        <div class="now-note"><strong id="nowNote">—</strong><span id="nowHz"></span></div>
+        <p class="now-detail" id="nowDetail"></p>
+        <canvas id="spectrumCanvas" width="320" height="64" role="img" aria-label="Live sound spectrum: bars show how loud each pitch range is"></canvas>
+        <p class="caption" id="caption" aria-live="off"></p>
+      </section>
 
-      <!-- Playback Controls -->
-      <div class="playback-controls">
-        <button id="btn-play" class="btn primary">Play</button>
-        <button id="btn-stop" class="btn secondary">Stop</button>
-        <button id="btn-test-earcon" class="btn outline">Trigger Alert Earcon</button>
-      </div>
-    </section>
+      <section class="card" aria-labelledby="soundTitle">
+        <div class="card-head">
+          <h2 id="soundTitle">Sound</h2>
+          <button type="button" class="btn btn-quiet" id="autoTuneBtn" title="Choose scale, tempo and instrument from the shape of the data">Suggest</button>
+        </div>
+        <p class="card-note" id="autoTuneNote" hidden></p>
+        <div class="form-grid">
+          <label class="field">Instrument<select id="instrument"></select></label>
+          <label class="field">Scale<select id="scale"></select></label>
+          <label class="field">Key<select id="key"></select></label>
+          <label class="field">Range<select id="range"><option value="12">1 octave</option><option value="24" selected>2 octaves</option><option value="36">3 octaves</option></select></label>
+        </div>
+        <label class="field field-range">Tempo <output id="tempoOut">96 BPM</output>
+          <input type="range" id="tempo" min="50" max="200" step="1" value="96">
+        </label>
+        <p class="card-note" id="durationNote"></p>
+      </section>
 
-    <!-- Visualizer / Canvas Section -->
-    <section class="panel visualizer-panel">
-      <h2>Visualizer & Spatial Display</h2>
-      <div class="canvas-wrapper">
-        <canvas id="visualizer-canvas" width="640" height="360"></canvas>
-      </div>
-      <div id="status-bar" class="status-bar">Status: Ready. Load a dataset or image to begin.</div>
-    </section>
-  </main>
+      <section class="card" aria-labelledby="mixTitle">
+        <div class="card-head"><h2 id="mixTitle">Channels</h2><button type="button" class="btn btn-quiet" id="mixReset">Reset</button></div>
+        <div id="channels" class="channels"></div>
+      </section>
 
-  <footer class="app-footer">
-    <p>Bit2Beat &copy; 2026 — NASA Space Apps Challenge Team Bit2Beat</p>
-  </footer>
+      <details class="card disclosure">
+        <summary><h2>Listening aids</h2></summary>
+        <label class="check"><input type="checkbox" id="sharedScale" checked><span><b>Same pitch scale for same units</b><small>e.g. max, mean and min temperature keep their real distance apart.</small></span></label>
+        <label class="check"><input type="checkbox" id="cues" checked><span><b>Tick on sudden jumps</b><small>A quiet click marks readings far from their neighbours.</small></span></label>
+        <label class="field">Reference tone
+          <select id="drone">
+            <option value="off">Off</option>
+            <option value="baseline">Baseline (when the data has one)</option>
+            <option value="mean">Average of the lead channel</option>
+          </select>
+        </label>
+        <p class="card-note" id="droneNote"></p>
+      </details>
 
-  <!-- Main ES Module Bootstrap -->
-  <script type="module" src="src/main.js"></script>
+      <details class="card disclosure">
+        <summary><h2>Space &amp; tone</h2></summary>
+        <div class="form-grid">
+          <label class="field">Output
+            <select id="output">
+              <option value="stereo">Stereo</option>
+              <option value="binaural">Binaural (headphones)</option>
+              <option value="5.1">5.1 surround</option>
+              <option value="7.1">7.1 surround</option>
+              <option value="7.1.4">7.1.4 with height</option>
+            </select>
+          </label>
+          <label class="field">Movement
+            <select id="path">
+              <option value="auto">Automatic</option>
+              <option value="sweep">Left to right</option>
+              <option value="orbit">Circle around</option>
+              <option value="fixed">Fixed places</option>
+            </select>
+          </label>
+        </div>
+        <canvas id="stageCanvas" width="320" height="200" role="img" aria-label="Where each channel sits around the listener"></canvas>
+        <label class="field field-range">Room <output id="roomOut">22%</output><input type="range" id="room" min="0" max="100" value="22"></label>
+        <div class="eq">
+          <div class="eq-head"><span>Equaliser</span>
+            <div class="seg seg-small" role="group" aria-label="Equaliser presets" id="eqPresets">
+              <button type="button" data-eq="flat" aria-pressed="true">Flat</button>
+              <button type="button" data-eq="warm" aria-pressed="false">Warm</button>
+              <button type="button" data-eq="bright" aria-pressed="false">Bright</button>
+              <button type="button" data-eq="bass" aria-pressed="false">Bass</button>
+            </div>
+          </div>
+          <label class="field field-range">Low (110 Hz) <output id="eqLowOut">0 dB</output><input type="range" id="eqLow" min="-12" max="12" step="0.5" value="0"></label>
+          <label class="field field-range">Mid (1 kHz) <output id="eqMidOut">0 dB</output><input type="range" id="eqMid" min="-12" max="12" step="0.5" value="0"></label>
+          <label class="field field-range">High (4.2 kHz) <output id="eqHighOut">0 dB</output><input type="range" id="eqHigh" min="-12" max="12" step="0.5" value="0"></label>
+        </div>
+      </details>
+
+    </aside>
+  </div>
+</main>
+
+<section id="about" class="about" hidden tabindex="-1" aria-labelledby="aboutTitle">
+  <div class="about-inner">
+    <h1 id="aboutTitle">About Bit2Beat</h1>
+    <p class="lead">Bit2Beat is our entry to the NASA Space Apps Challenge “Earth Information Jukebox”. It turns Earth data into sound, so anyone, including people who are blind or have low vision, can follow how our planet changes by listening.</p>
+    <div class="about-cols">
+      <section>
+        <h2>How it works</h2>
+        <p>Every number becomes a note: higher values play higher. Each series is scaled between its own lowest and highest value (or a range shared with series in the same unit) and placed on a musical scale, so equal steps in the data sound like equal steps in the melody. Position in time can also become position in space, from simple stereo to 7.1.4 surround.</p>
+        <p>The data comes from NASA GISTEMP, NASA POWER and NASA EONET, the USGS earthquake feed and Open-Meteo. When there is no internet, Bit2Beat uses real copies of those feeds saved inside the app. Everything runs in your browser; your files never leave your computer.</p>
+      </section>
+      <section>
+        <h2>Our vision</h2>
+        <p>We as a team enjoyed making this from scratch. We experienced and learned a lot during the time, and we had to know each other well. Every one of us contributed and gave all he had.</p>
+        <p>Our vision is to help first: free technology like this can open data to people who cannot see a chart, and anyone who tries it for fun learns something about Earth along the way.</p>
+      </section>
+    </div>
+    <h2 class="team-title">The team</h2>
+    <div class="team">
+      <article class="member"><img src="assets/team/george-hany.jpg" alt="George Hany" width="96" height="96"><div><h3>George Hany <span class="role">Team leader</span></h3><p>George Hany is a 2nd-year Electrical Engineering student at Assiut University. He has a strong passion for AI &amp; Computer Vision and their real-world applications. George was always eager to learn new skills and since a short period of time, he has developed a strong passion for music! He chose to learn violin during summer and his passion drove him from zero-experience to the best member prize in the 1-month violin course he enrolled in! Then he wanted to combine his new skill with technology and that’s why he chose to work on the Earth Information Jukebox challenge.</p></div></article>
+      <article class="member"><img src="assets/team/mina-helal.jpg" alt="Mina Helal" width="96" height="96"><div><h3>Mina Helal <span class="role">Data Analyst</span></h3><p>I’m Mina Helal—an Electrical Engineering undergrad who loves the thrill of building things from scratch, figuring out exactly how things work. I’m here to bridge theory with hands-on challenge and see what we can create.</p></div></article>
+      <article class="member"><img src="assets/team/steven-joseph.jpg" alt="Steven Joseph" width="96" height="96"><div><h3>Steven Joseph <span class="role">Integration lead</span></h3><p>Hi, I am Steven, 20 years old. I am a science enthusiast and love playing violin and eating burger, and in this team I am leader of the integration.</p></div></article>
+      <article class="member"><img src="assets/team/mostafa-ragab.jpg" alt="Mostafa Ragab" width="96" height="96"><div><h3>Mostafa Ragab <span class="role">UI Specialist &amp; Engine</span></h3><p>I’m Mostafa Ragab, an EE student as well, 20 years. I don’t have a specific passion that is taking my mind, but I’m always learning. Not far long ago, I was stunned by Quantum Physics, and I have always been dedicated to master Pure Math and advanced complex analysis to help me understand it, but like a flame it never stays at the same level of light and heat. 3 years ago, I discovered that I have a hidden passion to music, either creating, listening or playing. I never actually had the chance to play it due to the poor resources we had, but I always was listening, analyzing what I hear, like this part is indeed from this instrument. I love peaceful beautiful music, because it’s always attached to good memories of mine. Happy to be in the competition!</p></div></article>
+      <article class="member"><img src="assets/team/mostafa-mohammed.jpg" alt="Mostafa Mohammed" width="96" height="96"><div><h3>Mostafa Mohammed <span class="role">Core</span></h3><p>Electrical Engineering student and member of the Bit2Beat team, working together from scratch to turn images and scientific Earth data into sound and visual experiences.</p></div></article>
+    </div>
+    <h2 class="team-title">Data sources &amp; credits</h2>
+    <ul class="credits">
+      <li>NASA GISS Surface Temperature Analysis (GISTEMP v4) — data.giss.nasa.gov/gistemp</li>
+      <li>NASA POWER daily and monthly point data — power.larc.nasa.gov</li>
+      <li>NASA Earth Observatory Natural Event Tracker (EONET v3) — eonet.gsfc.nasa.gov</li>
+      <li>NASA GIBS satellite imagery (MODIS, VIIRS) — gibs.earthdata.nasa.gov</li>
+      <li>NASA Image and Video Library (BitPet notes) — images.nasa.gov</li>
+      <li>USGS Earthquake Hazards Program real-time feeds — earthquake.usgs.gov</li>
+      <li>abcjs music engraving (MIT licence)</li>
+    </ul>
+    <p><button type="button" class="btn" data-page="studio">Back to the studio</button></p>
+  </div>
+</section>
+
+<footer class="transport" aria-label="Playback">
+  <div class="transport-left">
+    <button type="button" class="round-btn" id="restartBtn" aria-label="Back to the start"><svg class="i" aria-hidden="true"><use href="#i-restart"/></svg></button>
+    <button type="button" class="play-btn" id="playBtn" aria-label="Play"><svg class="i" aria-hidden="true"><use href="#i-play" id="playIcon"/></svg></button>
+    <button type="button" class="round-btn" id="loopBtn" aria-label="Repeat" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-loop"/></svg></button>
+  </div>
+  <div class="transport-mid">
+    <div class="track"><strong id="trackName">—</strong><span id="trackStep"></span></div>
+    <div class="seek"><span id="elapsed">0:00</span><input type="range" id="seek" min="0" max="0" value="0" aria-label="Playback position"><span id="duration">0:00</span></div>
+  </div>
+  <div class="transport-right">
+    <button type="button" class="round-btn" id="muteBtn" aria-label="Mute" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-volume" id="volIcon"/></svg></button>
+    <input type="range" id="volume" min="0" max="100" value="70" aria-label="Volume" class="volume">
+    <button type="button" class="btn btn-ghost" id="recBtn" aria-pressed="false"><span class="rec-dot" aria-hidden="true"></span><span id="recLabel">Record</span></button>
+    <button type="button" class="btn btn-ghost" id="tableBtn"><svg class="i" aria-hidden="true"><use href="#i-table"/></svg>Readings</button>
+    <button type="button" class="btn btn-primary" id="exportBtn"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Export</button>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="sr-only" id="srLive" aria-live="polite"></div>
+
+<dialog id="exportDialog" aria-labelledby="exportTitle">
+  <div class="dlg-head"><h2 id="exportTitle">Export</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+  <p class="dlg-note" id="exportSummary"></p>
+  <label class="field">Audio format<select id="exportFormat"></select></label>
+  <p class="dlg-note" id="exportHint"></p>
+  <div class="btn-row">
+    <button type="button" class="btn btn-primary" id="exportAudio"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Download audio</button>
+    <button type="button" class="btn" id="exportCsv">Notes as CSV</button>
+    <button type="button" class="btn" id="exportAbc">Score as ABC</button>
+  </div>
+  <p class="dlg-status" id="exportStatus" role="status"></p>
+</dialog>
+
+<dialog id="tableDialog" class="dlg-wide" aria-labelledby="tableTitle">
+  <div class="dlg-head"><h2 id="tableTitle">Readings and notes</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+  <p class="dlg-note" id="tableNote"></p>
+  <div class="table-wrap"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
+  <p class="dlg-note">Select a row to hear that step.</p>
+</dialog>
+
+<dialog id="scoreDialog" class="dlg-wide" aria-labelledby="scoreDlgTitle">
+  <div class="dlg-head"><h2 id="scoreDlgTitle">Full score</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+  <div class="score-tools">
+    <label class="field">Show<select id="scoreVoices"></select></label>
+    <div class="btn-row"><button type="button" class="btn" id="scorePrev">Previous page</button><span id="scorePage"></span><button type="button" class="btn" id="scoreNext">Next page</button></div>
+  </div>
+  <div id="scorePaper" class="score-paper"></div>
+</dialog>
+
+<dialog id="accessDialog" aria-labelledby="accessTitle">
+  <div class="dlg-head"><h2 id="accessTitle">Accessibility</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+  <p class="dlg-note">Saved on this device.</p>
+  <div class="access-list">
+    <label class="check"><input type="checkbox" data-pref="dark"><span><b>Dark theme</b></span></label>
+    <label class="check"><input type="checkbox" data-pref="contrast"><span><b>Higher contrast</b></span></label>
+    <label class="field field-range">Text size <output id="textSizeOut">100%</output><input type="range" id="textSize" min="100" max="160" step="10" value="100"></label>
+    <label class="check"><input type="checkbox" data-pref="reduceMotion"><span><b>Reduce motion</b><small>Keep pictures still while sound plays.</small></span></label>
+    <label class="check"><input type="checkbox" data-pref="bigTargets"><span><b>Larger buttons</b></span></label>
+    <label class="check"><input type="checkbox" data-pref="mono"><span><b>Mono audio</b><small>Same sound in both ears.</small></span></label>
+    <label class="check"><input type="checkbox" data-pref="captions" checked><span><b>Show what is playing</b><small>Value, note and place as text.</small></span></label>
+    <label class="check"><input type="checkbox" data-pref="announce"><span><b>Screen reader updates while playing</b><small>Every few seconds.</small></span></label>
+    <label class="check"><input type="checkbox" data-pref="pet" checked><span><b>Show BitPet</b></span></label>
+  </div>
+  <div class="btn-row"><button type="button" class="btn btn-quiet" id="accessReset">Reset</button><button type="button" class="btn btn-primary" data-close>Done</button></div>
+</dialog>
+
+<dialog id="helpDialog" aria-labelledby="helpTitle">
+  <div class="dlg-head"><h2 id="helpTitle">How to use Bit2Beat</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+  <ol class="help-steps">
+    <li><b>Pick something to hear.</b> Data has NASA climate series and your own CSV files. Earth events has live earthquakes and natural events, played across the map from west to east. Image turns a picture or a satellite view into sound.</li>
+    <li><b>Press Play.</b> Higher values play higher. The Melody panel and the score show the same notes.</li>
+    <li><b>Shape the sound.</b> Change instrument, scale and tempo, mute or solo channels, or press Suggest.</li>
+    <li><b>Export.</b> Download audio, the notes as CSV or the score.</li>
+  </ol>
+  <h3>Keyboard</h3>
+  <dl class="keys">
+    <dt><kbd>Space</kbd></dt><dd>Play / pause</dd>
+    <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Step back / forward and hear that step</dd>
+    <dt><kbd>Home</kbd> <kbd>End</kbd></dt><dd>First / last step</dd>
+    <dt><kbd>L</kbd></dt><dd>Repeat on / off</dd>
+    <dt><kbd>D</kbd></dt><dd>Read the data summary aloud</dd>
+    <dt><kbd>T</kbd></dt><dd>Readings table</dd>
+    <dt><kbd>?</kbd></dt><dd>This help</dd>
+  </dl>
+</dialog>
+
+<dialog id="sessionsDialog" aria-labelledby="sessionsTitle">
+  <div class="dlg-head"><h2 id="sessionsTitle">Sessions</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+  <form id="saveForm" class="save-form"><label class="field">Save current settings as<input id="sessionName" type="text" maxlength="60" required></label><button type="submit" class="btn btn-primary">Save</button></form>
+  <p class="dlg-note">Sessions keep the source and every setting in this browser. Uploaded images are not stored.</p>
+  <ul id="sessionList" class="session-list"></ul>
+</dialog>
+
+<script src="vendor/abcjs/abcjs-basic-min.js"></script>
+<script src="src/js/data/landmask.js"></script>
+<script src="src/js/data/snapshots.js"></script>
+<script src="src/js/core/music.js"></script>
+<script src="src/js/core/stats.js"></script>
+<script src="src/js/core/csv.js"></script>
+<script src="src/js/core/wav.js"></script>
+<script src="src/js/core/spatial.js"></script>
+<script src="src/js/core/adm.js"></script>
+<script src="src/js/core/geo.js"></script>
+<script src="src/js/core/image.js"></script>
+<script src="src/js/core/score.js"></script>
+<script src="src/js/core/feeds.js"></script>
+<script src="src/js/core/plan.js"></script>
+<script src="src/js/data/presets.js"></script>
+<script src="src/js/audio/engine.js"></script>
+<script src="src/js/audio/player.js"></script>
+<script src="src/js/audio/exporter.js"></script>
+<script src="src/js/ui/dom.js"></script>
+<script src="src/js/ui/illustrations.js"></script>
+<script src="src/js/ui/draw.js"></script>
+<script src="src/js/ui/score-view.js"></script>
+<script src="src/js/data/nasa-notes.js"></script>
+<script src="src/js/ui/bitpet.js"></script>
+<script src="src/js/ui/sources.js"></script>
+<script src="src/js/ui/panels.js"></script>
+<script src="src/js/ui/mixer.js"></script>
+<script src="src/js/ui/dialogs.js"></script>
+<script src="src/js/ui/canvas-input.js"></script>
+<script src="src/js/ui/recorder.js"></script>
+<script src="src/js/ui/url-state.js"></script>
+<script src="src/js/app.js"></script>
 </body>
 </html>

@@ -1,0 +1,161 @@
+/* Bit2Beat · 2.1 design pass
+   Full-width studio, calmer hierarchy (small-caps card labels with an amber rule, as in the
+   deck), soft depth on cards, and a navy "instrument display" for the note that is playing. */
+
+/* ---------- use the whole screen ---------- */
+main {
+  max-width: none;
+  padding: 14px clamp(12px, 1.6vw, 28px) 20px;
+}
+.studio-grid {
+  grid-template-columns: minmax(0, 1fr) clamp(320px, 22vw, 420px);
+  gap: 14px;
+}
+.col-main,
+.col-side,
+.duo {
+  gap: 14px;
+}
+@media (max-width: 1100px) {
+  .studio-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- header ---------- */
+.topbar {
+  box-shadow: inset 0 -1px 0 rgba(232, 163, 61, 0.45);
+}
+.toolbar {
+  margin-bottom: 14px;
+}
+.modes {
+  border-radius: 10px;
+  padding: 4px;
+}
+.modes button {
+  padding: 8px 18px;
+  border-radius: 7px;
+  transition: color 0.15s, background-color 0.15s;
+}
+.modes button:hover {
+  color: var(--text);
+}
+.modes button[aria-selected='true'] {
+  box-shadow: 0 0 0 1px var(--line), 0 2px 6px -3px rgba(20, 33, 61, 0.35);
+}
+.modes button[aria-selected='true']::after {
+  content: '';
+  display: block;
+  height: 2px;
+  margin: 4px auto -2px;
+  width: 18px;
+  border-radius: 2px;
+  background: var(--amber);
+}
+
+/* ---------- cards ---------- */
+.card {
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 0 rgba(20, 33, 61, 0.03), 0 10px 28px -22px rgba(20, 33, 61, 0.45);
+}
+:root[data-theme='dark'] .card {
+  box-shadow: 0 10px 28px -20px rgba(0, 0, 0, 0.7);
+}
+/* section labels: small capitals after a short amber rule */
+.card-head h2:not(#sourceName),
+.disclosure > summary h2 {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-head h2:not(#sourceName)::before,
+.disclosure > summary h2::before {
+  content: '';
+  width: 14px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--amber);
+  flex: none;
+}
+.source-card {
+  padding: 16px 18px;
+}
+.source-card #sourceName {
+  font-size: 1.3rem;
+  letter-spacing: -0.01em;
+}
+.canvas-wrap {
+  border-radius: 10px;
+}
+.card.disclosure {
+  padding: 0;
+}
+.disclosure > summary {
+  padding: 15px 16px;
+}
+
+/* the world map keeps its shape and fills the width */
+.canvas-wrap[data-view='world'] #sourceCanvas {
+  height: auto;
+  aspect-ratio: 2.18;
+  max-height: max(260px, calc(100vh - 560px));
+}
+
+/* ---------- now playing: navy instrument display ---------- */
+.card.now {
+  background: linear-gradient(180deg, #1a2a4c 0%, var(--navy) 100%);
+  border-color: #0b1222;
+  color: var(--cream);
+  padding: 14px 16px 12px;
+}
+.now .now-step,
+.now .now-note span,
+.now .now-detail {
+  color: rgba(246, 241, 231, 0.72);
+}
+.now .now-step {
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.now .now-note strong {
+  font-size: 2rem;
+  color: var(--cream);
+  font-variant-numeric: tabular-nums;
+}
+.now .now-detail {
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
+.now .caption {
+  color: rgba(246, 241, 231, 0.62);
+  border-top: 1px solid rgba(246, 241, 231, 0.14);
+}
+
+/* ---------- insights and lists ---------- */
+.insights ul {
+  gap: 6px;
+}
+.insights li::marker {
+  color: var(--amber);
+}
+.duo .insights {
+  max-height: 190px;
+}
+
+/* ---------- small motion ---------- */
+.card,
+.btn,
+.seg button {
+  transition: border-color 0.15s, box-shadow 0.2s, background-color 0.15s, color 0.15s;
+}
+.btn:active {
+  transform: translateY(1px);
+}
