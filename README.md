@@ -6,6 +6,10 @@ Built for the NASA Space Apps Challenge 2026, *The Earth Information Jukebox*, b
 
 ![Bit2Beat studio](docs/screenshots/studio.png)
 
+New to Bit2Beat? Open the **Story** tab: Bitty the space pup plays eight chapters of real NASA and USGS data, one at a time, with facts worked out from the numbers you hear. Or let Bitty’s **guided tour** walk you through the studio (Help → *Tour the studio with Bitty*).
+
+![Bitty’s story](docs/screenshots/story.png)
+
 ## Open it
 
 - **No install:** double-click `dist/Bit2Beat-Studio.html`. Everything (code, data, map, photos) is inside that one file, and it works offline.
@@ -14,7 +18,7 @@ Built for the NASA Space Apps Challenge 2026, *The Earth Information Jukebox*, b
 ```bash
 npm run check   # syntax check of every module
 npm run build   # writes dist/Bit2Beat-Studio.html
-npm test        # 15 test groups: algorithms, file formats, page integrity, build
+npm test        # 17 test groups: algorithms, file formats, story, tour, page integrity, build
 ```
 
 ## What you can listen to
@@ -57,6 +61,8 @@ src/js/core/                pure, Node-testable logic
   music.js   scales, keys, value → note, normalisation
   stats.js   trend, sudden jumps, resampling, plain-language summary, suggestions
   plan.js    builds the full note plan (pitch, loudness, time, 3D position) used everywhere
+  story.js   Bitty’s eight chapters and the facts worked out from their data
+  spotlight.js  where the tour’s bubble and dimmed areas go
   image.js   L* and colour analysis of pixels
   csv.js     CSV parser with label and unit detection
   feeds.js   USGS, NASA EONET, NASA POWER (live + offline)

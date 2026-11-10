@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.3.0 — 10 November 2026
+- **Story page: “Bitty listens to Earth”.** A new *Story* tab next to Studio. Bitty, the space pup from the first prototype, tells eight short chapters, each playing one real data set in the studio’s own player: a rising line to learn how to listen, GISTEMP 1880–2025 with the 1951–1980 reference tone, the Svalbard yearly record, polar night and midnight sun in 2025, the earthquake sweep, NASA EONET events, GEDI forest height and the DYAMOND CO₂ model.
+- **Facts worked out from the data you hear** instead of typed text: warmest year and the ten warmest years, Svalbard’s warming per decade compared with the globe over the same years (about 3.7× faster), days without sunlight, the strongest and deepest quakes, event counts, peak forest height and CO₂. With live feeds the facts follow the live numbers.
+- **Play the whole story** moves to the next chapter when one ends; **Bitty reads each chapter aloud** (optional, speech synthesis) before the music; each chapter shows the shape of its data with a playhead, *Listen for* hints and *Open in the studio*. Chapters heard are remembered in the browser; hearing all eight earns the *Earth Listener* badge.
+- **Guided tour of the studio.** A spotlight walks through tabs, source menu, chart, Play, Now playing, melody and summary, sound, channels, Earth events and Export. Steps that ask you to try something wait for you and cheer (“Do it for me” presses it). Shown once on a first visit (one click to skip), again from Help, BitPet or `?tour`; `?notour` hides it. Keyboard (Esc), screen readers, reduced motion, dark theme and phones are supported.
+- Bitty’s artwork (four moods, headphones, wagging tail) is shared by BitPet, the story and the tour.
+- The address bar keeps the Story page (`page=story`), so a refresh returns to the chapter that was playing.
+- About page credits the NASA Earth Information Center instead of Open-Meteo, which is no longer used.
+
 ## 2.2.0 — 7 November 2026
 - **Video tab and NASA Earth Information Center presets** (GEDI forest height, DYAMOND global CO₂), as videos and as stills.
 - **Colour keys.** The NASA presets are read through their own colour bars: forest height (m) and land in view; CO₂ (ppm) and the area above ~420 ppm. Image tab: new *Colour key* analysis.

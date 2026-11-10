@@ -3,6 +3,7 @@
 Bit2Beat turns Earth data into music you can hear, read as a score and export. This guide walks through every part of the studio.
 
 - [Opening Bit2Beat](#opening-bit2beat)
+- [Bitty’s story and tour](#bittys-story-and-tour)
 - [The studio at a glance](#the-studio-at-a-glance)
 - [Data tab](#data-tab)
 - [Earth events tab](#earth-events-tab)
@@ -24,12 +25,45 @@ Bit2Beat turns Earth data into music you can hear, read as a score and export. T
 
 Bit2Beat runs fully in the browser. Nothing is uploaded: CSV files and pictures you open stay on your computer.
 
+## Bitty’s story and tour
+
+![Story](screenshots/story.png)
+
+**Story** (top bar) is the easiest way in. Bitty, a space pup with very good ears, tells eight short chapters. Each one plays a real data set in the studio’s own player, so the sound, score and exports are exactly the studio’s.
+
+| Chapter | You hear | Bitty sets |
+| --- | --- | --- |
+| Prologue · A silent planet | A rising line: bigger number, higher note | – |
+| 1 · A warming century | NASA GISTEMP 1880–2025 | Reference tone at the 1951–1980 normal |
+| 2 · The Arctic runs a fever | Svalbard yearly temperature 1981–2024 | Reference tone at the average |
+| 3 · Polar night, midnight sun | Svalbard daily 2025, temperature and sunlight together | 120 averaged steps; *Sunlight* unmuted |
+| 4 · The restless ring | USGS earthquakes, west to east | *Map distance* spacing |
+| 5 · Fire, flood and ice | NASA EONET natural events | *Even steps* |
+| 6 · Forests measured by laser | NASA EIC GEDI forest-height video | Real-time tempo |
+| 7 · The planet breathes | NASA EIC DYAMOND CO₂ video | Real-time tempo |
+
+![A chapter](screenshots/story-chapter.png)
+
+Each chapter shows:
+
+- Bitty’s narration and a **Listen for** hint (what to listen for).
+- The **shape of the data** with a playhead while it plays.
+- **From the data**: facts worked out from the numbers you hear (for example the warmest year, how much faster Svalbard warmed than the whole planet over the same years, the strongest quake). With live feeds they follow the live numbers.
+- **Listen** (Pause) and **Open in the studio**, which keeps the chapter loaded so you can change instruments, mute channels or export.
+
+**Play the whole story** plays the chapters one after another (it starts from the first chapter you have not heard). Tick **Bitty reads each chapter aloud** to hear the narration (your browser’s voice) before the music. Chapters you have heard get a tick; hear all eight to earn the **Earth Listener** badge. Progress is kept in this browser only.
+
+![Tour](screenshots/tour.png)
+
+The **tour** highlights the studio’s controls one at a time: tabs, source menu, chart, Play, Now playing, melody and summary, Sound, Channels, Earth events and Export. Some steps ask you to try the control and wait for you; **Do it for me** presses it for you. It appears once on your first visit (one click to skip). Start it again from **Help → Tour the studio with Bitty**, **Tour** on the BitPet card, the Story page, or by adding `?tour` to the address. `Esc` closes it.
+
 ## The studio at a glance
 
 ![Studio](screenshots/studio.png)
 
 | Area | What it does |
 | --- | --- |
+| **Pages** (Studio · Story · About the team) | Story is Bitty’s guided listening journey; see above. |
 | **Tabs** (Data · Earth events · Image · Video) | Choose what kind of thing to listen to. The menu beside them picks the source. |
 | **Source card** | The chart, map or picture you are hearing, its source line (where the numbers come from and when), and options for that tab. Hover to read a value; click to hear that step. |
 | **Now playing** (navy panel) | The current step, its note and frequency, the reading behind it and live sound bars. |
@@ -40,7 +74,7 @@ Bit2Beat runs fully in the browser. Nothing is uploaded: CSV files and pictures 
 | **Melody** | Every note over time; the amber line is the playhead. |
 | **What the data says** | Trend, highs and lows, sudden jumps, in plain sentences. **Read aloud** speaks them. |
 | **Score** | Live sheet music of the lead channel; **Full score** shows every channel; **PNG** downloads it. |
-| **BitPet** | Short notes from the NASA Image and Video Library that follow what you are playing. |
+| **BitPet** | Bitty with short notes from the NASA Image and Video Library that follow what you are playing; **Tour** starts the guided tour. |
 | **Player bar** | Restart, Play/Pause, Repeat, position, volume, **Record**, **Readings** table and **Export**. |
 
 ## Data tab
@@ -119,7 +153,7 @@ Press **Play**: the muted video follows the music. Click the picture to play or 
 
 ## Saving, sharing and exporting
 
-- **The address bar remembers everything.** Tab, source, sound settings, channel mix, image options and play position are kept in the link. Refresh and you are back where you were; send the link and others open the same view. (An uploaded file cannot travel in a link.)
+- **The address bar remembers everything.** Page (Studio or Story), tab, source, sound settings, channel mix, image options and play position are kept in the link. Refresh and you are back where you were; send the link and others open the same view. (An uploaded file cannot travel in a link.)
 - **Sessions** saves named setups in this browser.
 - **Record** captures what you hear live (browser codec).
 - **Export** renders exact files from the same notes: stereo WAV, binaural WAV, 5.1 / 7.1 / 7.1.4 WAV, an ADM BWF object master, the notes as CSV, and the score as ABC or PNG. Audio is normalised to −1 dBFS.

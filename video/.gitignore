@@ -1,0 +1,6 @@
+__pycache__/
+render/
+review/
+output/soundtrack-float.wav
+output/*review*.png
+output/*contact.png

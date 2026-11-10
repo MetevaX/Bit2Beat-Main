@@ -1755,6 +1755,764 @@ main {
 }
 
 </style>
+<style>
+/* Bit2Beat · Story page, Bitty the space pup and the guided tour. */
+
+/* ---------------------------------------------------------------- Bitty */
+.bitty {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.bitty .bt-tail {
+  transform-origin: 112px 105px;
+  animation: bt-wag 1.6s ease-in-out infinite;
+}
+.bitty .bt-ear-l {
+  transform-origin: 44px 46px;
+  animation: bt-ear 4.8s ease-in-out infinite;
+}
+.bitty .bt-ear-r {
+  transform-origin: 109px 46px;
+  animation: bt-ear 4.8s ease-in-out infinite 0.4s;
+}
+.bitty .bt-tilt {
+  transform-origin: 77px 70px;
+  transform: rotate(-7deg);
+}
+.bitty .bt-eyes {
+  transform-origin: 77px 58px;
+  animation: bt-blink 5.5s infinite;
+}
+@keyframes bt-wag {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(10deg); }
+}
+@keyframes bt-ear {
+  0%, 86%, 100% { transform: rotate(0); }
+  92% { transform: rotate(-8deg); }
+}
+@keyframes bt-blink {
+  0%, 95%, 100% { transform: scaleY(1); }
+  97% { transform: scaleY(0.1); }
+}
+.bt-hop {
+  animation: bt-hop 0.55s ease;
+}
+@keyframes bt-hop {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-9px); }
+  70% { transform: translateY(2px); }
+}
+.reduce-motion .bitty *,
+.reduce-motion .bt-hop,
+.bt-still .bitty * {
+  animation: none !important;
+}
+
+/* ---------------------------------------------------------------- Story page */
+.story {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 24px 132px;
+}
+.story:focus {
+  outline: none;
+}
+.story-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 28px;
+  align-items: center;
+  padding: 28px 32px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 12% 30%, rgba(232, 163, 61, 0.22), transparent 38%),
+    radial-gradient(1.2px 1.2px at 30% 20%, rgba(246, 241, 231, 0.7), transparent 2px),
+    radial-gradient(1px 1px at 70% 30%, rgba(246, 241, 231, 0.6), transparent 2px),
+    radial-gradient(1.4px 1.4px at 86% 72%, rgba(246, 241, 231, 0.6), transparent 2px),
+    radial-gradient(1px 1px at 55% 85%, rgba(246, 241, 231, 0.5), transparent 2px),
+    var(--navy);
+  color: var(--cream);
+  overflow: hidden;
+}
+.story-hero-dog {
+  width: 200px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, #f6f1e7 0 58%, rgba(246, 241, 231, 0.12) 59% 64%, transparent 65%);
+  display: grid;
+  place-items: center;
+  animation: bt-float 6s ease-in-out infinite;
+}
+.story-hero-dog .bitty {
+  width: 78%;
+}
+@keyframes bt-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.reduce-motion .story-hero-dog {
+  animation: none;
+}
+.story-kicker,
+.chapter-kicker {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+.chapter-kicker {
+  color: var(--amber-ink);
+}
+.story-hero h1 {
+  font-size: clamp(1.7rem, 3.2vw, 2.4rem);
+  line-height: 1.15;
+  margin: 4px 0 10px;
+  color: var(--cream);
+}
+.story-hero .lead {
+  max-width: 68ch;
+  color: rgba(246, 241, 231, 0.86);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+.story-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 18px;
+}
+.story-hero .btn:not(.btn-primary) {
+  background: transparent;
+  color: var(--cream);
+  border-color: rgba(246, 241, 231, 0.35);
+}
+.story-hero .btn:not(.btn-primary):hover {
+  border-color: var(--cream);
+}
+.story-hero .btn[aria-pressed='true'] {
+  background: var(--cream);
+  border-color: var(--cream);
+  color: var(--navy);
+}
+.check-inline {
+  align-items: center;
+}
+.check-inline input {
+  margin-top: 0;
+}
+.story-hero .check input {
+  accent-color: var(--amber);
+}
+.story-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 0.85rem;
+  color: rgba(246, 241, 231, 0.8);
+}
+.story-dots {
+  display: inline-flex;
+  gap: 6px;
+}
+.story-dots i {
+  width: 22px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(246, 241, 231, 0.22);
+}
+.story-dots i.on {
+  background: var(--amber);
+}
+.story-dots i.now {
+  box-shadow: 0 0 0 2px var(--cream);
+}
+
+/* chapters: a timeline */
+.story-chapters {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  position: relative;
+}
+.story-chapters::before {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 12px;
+  bottom: 12px;
+  border-left: 2px dashed var(--line);
+}
+.chapter {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.chapter-node {
+  position: relative;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  margin-top: 22px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--navy);
+}
+.chapter.is-heard .chapter-node {
+  background: var(--amber);
+  border-color: var(--amber);
+}
+.chapter.is-heard .chapter-node::after {
+  content: '✓';
+}
+.chapter.is-current .chapter-node {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 4px rgba(232, 163, 61, 0.28);
+}
+.chapter[data-state='playing'] .chapter-node {
+  animation: bt-pulse 1.4s ease-in-out infinite;
+}
+@keyframes bt-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(232, 163, 61, 0.3); }
+  50% { box-shadow: 0 0 0 9px rgba(232, 163, 61, 0.08); }
+}
+.reduce-motion .chapter-node {
+  animation: none !important;
+}
+.chapter-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.chapter.is-current .chapter-card {
+  border-color: var(--amber);
+  box-shadow: 0 6px 24px rgba(20, 33, 61, 0.1);
+}
+.chapter-card header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 14px;
+}
+.chapter-card header .chapter-kicker {
+  flex-basis: 100%;
+}
+.chapter-card h2 {
+  font-size: 1.35rem;
+  margin: 2px 0 12px;
+}
+.chapter-heard {
+  display: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--amber-ink);
+}
+.chapter.is-heard .chapter-heard {
+  display: inline-block;
+}
+.chapter-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.chapter-say {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.chapter-dog {
+  width: 76px;
+}
+.chapter-bubble {
+  position: relative;
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+.chapter-bubble::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 22px;
+  border: 8px solid transparent;
+  border-left: 0;
+  border-right-color: var(--surface-2);
+}
+.chapter-side {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.chapter-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--navy);
+}
+.chapter-spark {
+  width: 100%;
+  height: 72px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--grid);
+}
+.chapter-listen {
+  font-size: 0.88rem;
+  border-left: 3px solid var(--amber);
+  padding: 2px 0 2px 10px;
+}
+.chapter-side h3 {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.chapter-facts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  font-size: 0.86rem;
+}
+.chapter-facts li {
+  position: relative;
+  padding-left: 16px;
+}
+.chapter-facts li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.55em;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--amber);
+}
+.chapter-origin {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.chapter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--grid);
+}
+.chapter-play {
+  min-width: 128px;
+}
+.chapter-play-icon {
+  width: 0;
+  height: 0;
+  border-left: 10px solid currentColor;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+}
+.chapter[data-state='playing'] .chapter-play-icon {
+  width: 10px;
+  height: 12px;
+  border: 0;
+  border-left: 3px solid currentColor;
+  border-right: 3px solid currentColor;
+}
+.chapter[data-state='loading'] .chapter-play-icon {
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  animation: bt-spin 0.8s linear infinite;
+}
+@keyframes bt-spin {
+  to { transform: rotate(360deg); }
+}
+.chapter-status {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+/* epilogue */
+.story-finale {
+  display: grid;
+  grid-template-columns: 150px 1fr 150px;
+  gap: 24px;
+  align-items: center;
+  margin: 8px 0 0 44px;
+  padding: 24px 28px;
+  border-radius: 16px;
+  background: var(--navy);
+  color: var(--cream);
+}
+.story-finale h2 {
+  font-size: 1.6rem;
+  margin: 2px 0 8px;
+  color: var(--cream);
+}
+.story-finale p:not(.chapter-kicker) {
+  color: rgba(246, 241, 231, 0.86);
+  line-height: 1.55;
+  max-width: 62ch;
+}
+.story-finale .chapter-kicker {
+  color: var(--amber);
+}
+.story-finale .btn-row {
+  margin-top: 14px;
+}
+.story-finale .btn:not(.btn-primary) {
+  background: transparent;
+  color: var(--cream);
+  border-color: rgba(246, 241, 231, 0.35);
+}
+.finale-dog {
+  background: var(--cream);
+  border-radius: 50%;
+  padding: 18px;
+}
+.bt-badge {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.bt-badge.is-locked {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+.finale-badge p {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  text-align: center;
+  color: rgba(246, 241, 231, 0.75);
+}
+
+/* ---------------------------------------------------------------- guided tour */
+.bt-root {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+.bt-dim {
+  position: fixed;
+  background: rgba(10, 16, 32, 0.58);
+  pointer-events: auto;
+}
+.bt-ring {
+  position: fixed;
+  border: 3px solid var(--amber);
+  border-radius: 12px;
+  pointer-events: auto; /* the highlighted area is for looking, unless the step asks you to use it */
+  transition: left 0.25s, top 0.25s, width 0.25s, height 0.25s;
+}
+.bt-ring.bt-live {
+  pointer-events: none;
+  animation: bt-ring 1.6s ease-in-out infinite;
+}
+@keyframes bt-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.55); }
+  50% { box-shadow: 0 0 0 8px rgba(232, 163, 61, 0); }
+}
+.bt-still .bt-ring,
+.bt-still .bt-bubble {
+  transition: none;
+  animation: none;
+}
+.bt-away {
+  visibility: hidden;
+}
+.bt-bubble {
+  position: fixed;
+  width: min(390px, calc(100vw - 24px));
+  pointer-events: auto;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 16px 12px;
+  box-shadow: 0 18px 50px rgba(10, 16, 32, 0.35);
+  transition: left 0.25s, top 0.25s;
+}
+.bt-bubble:focus {
+  outline: none;
+}
+.bt-bubble:focus-visible {
+  box-shadow: var(--focus), 0 18px 50px rgba(10, 16, 32, 0.35);
+}
+.bt-bubble.bt-hero {
+  width: min(460px, calc(100vw - 24px));
+  text-align: center;
+}
+.bt-bubble::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  transform: rotate(45deg);
+  display: none;
+}
+.bt-bubble[data-placement='bottom']::before {
+  display: block;
+  top: -8px;
+  left: calc(var(--caret-x, 50%) - 7px);
+  border-right: 0;
+  border-bottom: 0;
+}
+.bt-bubble[data-placement='top']::before {
+  display: block;
+  bottom: -8px;
+  left: calc(var(--caret-x, 50%) - 7px);
+  border-left: 0;
+  border-top: 0;
+}
+.bt-bubble[data-placement='right']::before {
+  display: block;
+  left: -8px;
+  top: calc(var(--caret-y, 50%) - 7px);
+  border-right: 0;
+  border-top: 0;
+}
+.bt-bubble[data-placement='left']::before {
+  display: block;
+  right: -8px;
+  top: calc(var(--caret-y, 50%) - 7px);
+  border-left: 0;
+  border-bottom: 0;
+}
+.bt-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+.bt-dog {
+  width: 64px;
+}
+.bt-hero .bt-head {
+  justify-content: center;
+}
+.bt-hero .bt-dog {
+  width: 112px;
+}
+.bt-count {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.bt-x {
+  margin-left: auto;
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.bt-hero .bt-x {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+}
+.bt-x:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+.bt-badge-wrap {
+  width: 92px;
+  margin: 8px auto 0;
+}
+.bt-title {
+  font-size: 1.15rem;
+  margin: 8px 0 4px;
+}
+.bt-text {
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.bt-done {
+  margin-top: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--amber-ink);
+}
+.bt-progress {
+  display: flex;
+  gap: 4px;
+  margin: 12px 0 0;
+}
+.bt-progress i {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--grid);
+}
+.bt-progress i.on {
+  background: var(--amber);
+}
+.bt-progress i:first-child,
+.bt-progress i:last-child {
+  display: none;
+}
+.bt-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.bt-hero .bt-foot {
+  justify-content: center;
+}
+.bt-spacer {
+  flex: 1;
+}
+.bt-hero .bt-spacer {
+  display: none;
+}
+.bt-hero .bt-skip {
+  order: 3;
+  flex-basis: 100%;
+}
+.bt-attn {
+  animation: bt-attn 1.2s ease-in-out 3;
+}
+@keyframes bt-attn {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.6); }
+  50% { box-shadow: 0 0 0 7px rgba(232, 163, 61, 0); }
+}
+.bt-still .bt-attn {
+  animation: none;
+}
+.help-bitty {
+  margin-top: 14px;
+}
+.pet-head > span {
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- dark theme and small screens */
+:root[data-theme='dark'] .story-hero,
+:root[data-theme='dark'] .story-finale {
+  background-color: #0a1222;
+  border: 1px solid var(--line);
+}
+:root[data-theme='dark'] .chapter-node {
+  color: var(--navy);
+}
+:root[data-theme='dark'] .chapter.is-current .chapter-card {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 900px) {
+  .chapter-body {
+    grid-template-columns: 1fr;
+  }
+  .story-finale {
+    grid-template-columns: 110px 1fr;
+    margin-left: 0;
+  }
+  .finale-badge {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
+@media (max-width: 640px) {
+  .story {
+    padding: 14px 12px 150px;
+  }
+  .story-hero {
+    grid-template-columns: 1fr;
+    padding: 20px 18px;
+    text-align: left;
+  }
+  .story-hero-dog {
+    width: 120px;
+  }
+  .story-chapters::before {
+    left: 9px;
+  }
+  .chapter {
+    grid-template-columns: 20px 1fr;
+    gap: 10px;
+  }
+  .chapter-node {
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+  }
+  .chapter-card {
+    padding: 14px;
+  }
+  .chapter-say {
+    grid-template-columns: 52px 1fr;
+  }
+  .chapter-dog {
+    width: 52px;
+  }
+  .chapter-status {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+  .story-finale {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+  .finale-dog {
+    width: 110px;
+  }
+  .finale-badge {
+    width: 110px;
+    grid-row: auto;
+  }
+  .bt-dog {
+    width: 52px;
+  }
+  .bt-foot .btn {
+    flex: 1 1 auto;
+  }
+  .bt-spacer {
+    display: none;
+  }
+  .bt-skip {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
+
+</style>
 <!-- abcjs licence:
 Copyright (c) 2009-2026 Paul Rosen and Gregory Dyke
 
@@ -1802,6 +2560,7 @@ THE SOFTWARE.
   <a class="brand" href="#studio" aria-label="Bit2Beat home"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii0yMCAtMjAgNTM4IDEzMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJCaXQyQmVhdCI+PHRpdGxlPkJpdDJCZWF0PC90aXRsZT48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiIGZpbGw9IiNGNkYxRTciLz48cmVjdCB4PSIxMiIgeT0iMCIgd2lkdGg9IjExIiBoZWlnaHQ9IjExIiBmaWxsPSIjRjZGMUU3Ii8+PHJlY3QgeD0iMjQiIHk9IjAiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjM2IiB5PSIwIiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiIGZpbGw9IiNGNkYxRTciLz48cmVjdCB4PSIwIiB5PSIxMiIgd2lkdGg9IjExIiBoZWlnaHQ9IjExIiBmaWxsPSIjRjZGMUU3Ii8+PHJlY3QgeD0iNDgiIHk9IjEyIiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiIGZpbGw9IiNGNkYxRTciLz48cmVjdCB4PSIwIiB5PSIyNCIgd2lkdGg9IjExIiBoZWlnaHQ9IjExIiBmaWxsPSIjRjZGMUU3Ii8+PHJlY3QgeD0iNDgiIHk9IjI0IiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiIGZpbGw9IiNGNkYxRTciLz48cmVjdCB4PSIwIiB5PSIzNiIgd2lkdGg9IjExIiBoZWlnaHQ9IjExIiBmaWxsPSIjRjZGMUU3Ii8+PHJlY3QgeD0iMTIiIHk9IjM2IiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiIGZpbGw9IiNGNkYxRTciLz48cmVjdCB4PSIyNCIgeT0iMzYiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjM2IiB5PSIzNiIgd2lkdGg9IjExIiBoZWlnaHQ9IjExIiBmaWxsPSIjRjZGMUU3Ii8+PHJlY3QgeD0iMCIgeT0iNDgiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjQ4IiB5PSI0OCIgd2lkdGg9IjExIiBoZWlnaHQ9IjExIiBmaWxsPSIjRjZGMUU3Ii8+PHJlY3QgeD0iMCIgeT0iNjAiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjQ4IiB5PSI2MCIgd2lkdGg9IjExIiBoZWlnaHQ9IjExIiBmaWxsPSIjRjZGMUU3Ii8+PHJlY3QgeD0iMCIgeT0iNzIiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjEyIiB5PSI3MiIgd2lkdGg9IjExIiBoZWlnaHQ9IjExIiBmaWxsPSIjRjZGMUU3Ii8+PHJlY3QgeD0iMjQiIHk9IjcyIiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiIGZpbGw9IiNGNkYxRTciLz48cmVjdCB4PSIzNiIgeT0iNzIiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjcyIiB5PSIwIiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiIGZpbGw9IiNFOEEzM0QiLz48cmVjdCB4PSI3MiIgeT0iMjQiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjcyIiB5PSIzNiIgd2lkdGg9IjExIiBoZWlnaHQ9IjExIiBmaWxsPSIjRjZGMUU3Ii8+PHJlY3QgeD0iNzIiIHk9IjQ4IiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiIGZpbGw9IiNGNkYxRTciLz48cmVjdCB4PSI3MiIgeT0iNjAiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjcyIiB5PSI3MiIgd2lkdGg9IjExIiBoZWlnaHQ9IjExIiBmaWxsPSIjRjZGMUU3Ii8+PHJlY3QgeD0iMTA4IiB5PSIwIiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiIGZpbGw9IiNGNkYxRTciLz48cmVjdCB4PSIxMDgiIHk9IjEyIiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiIGZpbGw9IiNGNkYxRTciLz48cmVjdCB4PSI5NiIgeT0iMjQiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjEwOCIgeT0iMjQiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjEyMCIgeT0iMjQiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjEzMiIgeT0iMjQiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjEwOCIgeT0iMzYiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjEwOCIgeT0iNDgiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjEwOCIgeT0iNjAiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjEwOCIgeT0iNzIiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxyZWN0IHg9IjEyMCIgeT0iNzIiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMSIgZmlsbD0iI0Y2RjFFNyIvPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE2NiwwKSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRThBMzNEIiBzdHJva2Utd2lkdGg9IjEwIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNNSAyNyBDNSAtMyA0NyAtMyA0NyAyNyBDNDcgNDUgMjIgNTggNSA3NyIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiLz48cmVjdCB4PSIwIiB5PSIyMiIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjRThBMzNEIiBzdHJva2U9Im5vbmUiLz48cGF0aCBkPSJNNSA3NyBINjIgTTUyIDY2IEw2MyA3NyBMNTIgODgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNjYsMCkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0Y2RjFFNyIgc3Ryb2tlLXdpZHRoPSIxMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiA+PHBhdGggZD0iTTUgNSBWNzcgSDMwIEExOSAxOSAwIDAgMCAzMCAzOSBINSBNNSA1IEgyNiBBMTcgMTcgMCAwIDEgMjYgMzkiLz48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMzI2LDApIiBmaWxsPSJub25lIiBzdHJva2U9IiNFOEEzM0QiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTUzIDU0IEEyNSAyNSAwIDEgMCA0NS43IDcxLjciIHN0cm9rZS13aWR0aD0iMTAiLz48cG9seWxpbmUgcG9pbnRzPSIzLjAsNTQuMCAzLjYsNTUuMSA0LjIsNTYuMCA0LjksNTYuOSA1LjUsNTcuNiA2LjEsNTguMiA2LjgsNTguNCA3LjQsNTguNSA4LjAsNTguMyA4LjYsNTcuOCA5LjIsNTcuMiA5LjksNTYuNCAxMC41LDU1LjQgMTEuMSw1NC40IDExLjgsNTMuMyAxMi40LDUyLjMgMTMuMCw1MS40IDEzLjYsNTAuNiAxNC4yLDUwLjAgMTQuOSw0OS42IDE1LjUsNDkuNSAxNi4xLDQ5LjYgMTYuOCw1MC4wIDE3LjQsNTAuNiAxOC4wLDUxLjQgMTguNiw1Mi4zIDE5LjIsNTMuMyAxOS45LDU0LjQgMjAuNSw1NS40IDIxLjEsNTYuNCAyMS44LDU3LjIgMjIuNCw1Ny44IDIzLjAsNTguMyAyMy42LDU4LjUgMjQuMiw1OC40IDI0LjksNTguMiAyNS41LDU3LjYgMjYuMSw1Ni45IDI2LjgsNTYuMCAyNy40LDU1LjEgMjguMCw1NC4wIDI4LjYsNTIuOSAyOS4yLDUyLjAgMjkuOSw1MS4xIDMwLjUsNTAuNCAzMS4xLDQ5LjggMzEuNyw0OS42IDMyLjQsNDkuNSAzMy4wLDQ5LjcgMzMuNiw1MC4yIDM0LjIsNTAuOCAzNC45LDUxLjYgMzUuNSw1Mi42IDM2LjEsNTMuNiAzNi44LDU0LjcgMzcuNCw1NS43IDM4LjAsNTYuNiAzOC42LDU3LjQgMzkuMiw1OC4wIDM5LjksNTguNCA0MC41LDU4LjUgNDEuMSw1OC40IDQxLjgsNTguMCA0Mi40LDU3LjQgNDMuMCw1Ni42IDQzLjYsNTUuNyA0NC4yLDU0LjcgNDQuOSw1My42IDQ1LjUsNTIuNiA0Ni4xLDUxLjYgNDYuOCw1MC44IDQ3LjQsNTAuMiA0OC4wLDQ5LjcgNDguNiw0OS41IDQ5LjIsNDkuNiA0OS45LDQ5LjggNTAuNSw1MC40IDUxLjEsNTEuMSA1MS44LDUyLjAgNTIuNCw1Mi45IDUzLjAsNTQuMCIgc3Ryb2tlLXdpZHRoPSI3Ii8+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDM5MiwwKSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRThBMzNEIiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxjaXJjbGUgY3g9IjI4IiBjeT0iNTIiIHI9IjI1IiBzdHJva2Utd2lkdGg9IjEwIi8+PGNpcmNsZSBjeD0iMjgiIGN5PSI1MiIgcj0iMTMiIHN0cm9rZS13aWR0aD0iMiIgb3BhY2l0eT0iLjU1Ii8+PHBhdGggZD0iTTUzIDI3IFY3NyIgc3Ryb2tlLXdpZHRoPSIxMCIvPjxjaXJjbGUgY3g9IjI4IiBjeT0iNTIiIHI9IjQuNSIgZmlsbD0iI0U4QTMzRCIgc3Ryb2tlPSJub25lIi8+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQ2MCwwKSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRjZGMUU3IiBzdHJva2Utd2lkdGg9IjEwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID48cGF0aCBkPSJNMTggNiBWNjIgQTE1IDE1IDAgMCAwIDMzIDc3IE0zIDI5IEgzNCIvPjwvZz48L3N2Zz4=" alt="Bit2Beat" width="168" height="41"></a>
   <nav class="topnav" aria-label="Pages">
     <button type="button" class="topnav-link" data-page="studio" aria-current="page">Studio</button>
+    <button type="button" class="topnav-link" data-page="story">Story</button>
     <button type="button" class="topnav-link" data-page="about">About the team</button>
   </nav>
   <div class="topbar-actions">
@@ -1936,7 +2695,7 @@ THE SOFTWARE.
       <section class="card bitpet" id="bitPet" aria-labelledby="petTitle">
         <button type="button" class="pet-face" id="petFace" aria-label="Say hello to BitPet"></button>
         <div class="pet-body">
-          <div class="pet-head"><h2 id="petTitle">BitPet’s NASA note</h2><button type="button" class="link-btn" id="petHide">Hide</button></div>
+          <div class="pet-head"><h2 id="petTitle">BitPet’s NASA note</h2><span><button type="button" class="link-btn" id="petTour">Tour</button> <button type="button" class="link-btn" id="petHide">Hide</button></span></div>
           <p id="petFact"></p>
           <div class="pet-foot"><a id="petSource" href="https://images.nasa.gov" target="_blank" rel="noopener noreferrer">Source</a>
             <span><button type="button" class="link-btn" id="petPrev" aria-label="Previous note">Prev</button> <span id="petPage"></span> <button type="button" class="link-btn" id="petNext" aria-label="Next note">Next</button></span></div>
@@ -2034,6 +2793,38 @@ THE SOFTWARE.
   </div>
 </main>
 
+<section id="story" class="story" hidden tabindex="-1" aria-labelledby="storyTitle">
+  <div class="story-hero">
+    <div class="story-hero-dog" id="storyDog"></div>
+    <div class="story-hero-text">
+      <p class="story-kicker">A story in eight sounds</p>
+      <h1 id="storyTitle">Bitty listens to Earth</h1>
+      <p class="lead">Bitty is a space pup with very good ears. Satellites send Bitty Earth’s numbers, and Bit2Beat turns them into music. Follow eight short chapters of real NASA and USGS data, from a warming century to the planet’s breath. Each chapter plays in the studio’s own player, so you can open any of them and keep exploring.</p>
+      <div class="story-actions">
+        <button type="button" class="btn btn-primary" id="storyPlayAll" aria-pressed="false">Play the whole story</button>
+        <button type="button" class="btn" id="storyTourBtn">Tour the studio</button>
+        <label class="check check-inline"><input type="checkbox" id="storyNarrate"><span><b>Bitty reads each chapter aloud</b></span></label>
+      </div>
+      <p class="story-progress" id="storyProgress"></p>
+    </div>
+  </div>
+  <ol class="story-chapters" id="storyChapters" aria-label="Chapters"></ol>
+  <section class="story-finale" id="storyFinale" aria-labelledby="finaleTitle">
+    <div class="finale-dog" id="finaleDog"></div>
+    <div class="finale-text">
+      <p class="chapter-kicker">Epilogue</p>
+      <h2 id="finaleTitle">Your turn</h2>
+      <p id="finaleText"></p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="finaleStudio">Open the studio</button>
+        <button type="button" class="btn" id="finaleCsv">Open my own CSV</button>
+        <button type="button" class="btn" id="finaleTour">Tour the studio</button>
+      </div>
+    </div>
+    <div class="finale-badge" id="finaleBadge"></div>
+  </section>
+</section>
+
 <section id="about" class="about" hidden tabindex="-1" aria-labelledby="aboutTitle">
   <div class="about-inner">
     <h1 id="aboutTitle">About Bit2Beat</h1>
@@ -2042,7 +2833,7 @@ THE SOFTWARE.
       <section>
         <h2>How it works</h2>
         <p>Every number becomes a note: higher values play higher. Each series is scaled between its own lowest and highest value (or a range shared with series in the same unit) and placed on a musical scale, so equal steps in the data sound like equal steps in the melody. Position in time can also become position in space, from simple stereo to 7.1.4 surround.</p>
-        <p>The data comes from NASA GISTEMP, NASA POWER and NASA EONET, the USGS earthquake feed and Open-Meteo. When there is no internet, Bit2Beat uses real copies of those feeds saved inside the app. Everything runs in your browser; your files never leave your computer.</p>
+        <p>The data comes from NASA GISTEMP, NASA POWER and NASA EONET, the NASA Earth Information Center (Scientific Visualization Studio) and the USGS earthquake feed. When there is no internet, Bit2Beat uses real copies of those feeds saved inside the app. Everything runs in your browser; your files never leave your computer.</p>
       </section>
       <section>
         <h2>Our vision</h2>
@@ -2148,6 +2939,7 @@ THE SOFTWARE.
     <li><b>Shape the sound.</b> Change instrument, scale and tempo, mute or solo channels, or press Suggest.</li>
     <li><b>Export.</b> Download audio, the notes as CSV or the score.</li>
   </ol>
+  <div class="btn-row help-bitty"><button type="button" class="btn btn-primary" id="helpTour">Tour the studio with Bitty</button><button type="button" class="btn" id="helpStory">Read Bitty’s story</button></div>
   <h3>Keyboard</h3>
   <dl class="keys">
     <dt><kbd>Space</kbd></dt><dd>Play / pause</dd>
@@ -4421,6 +5213,356 @@ THE SOFTWARE.
 });
 
 </script>
+<script>/* src/js/core/story.js */
+/**
+ * Bit2Beat core · Bitty's Earth story.
+ *
+ * Eight short chapters that each play one real data set from the studio, told by Bitty, the
+ * space pup. Every chapter has a "scene" (which tab and source to load, and the few settings that
+ * make it easier to hear), a narration, a hint of what to listen for, and facts that are worked
+ * out from the very numbers you hear, so they stay true when a live feed replaces the snapshot.
+ * Pure data and functions, no DOM: tested in Node.
+ */
+(function (root, factory) {
+  const deps = typeof module === 'object' && module.exports ? { stats: require('./stats.js') } : root.Bit2Beat;
+  const mod = factory(deps);
+  if (typeof module === 'object' && module.exports) module.exports = mod;
+  else (root.Bit2Beat = root.Bit2Beat || {}).story = mod;
+})(typeof self !== 'undefined' ? self : this, function (deps) {
+  'use strict';
+  const { stats } = deps;
+
+  // ------------------------------------------------------------------ helpers
+  const finite = (v) => typeof v === 'number' && Number.isFinite(v);
+  const signed = (v, d = 2) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
+  const n1 = (v) => v.toFixed(1).replace('-', '−');
+  const plural = (n, one, many = one + 's') => `${n.toLocaleString('en')} ${n === 1 ? one : many}`;
+  const channel = (src, re) => (src?.channels || []).find((c) => re.test(c.name));
+  /** Index of the largest (or smallest) finite value, or -1. */
+  function argBest(values, dir = 1) {
+    let best = -1;
+    (values || []).forEach((v, i) => {
+      if (finite(v) && (best < 0 || dir * (v - values[best]) > 0)) best = i;
+    });
+    return best;
+  }
+  const mean = (a) => {
+    const f = a.filter(finite);
+    return f.length ? f.reduce((s, v) => s + v, 0) / f.length : NaN;
+  };
+  /** "5 March" from "2025-03-05". */
+  function day(label) {
+    const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(String(label));
+    if (!m) return String(label);
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${+m[3]} ${months[+m[2] - 1]}`;
+  }
+
+  // ------------------------------------------------------------------ facts from the data
+  /** Facts read from the source that is playing (each returns plain sentences). */
+  const FACTS = {
+    shape(src) {
+      const c = src.channels[0];
+      return [`${plural(c.values.length, 'value')} from ${c.values[0]} to ${c.values[c.values.length - 1]}, one eighth note each.`, 'Bigger value = higher note. Smaller value = lower note.'];
+    },
+
+    warming(src) {
+      const c = src.channels[0];
+      const years = src.labels.map(Number);
+      const out = [];
+      const top = argBest(c.values, 1);
+      if (top >= 0) out.push(`Warmest year in the record: ${years[top]}, ${signed(c.values[top])} °C compared with the 1951–1980 average.`);
+      const ranked = c.values.map((v, i) => [v, years[i]]).filter((p) => finite(p[0])).sort((a, b) => b[0] - a[0]);
+      if (ranked.length >= 20) {
+        const since = Math.min(...ranked.slice(0, 10).map((p) => p[1]));
+        out.push(`All ten warmest years came in ${since} or later.`);
+      }
+      if (c.values.length >= 40) {
+        const early = mean(c.values.slice(0, 30));
+        const late = mean(c.values.slice(-10));
+        out.push(`${years[0]}–${years[29]} averaged ${signed(early)} °C; the last ten years averaged ${signed(late)} °C. That is about ${(late - early).toFixed(1)} °C warmer.`);
+      }
+      return out;
+    },
+
+    /** `global` is the GISTEMP source, used to compare the trend over the same years. */
+    arctic(src, { global } = {}) {
+      const c = src.channels[0];
+      const years = src.labels.map(Number);
+      const out = [];
+      const t = stats.linearTrend(c.values, years);
+      if (t.n >= 10) out.push(`Svalbard warmed by about ${(t.slope * 10).toFixed(2)} °C per decade from ${years[0]} to ${years[years.length - 1]}.`);
+      if (global && t.n >= 10) {
+        const gy = global.labels.map(Number);
+        const gv = global.channels[0].values.filter((_, i) => gy[i] >= years[0] && gy[i] <= years[years.length - 1]);
+        const g = stats.linearTrend(gv, gy.filter((y) => y >= years[0] && y <= years[years.length - 1]));
+        if (g.slope > 0) out.push(`The whole planet warmed by ${(g.slope * 10).toFixed(2)} °C per decade over the same years, so this Arctic place warmed about ${(t.slope / g.slope).toFixed(1)} times faster.`);
+      }
+      const hi = argBest(c.values, 1);
+      const lo = argBest(c.values, -1);
+      if (hi >= 0 && lo >= 0) out.push(`Coldest year ${years[lo]} (${n1(c.values[lo])} °C), warmest year ${years[hi]} (${n1(c.values[hi])} °C).`);
+      return out;
+    },
+
+    polar(src) {
+      const out = [];
+      const sun = channel(src, /sun/i);
+      const temp = channel(src, /^mean/i) || src.channels[0];
+      if (sun) {
+        const dark = sun.values.filter((v) => v === 0).length;
+        if (dark) out.push(`${plural(dark, 'day')} of the year had no measurable sunlight at the ground: the polar night and its dark twilight.`);
+        const top = argBest(sun.values, 1);
+        if (top >= 0) out.push(`Brightest day: ${day(src.labels[top])}, ${sun.values[top].toFixed(1)} ${sun.unit}.`);
+      }
+      const lo = argBest(temp.values, -1);
+      const hi = argBest(temp.values, 1);
+      if (lo >= 0 && hi >= 0) out.push(`Coldest day ${day(src.labels[lo])} (${n1(temp.values[lo])} °C), warmest day ${day(src.labels[hi])} (${n1(temp.values[hi])} °C).`);
+      return out;
+    },
+
+    quakes(src) {
+      const c = src.channels[0];
+      const out = [`${plural(c.values.length, 'earthquake')} in “${src.name}”, played from west to east.`];
+      const mags = c.loudBy || [];
+      const top = argBest(mags, 1);
+      if (top >= 0) out.push(`Strongest: ${String(src.details?.[top] || 'M' + mags[top]).split(' · ').slice(0, 2).join(', ')}.`);
+      const depths = (src.points || []).map((p) => p.depth);
+      const deep = argBest(depths, 1);
+      if (deep >= 0) out.push(`Deepest: ${Math.round(depths[deep])} km below the surface (${String(src.details?.[deep] || '').split(' · ')[1] || src.labels[deep]}). Deep quakes sit lower in 3D sound.`);
+      return out;
+    },
+
+    events(src) {
+      const counts = src.channels
+        .map((c) => [c.name, c.values.filter(finite).length])
+        .filter((p) => p[1] > 0)
+        .sort((a, b) => b[1] - a[1]);
+      const total = counts.reduce((s, p) => s + p[1], 0);
+      const out = [`${plural(total, 'natural event')} in ${plural(counts.length, 'kind')}: ${counts.map(([n, k]) => `${k} ${n.toLowerCase()}`).join(', ')}.`];
+      if (counts.length) out.push(`The busiest voice is ${counts[0][0].toLowerCase()}. Solo it (S) in Channels to hear only that kind.`);
+      return out;
+    },
+
+    forests(src) {
+      const out = [];
+      const h = channel(src, /height/i);
+      const land = channel(src, /land/i);
+      if (h) {
+        const top = argBest(h.values, 1);
+        if (top >= 0) out.push(`The forest height shown peaks at about ${h.values[top].toFixed(1)} m (averaged over the land in view), ${src.labels[top]} into the video.`);
+      }
+      if (land) {
+        const top = argBest(land.values, 1);
+        if (top >= 0) out.push(`At most ${Math.round(land.values[top])}% of the picture showed land with forest data.`);
+      }
+      out.push('Heights are what the visualisation shows through its colour bar (0–50 m), not new measurements.');
+      return out;
+    },
+
+    breath(src) {
+      const out = [];
+      const co2 = channel(src, /co/i);
+      const area = channel(src, /area/i);
+      if (co2) {
+        const lo = argBest(co2.values, -1);
+        const hi = argBest(co2.values, 1);
+        if (lo >= 0 && hi >= 0) out.push(`CO₂ shown ranged from ${co2.values[lo].toFixed(0)} to ${co2.values[hi].toFixed(0)} ppm; the peak came at ${src.labels[hi]}.`);
+      }
+      if (area) {
+        const hi = argBest(area.values, 1);
+        if (hi >= 0) out.push(`At most ${Math.round(area.values[hi])}% of the globe in view was above ~420 ppm.`);
+      }
+      out.push('Values are from a NASA model shown through its colour bar, not new measurements.');
+      return out;
+    },
+  };
+
+  // ------------------------------------------------------------------ the chapters
+  /**
+   * scene: { mode, src, settings?, unmute? } — what the studio loads for this chapter.
+   * mood: Bitty's face. listen: what to listen for. facts: a key of FACTS.
+   */
+  const CHAPTERS = [
+    {
+      id: 'listen',
+      kicker: 'Prologue',
+      title: 'A silent planet',
+      mood: 'excited',
+      scene: { mode: 'data', src: 'rising', settings: { length: 0, drone: 'off' } },
+      text: 'Woof! I’m Bitty, a space pup with very good ears. From orbit I can see everything Earth’s satellites measure, but numbers make no sound. Bit2Beat gives every number a note: the bigger the number, the higher the note. Let’s warm up with a line that only goes up.',
+      listen: 'The melody climbs step by step from the first note to the last, just like the line.',
+      facts: 'shape',
+    },
+    {
+      id: 'warming',
+      kicker: 'Chapter 1 · Climate',
+      title: 'A warming century',
+      mood: 'curious',
+      scene: { mode: 'data', src: 'gistemp', settings: { length: 0, drone: 'baseline' } },
+      text: 'Since 1880, NASA scientists have worked out how warm each year was compared with a “normal” from 1951 to 1980. I switched on a quiet reference tone at that normal. Notes below it were cooler years, notes above it were warmer ones. Listen to how the second half of the song stops coming back down.',
+      listen: 'For decades the melody wanders around the reference tone. Then it climbs above it and stays there.',
+      facts: 'warming',
+    },
+    {
+      id: 'arctic',
+      kicker: 'Chapter 2 · The Arctic',
+      title: 'The Arctic runs a fever',
+      mood: 'curious',
+      scene: { mode: 'data', src: 'arcticAnnual', settings: { length: 0, drone: 'mean' } },
+      text: 'This is Svalbard, a group of islands far north of Norway, closer to the North Pole than to Oslo. NASA POWER gives one average temperature for each year. Snow and ice reflect sunlight back to space; when they melt, darker land and sea soak up more heat. That is one reason the Arctic warms faster than the rest of the planet.',
+      listen: 'The reference tone is the average of all these years. Early years sit below it, recent years jump above it.',
+      facts: 'arctic',
+    },
+    {
+      id: 'polar',
+      kicker: 'Chapter 3 · The Arctic',
+      title: 'Polar night, midnight sun',
+      mood: 'happy',
+      scene: { mode: 'data', src: 'arcticDaily', settings: { length: 120, drone: 'off' }, unmute: ['Sunlight'] },
+      text: 'Now every day of 2025 in Svalbard, squeezed into 120 steps. Two voices sing together: the temperature, and the sunlight reaching the ground. In winter the Sun never rises there. In summer it never sets.',
+      listen: 'The sunlight voice stays on its lowest note for weeks at the start and the end, then rises into a long, high summer.',
+      facts: 'polar',
+    },
+    {
+      id: 'quakes',
+      kicker: 'Chapter 4 · Earthquakes',
+      title: 'The restless ring',
+      mood: 'excited',
+      scene: { mode: 'earth', src: 'quakes', settings: { spacing: 'time' } },
+      text: 'Earth’s outer shell is cracked into giant plates that slowly grind past each other. When they slip, the ground shakes. I sweep across the world map from west to east, like reading a page. Each quake is one note: further north sounds higher, stronger quakes play louder. “Map distance” keeps the real gaps, so busy places sound busy and empty oceans go quiet.',
+      listen: 'Bursts of notes at both ends of the sweep and along the Americas: the rim of the Pacific Ocean, called the Ring of Fire.',
+      facts: 'quakes',
+    },
+    {
+      id: 'events',
+      kicker: 'Chapter 5 · Natural events',
+      title: 'Fire, flood and ice',
+      mood: 'curious',
+      scene: { mode: 'earth', src: 'eonet', settings: { spacing: 'even' } },
+      text: 'NASA’s Earth Observatory keeps a list of natural events seen from space: wildfires, storms, floods, icebergs and volcanoes. Every kind of event has its own instrument, so you can follow them with your eyes closed. Louder notes are bigger events: larger fires, stronger winds, bigger icebergs.',
+      listen: 'Follow one instrument at a time. Each kind of event keeps the same sound all the way across the map.',
+      facts: 'events',
+    },
+    {
+      id: 'forests',
+      kicker: 'Chapter 6 · Forests',
+      title: 'Forests measured by laser',
+      mood: 'happy',
+      scene: { mode: 'video', src: 'gedi' },
+      text: 'GEDI is a laser instrument on the International Space Station. It times how long its light takes to bounce back from the treetops and from the ground, and that tells it how tall the forest is. Bit2Beat reads this NASA animation through its own colour bar, so the notes follow forest height, not just colour. Watch the globe turn while you listen.',
+      listen: 'The melody rises as the rainforests of the Amazon, the Congo and South-East Asia turn into view.',
+      facts: 'forests',
+    },
+    {
+      id: 'breath',
+      kicker: 'Chapter 7 · Air',
+      title: 'The planet breathes',
+      mood: 'curious',
+      scene: { mode: 'video', src: 'co2' },
+      text: 'Carbon dioxide is invisible, but this NASA computer model shows it, from January to March 2020. Plumes rise from cities, industry and fires and the wind carries them around the world. Carbon dioxide traps heat, which brings us back to the warming you heard in Chapter 1.',
+      listen: 'The tone rises and the second voice grows louder as thick plumes over East Asia and fire regions swing into view.',
+      facts: 'breath',
+    },
+  ];
+
+  const FINALE = {
+    id: 'finale',
+    kicker: 'Epilogue',
+    title: 'Your turn',
+    mood: 'joy',
+    text: 'You heard a warming century, a fevered Arctic, a restless crust, a planet that burns, floods and freezes, its forests and its breath. Now it is your turn: open the studio and listen to anything with numbers, from a school weather station to a river gauge, or a picture of your own.',
+  };
+
+  const byId = Object.fromEntries(CHAPTERS.map((c) => [c.id, c]));
+
+  /** Facts for a chapter, read from the source that is (or will be) playing. Never throws. */
+  function factsFor(id, src, extra) {
+    const ch = byId[id];
+    if (!ch || !src || !src.channels?.length) return [];
+    try {
+      return FACTS[ch.facts](src, extra || {}).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
+  /** Which chapter is the studio showing now (mode + source id), if any. */
+  function chapterFor(mode, srcId) {
+    return CHAPTERS.find((c) => c.scene.mode === mode && c.scene.src === srcId) || null;
+  }
+
+  /** Progress text for the badge: how many chapters have been heard. */
+  function progress(heard) {
+    const n = CHAPTERS.filter((c) => heard && heard[c.id]).length;
+    return { n, total: CHAPTERS.length, done: n === CHAPTERS.length };
+  }
+
+  return { CHAPTERS, FINALE, FACTS, factsFor, chapterFor, progress, day };
+});
+
+</script>
+<script>/* src/js/core/spotlight.js */
+/**
+ * Bit2Beat core · geometry for Bitty's guided tour.
+ * Where the speech bubble goes so it sits beside the highlighted control without leaving the
+ * screen, and the four dimmed rectangles around the highlight. Pure functions, tested in Node.
+ */
+(function (root, factory) {
+  const mod = factory();
+  if (typeof module === 'object' && module.exports) module.exports = mod;
+  else (root.Bit2Beat = root.Bit2Beat || {}).spotlight = mod;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+
+  /**
+   * @param {{left,top,right,bottom,width,height}|null} rect  the highlighted area (null = centred card)
+   * @param {{w,h}} size  bubble size
+   * @param {{w,h,top?,bottom?}} vp  viewport, with optional free band between fixed bars
+   * @returns {{x,y,placement}}
+   */
+  function placeBubble(rect, size, vp, { gap = 16, margin = 12, narrow = 640 } = {}) {
+    const { w, h } = size;
+    const top = Math.max(margin, vp.top ?? margin);
+    const bottom = Math.min(vp.h - margin, vp.bottom ?? vp.h - margin);
+    if (!rect) return { x: Math.round(Math.max(margin, (vp.w - w) / 2)), y: Math.round(Math.max(margin, (vp.h - h) / 2)), placement: 'center' };
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    if (vp.w <= narrow) {
+      // phones: dock at the top or bottom, away from the highlight
+      const up = cy > vp.h / 2;
+      return { x: margin, y: Math.round(up ? top : Math.max(top, bottom - h)), placement: up ? 'dock-top' : 'dock-bottom' };
+    }
+    const at = {
+      bottom: () => ({ x: clamp(cx - w / 2, margin, vp.w - w - margin), y: rect.bottom + gap }),
+      top: () => ({ x: clamp(cx - w / 2, margin, vp.w - w - margin), y: rect.top - gap - h }),
+      right: () => ({ x: rect.right + gap, y: clamp(cy - h / 2, top, bottom - h) }),
+      left: () => ({ x: rect.left - gap - w, y: clamp(cy - h / 2, top, bottom - h) }),
+    };
+    const fits = (a) => a.x >= margin - 0.5 && a.y >= top - 0.5 && a.x + w <= vp.w - margin + 0.5 && a.y + h <= bottom + 0.5;
+    for (const p of ['bottom', 'top', 'right', 'left']) {
+      const a = at[p]();
+      if (fits(a)) return { x: Math.round(a.x), y: Math.round(a.y), placement: p };
+    }
+    // nothing fits beside a very large area: the corner with the most room
+    const x = rect.left > vp.w - rect.right ? margin : vp.w - w - margin;
+    return { x: Math.round(Math.max(margin, x)), y: Math.round(Math.max(top, bottom - h)), placement: 'corner' };
+  }
+
+  /** The four dimmed rectangles [x, y, w, h] around a hole {x, y, w, h}; the hole stays clear. */
+  function dimRects(hole, vp) {
+    if (!hole) return { t: [0, 0, vp.w, vp.h], b: [0, 0, 0, 0], l: [0, 0, 0, 0], r: [0, 0, 0, 0] };
+    const x = clamp(hole.x, 0, vp.w);
+    const y = clamp(hole.y, 0, vp.h);
+    const x2 = clamp(hole.x + hole.w, 0, vp.w);
+    const y2 = clamp(hole.y + hole.h, 0, vp.h);
+    return { t: [0, 0, vp.w, y], b: [0, y2, vp.w, vp.h - y2], l: [0, y, x, y2 - y], r: [x2, y, vp.w - x2, y2 - y] };
+  }
+
+  return { placeBubble, dimRects, clamp };
+});
+
+</script>
 <script>/* src/js/data/presets.js */
 /**
  * Bit2Beat · built-in data sets for the Data tab.
@@ -6341,6 +7483,74 @@ THE SOFTWARE.
 })(typeof self !== 'undefined' ? self : this);
 
 </script>
+<script>/* src/js/ui/bitty-art.js */
+/**
+ * Bit2Beat ui · Bitty, the space pup (original inline SVG artwork).
+ * Four moods (happy, excited, curious, joy) share one body; the tail wags, the ears and
+ * headphones move with CSS and every animation stops with Reduce motion. Also the
+ * “Earth Listener” badge for finishing the story. Strings only, so it also loads in Node.
+ */
+(function (root, factory) {
+  const mod = factory();
+  if (typeof module === 'object' && module.exports) module.exports = mod;
+  else (root.Bit2Beat = root.Bit2Beat || {}).bittyArt = mod;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  const INK = '#17243b';
+  const EYES = {
+    happy: `<g class="bt-eyes" fill="${INK}"><ellipse cx="56" cy="59" rx="4" ry="5"/><ellipse cx="98" cy="59" rx="4" ry="5"/></g>`,
+    excited: `<g class="bt-eyes" fill="${INK}"><ellipse cx="56" cy="58" rx="5" ry="6.5"/><ellipse cx="98" cy="58" rx="5" ry="6.5"/><circle cx="58" cy="55.5" r="1.9" fill="#fff"/><circle cx="100" cy="55.5" r="1.9" fill="#fff"/></g>`,
+    curious: `<g class="bt-eyes" fill="${INK}"><ellipse cx="56" cy="60" rx="4" ry="5"/><ellipse cx="98" cy="58" rx="5" ry="6.5"/><circle cx="100" cy="55.5" r="1.8" fill="#fff"/></g><path d="M89 47 Q98 41 107 47" fill="none" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/>`,
+    joy: `<g class="bt-eyes" fill="none" stroke="${INK}" stroke-width="3.4" stroke-linecap="round"><path d="M49 62 Q56 52 63 62"/><path d="M91 62 Q98 52 105 62"/></g>`,
+  };
+  const MOUTH = {
+    happy: `<path d="M77 79 V85 M77 85 Q69 90 65 84 M77 85 Q85 90 89 84" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linecap="round"/>`,
+    open: `<path d="M77 79 V84" stroke="${INK}" stroke-width="2.5" stroke-linecap="round"/><path d="M64 84 Q77 106 90 84 Q77 89 64 84Z" fill="#7b2d3d" stroke="${INK}" stroke-width="2.3" stroke-linejoin="round"/><path d="M71 94 Q77 102 83 94 Q77 90 71 94Z" fill="#e58a96"/>`,
+    curious: `<path d="M77 79 V84" stroke="${INK}" stroke-width="2.5" stroke-linecap="round"/><ellipse cx="77" cy="89" rx="4.6" ry="4" fill="#7b2d3d" stroke="${INK}" stroke-width="2.2"/>`,
+  };
+  const MOODS = {
+    happy: { eyes: EYES.happy, mouth: MOUTH.happy },
+    excited: { eyes: EYES.excited, mouth: MOUTH.open },
+    curious: { eyes: EYES.curious, mouth: MOUTH.curious, tilt: true },
+    joy: { eyes: EYES.joy, mouth: MOUTH.open },
+  };
+
+  /** Bitty as an SVG string. `cls` adds classes (for size). */
+  function dog(mood = 'happy', cls = '') {
+    const key = mood in MOODS ? mood : 'happy';
+    const m = MOODS[key];
+    return `<svg viewBox="0 0 160 145" class="bitty mood-${key} ${cls}" aria-hidden="true" focusable="false">
+<g class="bt-tail"><path d="M112 105 Q149 109 139 80" fill="none" stroke="#b87c38" stroke-width="15" stroke-linecap="round"/><path d="M139 80 Q138 74 135 71" fill="none" stroke="#f0dfbd" stroke-width="15" stroke-linecap="round"/></g>
+<path d="M48 101 Q45 75 78 76 Q111 77 115 108 L113 127 H47Z" fill="#d5a866" stroke="${INK}" stroke-width="2.5"/>
+<path d="M71 91 Q92 85 96 121 H67Z" fill="#f5e8cf"/>
+<path d="M50 111 V133 H67 V114 M96 114 V133 H114 V111" fill="#d5a866" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>
+<g class="bt-head${m.tilt ? ' bt-tilt' : ''}">
+<path class="bt-ear bt-ear-l" d="M46 43 Q18 27 24 65 Q28 84 44 68Z" fill="#9b6837" stroke="${INK}" stroke-width="2.5"/>
+<path class="bt-ear bt-ear-r" d="M107 43 Q134 30 127 66 Q123 82 109 68Z" fill="#9b6837" stroke="${INK}" stroke-width="2.5"/>
+<path d="M40 49 Q41 22 77 24 Q112 23 114 52 L114 72 Q110 96 77 97 Q42 96 39 73Z" fill="#dab376" stroke="${INK}" stroke-width="2.5"/>
+<path d="M66 25 Q76 23 85 25 L90 73 H63Z" fill="#f5e8cf"/>
+<ellipse cx="77" cy="77" rx="26" ry="17" fill="#f5e8cf"/>
+${m.eyes}
+<path d="M70 70 Q77 66 84 70 Q84 78 77 79 Q70 77 70 70Z" fill="${INK}"/>
+${m.mouth}
+<path d="M37 57 Q34 17 77 17 Q120 17 117 57" fill="none" stroke="#14213d" stroke-width="6.5" stroke-linecap="round"/>
+<rect x="27" y="43" width="16" height="29" rx="8" fill="#e8a33d" stroke="${INK}" stroke-width="2.5"/>
+<rect x="111" y="43" width="16" height="29" rx="8" fill="#e8a33d" stroke="${INK}" stroke-width="2.5"/>
+<path d="M32 51v13M122 51v13" stroke="${INK}" stroke-width="2.2" stroke-linecap="round" opacity=".55"/>
+</g>
+<path d="M51 95 Q78 107 105 95" fill="none" stroke="#14213d" stroke-width="9"/><rect x="71" y="98" width="14" height="17" rx="3" fill="#e8a33d" stroke="${INK}" stroke-width="2"/><path d="M75 103h5m-5 4h5" stroke="${INK}" stroke-width="2"/>
+</svg>`;
+  }
+
+  /** The “Earth Listener” badge; `earned` false draws it as an outline still to win. */
+  function badge(earned = true) {
+    return `<svg viewBox="0 0 120 120" class="bt-badge${earned ? '' : ' is-locked'}" role="img" aria-label="Earth Listener badge${earned ? '' : ' (not yet earned)'}"><circle cx="60" cy="60" r="56" fill="#14213d"/><circle cx="60" cy="60" r="50" fill="none" stroke="#e8a33d" stroke-width="2.5" stroke-dasharray="3 5"/><circle cx="60" cy="52" r="19" fill="#488477"/><path d="M47 47c6-6 12-3 15 2s9 4 11 10c-6 9-22 9-28-1-2-4 0-8 2-11Z" fill="#6595c7"/><ellipse cx="60" cy="52" rx="29" ry="7.5" fill="none" stroke="#e8a33d" stroke-width="2.5" transform="rotate(-18 60 52)"/><text x="60" y="88" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="8.5" font-weight="600" letter-spacing="1.4" fill="#f6f1e7">EARTH</text><text x="60" y="99" text-anchor="middle" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="8.5" font-weight="600" letter-spacing="1.4" fill="#f6f1e7">LISTENER</text></svg>`;
+  }
+
+  return { dog, badge, MOODS: Object.keys(MOODS) };
+});
+
+</script>
 <script>/* src/js/ui/bitpet.js */
 /**
  * Bit2Beat ui · BitPet, a small companion with short notes from the NASA Image and Video Library.
@@ -6352,7 +7562,6 @@ THE SOFTWARE.
   'use strict';
   const B = root.Bit2Beat;
   const { $, storage } = B.dom;
-  const DOG = '<svg viewBox="0 0 160 145" class="dog" aria-hidden="true"><g class="pet-tail"><path d="M112 105 Q149 109 139 80" fill="none" stroke="#b87c38" stroke-width="15" stroke-linecap="round"/><path d="M139 80 Q138 74 135 71" fill="none" stroke="#f0dfbd" stroke-width="15" stroke-linecap="round"/></g><path d="M48 101 Q45 75 78 76 Q111 77 115 108 L113 127 H47Z" fill="#d5a866" stroke="#17243b" stroke-width="2.5"/><path d="M71 91 Q92 85 96 121 H67Z" fill="#f5e8cf"/><path d="M50 111 V133 H67 V114 M96 114 V133 H114 V111" fill="#d5a866" stroke="#17243b" stroke-width="2.5" stroke-linejoin="round"/><g class="pet-head"><path class="pet-ear left" d="M46 43 Q18 27 24 65 Q28 84 44 68Z" fill="#9b6837" stroke="#17243b" stroke-width="2.5"/><path class="pet-ear right" d="M107 43 Q134 30 127 66 Q123 82 109 68Z" fill="#9b6837" stroke="#17243b" stroke-width="2.5"/><path d="M40 49 Q41 22 77 24 Q112 23 114 52 L114 72 Q110 96 77 97 Q42 96 39 73Z" fill="#dab376" stroke="#17243b" stroke-width="2.5"/><path d="M66 25 Q76 23 85 25 L90 73 H63Z" fill="#f5e8cf"/><ellipse cx="77" cy="77" rx="26" ry="17" fill="#f5e8cf"/><g class="pet-eyes" fill="#17243b"><ellipse cx="56" cy="59" rx="4" ry="5"/><ellipse cx="98" cy="59" rx="4" ry="5"/></g><path d="M70 70 Q77 66 84 70 Q84 78 77 79 Q70 77 70 70Z" fill="#17243b"/><path d="M77 79 V85 M77 85 Q69 90 65 84 M77 85 Q85 90 89 84" fill="none" stroke="#17243b" stroke-width="2.5" stroke-linecap="round"/></g><path d="M51 95 Q78 107 105 95" fill="none" stroke="#14213d" stroke-width="9"/><rect x="71" y="98" width="14" height="17" rx="3" fill="#e8a33d" stroke="#17243b" stroke-width="2"/><path d="M75 103h5m-5 4h5" stroke="#17243b" stroke-width="2"/></svg>';
   const ROTATE_MS = 20000;
   const ABBR = /(?:\b(?:Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|Mr|Dr|St|Mt|No|vs|approx|U\.S|a\.m|p\.m|[A-Z]))$/;
 
@@ -6387,7 +7596,7 @@ THE SOFTWARE.
     let timer = 0;
     let paused = false;
     const fetched = new Set();
-    $('petFace').innerHTML = DOG;
+    $('petFace').innerHTML = B.bittyArt.dog('happy', 'dog');
 
     const ordered = () => [...pool.filter((n) => n.topic === topic), ...pool.filter((n) => n.topic !== topic)];
     let list = ordered();
@@ -7512,7 +8721,9 @@ THE SOFTWARE.
     const q = new URLSearchParams(search);
     const out = { settings: {}, audio: {}, image: {}, earth: {} };
     const has = (k) => q.has(k) && q.get(k) !== '';
-    if (has('page')) out.page = oneOf(q.get('page'), ['studio', 'about']);
+    if (has('page')) out.page = oneOf(q.get('page'), ['studio', 'story', 'about']);
+    if (q.has('tour')) out.tour = true;
+    if (q.has('notour')) out.tour = false;
     if (has('mode')) out.mode = oneOf(q.get('mode'), MODES);
     if (has('src')) out.choice = q.get('src').slice(0, 40);
     if (has('t')) out.position = num(q.get('t'), 0, 1e6) | 0;
@@ -7565,7 +8776,7 @@ THE SOFTWARE.
     const st = app.state;
     const D = B.plan.DEFAULTS;
     const q = new URLSearchParams();
-    if (page === 'about') q.set('page', 'about');
+    if (page === 'about' || page === 'story') q.set('page', page);
     q.set('mode', st.mode);
     const choice = st.choice[st.mode];
     if (choice !== 'upload' && choice !== 'custom') q.set('src', choice);
@@ -7609,7 +8820,7 @@ THE SOFTWARE.
     const go = () => {
       last = Date.now();
       timer = 0;
-      const qs = query(app, page ?? (document.getElementById('about')?.hidden === false ? 'about' : 'studio'));
+      const qs = query(app, page ?? app.page?.() ?? 'studio');
       const url = `${location.pathname}${qs ? '?' + qs : ''}`;
       if (url !== location.pathname + location.search) {
         try {
@@ -7758,6 +8969,724 @@ THE SOFTWARE.
 })(typeof self !== 'undefined' ? self : this);
 
 </script>
+<script>/* src/js/ui/pages.js */
+/**
+ * Bit2Beat ui · the three pages: Studio, Story and About the team.
+ * Only one page is visible at a time; the player bar stays on Studio and Story (so you can follow
+ * a chapter while you read) and hides on About, which also pauses the sound.
+ */
+(function (root) {
+  'use strict';
+  const B = root.Bit2Beat;
+  const { $, $$ } = B.dom;
+  const PAGES = ['studio', 'story', 'about'];
+
+  /** Returns showPage(page). `redraw` repaints the studio canvases after it becomes visible. */
+  function init(app, redraw) {
+    let current = 'studio';
+    function showPage(page, { focus = true } = {}) {
+      if (!PAGES.includes(page)) page = 'studio';
+      const from = current;
+      current = page;
+      PAGES.forEach((p) => ($(p).hidden = p !== page));
+      document.querySelector('.transport').hidden = page === 'about';
+      document.documentElement.dataset.page = page;
+      $$('.topnav-link').forEach((b) => (b.dataset.page === page ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
+      if (page === 'about') app.player.pause();
+      if (focus) $(page).focus({ preventScroll: true });
+      if (from !== page) window.scrollTo(0, 0);
+      if (page === 'studio') requestAnimationFrame(redraw);
+      if (page === 'story') B.storyView?.show();
+      root.dispatchEvent(new CustomEvent('b2b:page', { detail: { page, from } }));
+      B.urlState.write(app, page);
+    }
+    $$('[data-page]').forEach((b) => b.addEventListener('click', () => showPage(b.dataset.page)));
+    app.page = () => current;
+    return showPage;
+  }
+
+  B.pages = { init, PAGES };
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>/* src/js/ui/story-view.js */
+/**
+ * Bit2Beat ui · the Story page: “Bitty listens to Earth”.
+ * Each chapter loads a real source into the studio (same player, same plan, same exports), so
+ * what the story plays is exactly what the studio plays. Facts are worked out from the numbers
+ * being heard (core/story.js). “Play the whole story” moves on by itself when a chapter ends, and
+ * Bitty can read each chapter aloud first. Chapters heard are remembered in this browser.
+ */
+(function (root) {
+  'use strict';
+  const B = root.Bit2Beat;
+  const { $, el, storage, fitCanvas, cssVar, announce, toast } = B.dom;
+  const { CHAPTERS, FINALE } = B.story;
+  const KEY = 'b2b-story';
+  const INKS = ['--text', '--amber', '#4f7cab', '#a3402a', '#488477', '#8a5a12'];
+
+  function init(app) {
+    const st = app.state;
+    const saved = storage.get(KEY, {});
+    const heard = saved.heard || {};
+    let auto = false; // playing the whole story
+    let active = null; // chapter the studio is showing
+    let pendingPlay = null; // chapter waiting for narration to end
+    let raf = 0;
+    let firstShow = true;
+    const rows = {};
+    const previews = {};
+    const save = () => storage.set(KEY, { heard, narrate: $('storyNarrate').checked });
+
+    // ---------------------------------------------------------------- sources
+    /** The source a chapter plays: the studio's own if it is showing it, else an offline copy. */
+    function sourceFor(ch) {
+      if (isActive(ch) && app.src) return app.src;
+      if (previews[ch.id]) return previews[ch.id];
+      const { mode, src } = ch.scene;
+      try {
+        if (mode === 'data') previews[ch.id] = B.presets.DATA[src]();
+        else if (mode === 'earth') previews[ch.id] = B.sources.earthOffline(src, src === 'quakes' ? st.earth.quakeFeed : st.earth.eonetDays);
+        else if (mode === 'video') previews[ch.id] = B.nasaMedia[src].source;
+      } catch {
+        previews[ch.id] = null;
+      }
+      return previews[ch.id];
+    }
+    const isActive = (ch) => st.mode === ch.scene.mode && st.choice[ch.scene.mode] === ch.scene.src;
+    const global = () => sourceFor(CHAPTERS.find((c) => c.id === 'warming'));
+
+    // ---------------------------------------------------------------- page
+    $('storyDog').innerHTML = B.bittyArt.dog('excited', 'bitty-hero');
+    $('storyNarrate').checked = !!saved.narrate;
+    $('storyNarrate').onchange = save;
+    if (!('speechSynthesis' in root)) $('storyNarrate').closest('label').hidden = true;
+
+    CHAPTERS.forEach((ch, i) => {
+      const facts = el('ul', { class: 'chapter-facts' });
+      const spark = el('canvas', { class: 'chapter-spark', height: '72', role: 'img', 'aria-label': `Shape of the data in “${ch.title}”` });
+      const status = el('span', { class: 'chapter-status', role: 'status' });
+      const listen = el('button', { type: 'button', class: 'btn btn-primary chapter-play', onclick: () => toggle(ch) }, el('span', { class: 'chapter-play-icon', 'aria-hidden': 'true' }), el('span', { class: 'chapter-play-label', text: 'Listen' }));
+      const open = el('button', { type: 'button', class: 'btn btn-quiet', onclick: () => openInStudio(ch) }, 'Open in the studio');
+      const origin = el('p', { class: 'chapter-origin' });
+      const thumb = ch.scene.mode === 'video' ? el('img', { class: 'chapter-thumb', alt: '', src: B.assets?.[ch.scene.src + 'Image'] || `assets/nasa/${ch.scene.src}.jpg`, loading: 'lazy' }) : null;
+      const li = el(
+        'li',
+        { class: 'chapter', id: 'ch-' + ch.id, 'data-state': 'idle', 'aria-labelledby': `ch-${ch.id}-title` },
+        el('span', { class: 'chapter-node', 'aria-hidden': 'true' }),
+        el(
+          'article',
+          { class: 'chapter-card' },
+          el('header', {}, el('p', { class: 'chapter-kicker', text: ch.kicker }), el('h2', { id: `ch-${ch.id}-title`, text: ch.title }), el('span', { class: 'chapter-heard', text: 'Heard' })),
+          el(
+            'div',
+            { class: 'chapter-body' },
+            el('div', { class: 'chapter-say' }, el('div', { class: 'chapter-dog' }), el('p', { class: 'chapter-bubble', text: ch.text })),
+            el(
+              'div',
+              { class: 'chapter-side' },
+              thumb,
+              spark,
+              el('p', { class: 'chapter-listen' }, el('b', { text: 'Listen for: ' }), ch.listen),
+              el('h3', { text: 'From the data' }),
+              facts,
+              origin,
+            ),
+          ),
+          el('div', { class: 'chapter-actions' }, listen, open, status),
+        ),
+      );
+      li.querySelector('.chapter-dog').innerHTML = B.bittyArt.dog(ch.mood);
+      $('storyChapters').append(li);
+      rows[ch.id] = { li, facts, spark, status, listen, origin, i };
+    });
+
+    $('finaleText').textContent = FINALE.text;
+    $('finaleStudio').onclick = () => app.showPage('studio');
+    $('finaleCsv').onclick = () => {
+      app.showPage('studio');
+      if (st.mode !== 'data') $('tab-data').click();
+      $('uploadBtn').click();
+    };
+    $('finaleTour').onclick = () => B.tour.start();
+    $('finaleDog').innerHTML = B.bittyArt.dog('joy');
+
+    // ---------------------------------------------------------------- drawing
+    function renderFacts(ch) {
+      const r = rows[ch.id];
+      const src = sourceFor(ch);
+      const list = B.story.factsFor(ch.id, src, { global: global() });
+      r.facts.replaceChildren(...list.map((f) => el('li', { text: f })));
+      const o = src?.origin;
+      r.origin.textContent = o ? `${o.source}${o.fetched ? ' · ' + String(o.fetched).slice(0, 10) : ''}${o.live ? ' · live' : o.cached ? ' · saved copy' : ''}` : '';
+    }
+
+    function drawSpark(ch) {
+      const r = rows[ch.id];
+      const src = sourceFor(ch);
+      if (!src || !r.spark.clientWidth) return;
+      const { g, w, h } = fitCanvas(r.spark, 72);
+      g.clearRect(0, 0, w, h);
+      const col = (k) => (k.startsWith('--') ? cssVar(k) : k);
+      const unmute = ch.scene.unmute || [];
+      const earth = src.kind === 'earth';
+      const chans = src.channels.filter((c) => earth || !c.mute || unmute.some((n) => c.name.startsWith(n))).slice(0, earth ? 6 : 2);
+      const pad = 6;
+      g.strokeStyle = col('--grid');
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(0, h / 2 + 0.5);
+      g.lineTo(w, h / 2 + 0.5);
+      g.stroke();
+      chans.forEach((c, k) => {
+        const v = c.values;
+        const f = v.filter(Number.isFinite);
+        const lo = earth ? -90 : Math.min(...f);
+        const hi = earth ? 90 : Math.max(...f);
+        const y = (x) => h - pad - ((x - lo) / (hi - lo || 1)) * (h - pad * 2);
+        const x = (i) => (v.length < 2 ? w / 2 : (i / (v.length - 1)) * (w - 4) + 2);
+        g.fillStyle = g.strokeStyle = col(INKS[k % INKS.length]);
+        if (earth) {
+          v.forEach((val, i) => Number.isFinite(val) && g.fillRect(x(i) - 1.5, y(val) - 1.5, 3, 3));
+        } else {
+          g.lineWidth = k ? 1.5 : 2;
+          g.beginPath();
+          let pen = false;
+          v.forEach((val, i) => {
+            if (!Number.isFinite(val)) return (pen = false);
+            pen ? g.lineTo(x(i), y(val)) : g.moveTo(x(i), y(val));
+            pen = true;
+          });
+          g.stroke();
+        }
+      });
+      // playhead for the chapter that is in the studio
+      if (isActive(ch) && app.plan?.count > 1 && (st.position > 0 || app.player.playing)) {
+        const px = (Math.min(st.position, app.plan.count - 1) / (app.plan.count - 1)) * (w - 4) + 2;
+        g.fillStyle = col('--surface');
+        g.globalAlpha = 0.55;
+        g.fillRect(px, 0, w - px, h);
+        g.globalAlpha = 1;
+        g.fillStyle = col('--amber');
+        g.fillRect(px - 1, 0, 2, h);
+      }
+    }
+
+    function syncRows() {
+      const playing = app.player.playing;
+      active = CHAPTERS.find(isActive) || null;
+      CHAPTERS.forEach((ch) => {
+        const r = rows[ch.id];
+        const on = active === ch;
+        const state = pendingPlay === ch ? 'loading' : on && playing ? 'playing' : on ? 'ready' : 'idle';
+        r.li.dataset.state = state;
+        r.li.classList.toggle('is-heard', !!heard[ch.id]);
+        r.li.classList.toggle('is-current', on);
+        r.listen.querySelector('.chapter-play-label').textContent = state === 'playing' ? 'Pause' : state === 'loading' ? 'Bitty is reading…' : heard[ch.id] && !on ? 'Listen again' : 'Listen';
+        r.listen.setAttribute('aria-label', `${state === 'playing' ? 'Pause' : 'Listen to'} “${ch.title}”`);
+        r.status.textContent = on && app.plan ? `${app.plan.count} steps · ${B.music.seconds(app.plan.duration)}` : '';
+      });
+      const p = B.story.progress(heard);
+      $('storyProgress').replaceChildren(
+        el('span', { class: 'story-dots', 'aria-hidden': 'true' }, ...CHAPTERS.map((c) => el('i', { class: (heard[c.id] ? 'on' : '') + (active === c ? ' now' : '') }))),
+        el('span', { text: p.done ? 'All chapters heard. You earned the badge!' : `${p.n} of ${p.total} chapters heard` }),
+      );
+      $('storyPlayAll').textContent = auto ? 'Stop the story' : p.n && !p.done ? 'Continue the story' : 'Play the whole story';
+      $('storyPlayAll').setAttribute('aria-pressed', String(auto));
+      $('finaleBadge').innerHTML = B.bittyArt.badge(p.done) + `<p>${p.done ? 'Earth Listener: you heard every chapter.' : `Hear all ${p.total} chapters to earn this badge (${p.n}/${p.total}).`}</p>`;
+    }
+
+    function loop() {
+      raf = 0;
+      if (app.page?.() !== 'story') return;
+      if (active) {
+        drawSpark(active);
+        if (app.plan && st.position >= app.plan.count * 0.8 && !heard[active.id]) markHeard(active);
+      }
+      if (app.player.playing) raf = requestAnimationFrame(loop);
+    }
+
+    function markHeard(ch) {
+      if (heard[ch.id]) return;
+      heard[ch.id] = true;
+      save();
+      syncRows();
+      if (B.story.progress(heard).done) {
+        toast('You heard every chapter. Bitty gives you the Earth Listener badge!', 5000);
+        announce('All chapters heard. You earned the Earth Listener badge.');
+      }
+    }
+
+    // ---------------------------------------------------------------- playing
+    function speak(text, then) {
+      if (!$('storyNarrate').checked || !('speechSynthesis' in root)) return then();
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      let done = false;
+      const go = () => !done && ((done = true), then());
+      u.onend = go;
+      u.onerror = go;
+      speechSynthesis.speak(u);
+    }
+    const stopSpeech = () => 'speechSynthesis' in root && speechSynthesis.cancel();
+
+    /** Put the chapter's scene in the studio: tab, source, settings and audible channels. */
+    function load(ch) {
+      const { mode, src, settings, unmute } = ch.scene;
+      if (settings) Object.assign(st.settings, settings);
+      app.syncControls?.();
+      app.persist();
+      if (!isActive(ch) || !app.src) app.choose(mode, src);
+      else app.rebuild({ keepPosition: false });
+      if (unmute && app.src) {
+        app.src.channels.forEach((c, j) => unmute.some((n) => c.name.startsWith(n)) && st.mix[j] && (st.mix[j].mute = false));
+        app.rebuild();
+      }
+      app.seek(0);
+      renderFacts(ch);
+    }
+
+    function listen(ch) {
+      pendingPlay = ch; // set first: loading pauses the player, which must not stop the story
+      app.player.pause();
+      load(ch);
+      syncRows();
+      speak(`${ch.title}. ${ch.text} Listen for this: ${ch.listen}`, () => {
+        if (pendingPlay !== ch) return;
+        pendingPlay = null;
+        app.play();
+      });
+    }
+
+    function toggle(ch) {
+      if (pendingPlay === ch) {
+        pendingPlay = null;
+        stopSpeech();
+        auto = false;
+        return syncRows();
+      }
+      if (isActive(ch) && app.player.playing) {
+        auto = false;
+        return app.player.pause();
+      }
+      if (isActive(ch) && app.src && pendingPlay == null && st.position > 0) return app.play(); // resume
+      listen(ch);
+    }
+
+    function openInStudio(ch) {
+      auto = false;
+      stopSpeech();
+      pendingPlay = null;
+      if (!isActive(ch)) load(ch);
+      app.showPage('studio');
+    }
+
+    function playAll() {
+      if (auto) {
+        auto = false;
+        pendingPlay = null;
+        stopSpeech();
+        app.player.pause();
+        return syncRows();
+      }
+      auto = true;
+      if (st.audio.loop) $('loopBtn').click(); // a repeating chapter would never end
+      const next = CHAPTERS.find((c) => !heard[c.id]) || CHAPTERS[0];
+      go(next);
+    }
+
+    function go(ch) {
+      rows[ch.id].li.scrollIntoView({ behavior: st.prefs.reduceMotion ? 'auto' : 'smooth', block: 'center' });
+      listen(ch);
+    }
+
+    $('storyPlayAll').onclick = playAll;
+    $('storyTourBtn').onclick = () => B.tour.start();
+
+    root.addEventListener('b2b:play', (e) => {
+      const { playing, reason } = e.detail;
+      if (!playing && reason === 'finished' && active) {
+        markHeard(active);
+        if (auto) {
+          const i = CHAPTERS.indexOf(active);
+          const next = CHAPTERS[i + 1];
+          if (next) setTimeout(() => auto && go(next), 1200);
+          else {
+            auto = false;
+            $('storyFinale').scrollIntoView({ behavior: st.prefs.reduceMotion ? 'auto' : 'smooth', block: 'center' });
+            speak(`${FINALE.title}. ${FINALE.text}`, () => {});
+          }
+        }
+      } else if (!playing && reason !== 'finished' && !pendingPlay) auto = false;
+      syncRows();
+      if (playing && !raf) raf = requestAnimationFrame(loop);
+      if (!playing && active) drawSpark(active);
+    });
+    root.addEventListener('b2b:source', () => {
+      syncRows();
+      if (active) {
+        renderFacts(active);
+        if (app.page?.() === 'story') drawSpark(active);
+      }
+    });
+    root.addEventListener('b2b:page', (e) => {
+      if (e.detail.page !== 'story') {
+        auto = false;
+        if (pendingPlay) stopSpeech();
+        pendingPlay = null;
+      }
+    });
+    let resizeTimer = 0;
+    root.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => app.page?.() === 'story' && CHAPTERS.forEach(drawSpark), 150);
+    });
+
+    /** Called whenever the Story page becomes visible. */
+    function show() {
+      syncRows();
+      CHAPTERS.forEach((ch) => {
+        renderFacts(ch);
+        drawSpark(ch);
+      });
+      // after a refresh on the Story page, come back to the chapter that was playing
+      if (firstShow && active && /[?&]page=story/.test(root.location.search) && /[?&]t=\d/.test(root.location.search)) rows[active.id].li.scrollIntoView({ block: 'center' });
+      firstShow = false;
+      if (app.player.playing && !raf) raf = requestAnimationFrame(loop);
+    }
+
+    B.storyView.show = show;
+    syncRows();
+  }
+
+  B.storyView = { init, show: () => {} };
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>/* src/js/ui/tour.js */
+/**
+ * Bit2Beat ui · Bitty's guided tour of the studio.
+ * A spotlight walks through the real controls, one at a time. Some steps wait for you to try the
+ * control (press Play, switch to Earth events) and Bitty cheers when you do; “Do it for me” presses
+ * it for you. The tour only reads the page and presses the same buttons you would.
+ * First visit: a friendly hello (one click to skip). ?tour in the address replays it, ?notour
+ * hides it. Esc closes it; it steps aside while a dialog is open.
+ */
+(function (root) {
+  'use strict';
+  const B = root.Bit2Beat;
+  const { $, storage, toast } = B.dom;
+  const { placeBubble, dimRects, clamp } = B.spotlight;
+  const KEY = 'b2b-tour';
+
+  const section = (titleId) => `section[aria-labelledby="${titleId}"]`;
+  /** target: CSS selector (null = centred card). interactive: the highlighted control can be used.
+   *  action: what trying it means, so Bitty can notice. ensure: the tab to show first. */
+  const STEPS = [
+    {
+      id: 'hello',
+      mood: 'excited',
+      hero: true,
+      title: 'Woof! I’m Bitty.',
+      text: 'I’m a space pup with very good ears. Satellites send me Earth’s numbers, but numbers are silent, so Bit2Beat turns them into music. Want a quick look around the studio? It takes about a minute.',
+      primary: 'Show me around',
+      secondary: 'Read my story instead',
+    },
+    { id: 'tabs', mood: 'curious', target: '.modes', title: 'Four ways to listen', text: 'Data plays NASA climate series and your own CSV files. Earth events plays earthquakes and natural events across the map. Image turns pictures and satellite views into sound. Video follows NASA animations frame by frame.', ensure: 'data' },
+    { id: 'source', mood: 'happy', target: '.source-pick', title: 'Pick a source', text: 'Each tab has its own menu. Everything in it is real data with a source line, and it works offline too. “Open CSV” brings your own numbers.', ensure: 'data' },
+    { id: 'chart', mood: 'curious', target: '#sourceCard', title: 'This is what you hear', text: 'Left to right is time. Higher on the chart means a higher note. Hover to read a value; click anywhere to hear that one step.', ensure: 'data' },
+    {
+      id: 'play',
+      mood: 'excited',
+      target: '#playBtn',
+      interactive: true,
+      title: 'Press play, co-pilot',
+      text: 'Press the big Play button (or the Space bar). Headphones make it even better.',
+      action: { type: 'play', show: 'Play it for me' },
+      done: 'Hear that? A whole century of temperature in under a minute.',
+      ensure: 'data',
+    },
+    { id: 'now', mood: 'happy', target: '.card.now', title: 'Now playing', text: 'The navy card says which step is playing, its note, and the real value behind it. The bars dance with the sound.' },
+    { id: 'melody', mood: 'curious', target: '.duo', title: 'See it, read it', text: 'Melody shows every note, with the amber line as the playhead. “What the data says” explains the trend in plain words and can read it aloud (D).' },
+    { id: 'sound', mood: 'happy', target: section('soundTitle'), title: 'Make it yours', text: 'Change the instrument, scale and tempo, or press Suggest and I’ll pick them from the shape of the data.' },
+    { id: 'channels', mood: 'curious', target: section('mixTitle'), title: 'One voice per series', text: 'Every series is its own voice. M mutes it, S plays it alone and ⇅ flips its pitch.' },
+    {
+      id: 'earth',
+      mood: 'excited',
+      target: '#tab-earth',
+      interactive: true,
+      title: 'Earth is busy',
+      text: 'Now open Earth events. Earthquakes play as one sweep from west to east: further north sounds higher, stronger sounds louder.',
+      action: { type: 'mode', value: 'earth', show: 'Take me there' },
+      done: 'See the map? Each dot is a real earthquake, played from west to east.',
+    },
+    { id: 'export', mood: 'happy', target: '#exportBtn', title: 'Take it home', text: 'Export makes WAV files (stereo, binaural or surround), the notes as CSV and the score. The address bar remembers everything, so a refresh or a shared link opens this exact view.' },
+    {
+      id: 'end',
+      mood: 'joy',
+      hero: true,
+      badge: true,
+      title: 'You’re ready!',
+      text: 'That’s the studio. Want to hear what Earth has been telling me? My story plays eight real data sets, one chapter at a time, and you earn the Earth Listener badge at the end.',
+      primary: 'Read my story',
+      secondary: 'Keep exploring',
+    },
+  ];
+
+  let app = null;
+  let ui = null;
+  let idx = 0;
+  let done = false;
+  let lastKey = '';
+  let raf = 0;
+  let poll = 0;
+  let returnFocus = null;
+
+  const reduced = () => !!app?.state.prefs.reduceMotion;
+
+  function build() {
+    const root_ = document.createElement('div');
+    root_.className = 'bt-root';
+    root_.hidden = true;
+    root_.innerHTML = `<div class="bt-dim" data-d="t"></div><div class="bt-dim" data-d="b"></div><div class="bt-dim" data-d="l"></div><div class="bt-dim" data-d="r"></div><div class="bt-ring"></div>
+<div class="bt-bubble" role="dialog" aria-modal="false" aria-labelledby="btTitle" aria-describedby="btText" tabindex="-1">
+ <div class="bt-head"><div class="bt-dog"></div><span class="bt-count"></span><button type="button" class="bt-x" aria-label="Close the tour">×</button></div>
+ <div class="bt-badge-wrap" hidden></div>
+ <h2 class="bt-title" id="btTitle"></h2>
+ <p class="bt-text" id="btText"></p>
+ <p class="bt-done" role="status" hidden></p>
+ <div class="bt-progress" aria-hidden="true">${STEPS.map(() => '<i></i>').join('')}</div>
+ <div class="bt-foot"><button type="button" class="bt-skip link-btn"></button><span class="bt-spacer"></span><button type="button" class="btn bt-show" hidden></button><button type="button" class="btn bt-back">Back</button><button type="button" class="btn btn-primary bt-next">Next</button></div>
+</div>`;
+    document.body.append(root_);
+    const q = (s) => root_.querySelector(s);
+    ui = {
+      root: root_,
+      bubble: q('.bt-bubble'),
+      ring: q('.bt-ring'),
+      dims: Object.fromEntries([...root_.querySelectorAll('.bt-dim')].map((d) => [d.dataset.d, d])),
+      dog: q('.bt-dog'),
+      count: q('.bt-count'),
+      badge: q('.bt-badge-wrap'),
+      title: q('.bt-title'),
+      text: q('.bt-text'),
+      done: q('.bt-done'),
+      progress: q('.bt-progress'),
+      skip: q('.bt-skip'),
+      show: q('.bt-show'),
+      back: q('.bt-back'),
+      next: q('.bt-next'),
+    };
+    q('.bt-x').onclick = () => exit();
+    ui.back.onclick = () => go(idx - 1);
+    ui.next.onclick = () => {
+      const s = STEPS[idx];
+      if (s.id === 'hello' || idx < STEPS.length - 1) return go(idx + 1);
+      exit({ completed: true });
+      app.showPage('story');
+    };
+    ui.skip.onclick = () => {
+      const s = STEPS[idx];
+      if (s.id === 'hello') {
+        exit({ quiet: true });
+        app.showPage('story');
+      } else exit({ completed: s.id === 'end' });
+    };
+    ui.show.onclick = () => perform(STEPS[idx].action);
+    root_.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        exit();
+      }
+    });
+  }
+
+  // ------------------------------------------------------------------ actions
+  function ensure(mode) {
+    if (mode && app.state.mode !== mode) $('tab-' + mode).click();
+  }
+  function perform(a) {
+    if (!a) return;
+    if (a.type === 'play' && !app.player.playing) app.play();
+    if (a.type === 'mode') $('tab-' + a.value).click();
+  }
+  function met(a) {
+    if (a.type === 'play') return app.player.playing;
+    if (a.type === 'mode') return app.state.mode === a.value;
+    return false;
+  }
+  function markDone() {
+    done = true;
+    ui.done.textContent = '✓ ' + STEPS[idx].done;
+    ui.done.hidden = false;
+    ui.show.hidden = true;
+    ui.next.classList.add('bt-attn');
+    setDog('joy');
+  }
+  function setDog(mood) {
+    ui.dog.innerHTML = B.bittyArt.dog(mood);
+    ui.dog.classList.remove('bt-hop');
+    if (!reduced()) {
+      void ui.dog.offsetWidth;
+      ui.dog.classList.add('bt-hop');
+    }
+  }
+
+  // ------------------------------------------------------------------ steps
+  function go(i) {
+    if (!ui) build();
+    idx = clamp(i, 0, STEPS.length - 1);
+    const s = STEPS[idx];
+    if (ui.root.hidden) returnFocus = document.activeElement;
+    if (app.page() !== 'studio') app.showPage('studio', { focus: false });
+    done = false;
+    lastKey = '';
+    ensure(s.ensure);
+    ui.bubble.classList.toggle('bt-hero', !!s.hero);
+    ui.count.textContent = s.hero ? '' : `${idx} of ${STEPS.length - 2}`;
+    ui.title.textContent = s.title;
+    ui.text.textContent = s.text;
+    ui.done.hidden = true;
+    ui.badge.hidden = !s.badge;
+    ui.badge.innerHTML = s.badge ? B.bittyArt.badge(true) : '';
+    [...ui.progress.children].forEach((c, n) => c.classList.toggle('on', n <= idx));
+    ui.progress.hidden = !!s.hero;
+    ui.skip.textContent = s.secondary || 'Skip the tour';
+    ui.show.hidden = !s.action;
+    ui.show.textContent = s.action ? s.action.show : '';
+    ui.back.hidden = idx <= 1 || s.hero;
+    ui.next.textContent = s.primary || (idx === STEPS.length - 2 ? 'Finish' : 'Next');
+    ui.next.classList.remove('bt-attn');
+    ui.ring.classList.toggle('bt-live', !!s.interactive);
+    ui.root.classList.toggle('bt-still', reduced());
+    ui.root.hidden = false;
+    document.documentElement.classList.add('bt-touring');
+    setDog(s.mood);
+    storage.set(KEY, { ...storage.get(KEY, {}), seen: true });
+    reveal();
+    layout(true);
+    ui.bubble.focus({ preventScroll: true });
+    if (s.action && met(s.action) && s.action.type !== 'play') markDone();
+    if (!raf) raf = requestAnimationFrame(tick);
+  }
+
+  /** Free band between the top bar and the player bar. */
+  function band() {
+    const top = (document.querySelector('.topbar')?.getBoundingClientRect().bottom || 0) + 8;
+    const t = document.querySelector('.transport');
+    const bottom = (t && !t.hidden ? t.getBoundingClientRect().top : innerHeight) - 8;
+    return { top: Math.max(8, top), bottom: Math.min(innerHeight, bottom) };
+  }
+
+  /** Scroll the highlighted control into the free band (fixed bars stay as they are). */
+  function reveal() {
+    const s = STEPS[idx];
+    const el = s.target && document.querySelector(s.target);
+    if (!el || el.closest('.transport, .topbar')) return;
+    const r = el.getBoundingClientRect();
+    const u = band();
+    let delta = 0;
+    if (r.height > u.bottom - u.top) delta = r.top - u.top;
+    else if (r.top < u.top || r.bottom > u.bottom) delta = r.top - (u.top + (u.bottom - u.top - r.height) / 2);
+    if (Math.abs(delta) > 2) scrollBy({ top: delta, behavior: reduced() ? 'auto' : 'smooth' });
+  }
+
+  function layout(force) {
+    if (!ui || ui.root.hidden) return;
+    const s = STEPS[idx];
+    const vp = { w: innerWidth, h: innerHeight, ...band() };
+    const el = s.target && document.querySelector(s.target);
+    let rect = null;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) rect = r;
+    }
+    const size = { w: ui.bubble.offsetWidth, h: ui.bubble.offsetHeight };
+    const key = [rect ? [rect.left, rect.top, rect.width, rect.height].map(Math.round).join() : '-', vp.w, vp.h, size.w, size.h].join('|');
+    if (!force && key === lastKey) return;
+    lastKey = key;
+    const pad = 6;
+    // keep the hole inside the visible band so a tall panel does not hide under the fixed bars
+    const hole = rect ? { x: rect.left - pad, y: Math.max(rect.top - pad, el.closest('.transport, .topbar') ? -1e4 : vp.top - 4), w: rect.width + pad * 2, h: 0 } : null;
+    if (hole) hole.h = Math.min(rect.bottom + pad, el.closest('.transport, .topbar') ? 1e4 : vp.bottom + 4) - hole.y;
+    const d = dimRects(hole, { w: vp.w, h: vp.h });
+    for (const k of ['t', 'b', 'l', 'r']) {
+      const [x, y, w, h] = d[k];
+      Object.assign(ui.dims[k].style, { left: x + 'px', top: y + 'px', width: Math.max(0, w) + 'px', height: Math.max(0, h) + 'px' });
+    }
+    ui.ring.hidden = !hole;
+    if (hole) Object.assign(ui.ring.style, { left: hole.x + 'px', top: hole.y + 'px', width: hole.w + 'px', height: hole.h + 'px' });
+    const box = hole && { left: hole.x, top: hole.y, right: hole.x + hole.w, bottom: hole.y + hole.h, width: hole.w, height: hole.h };
+    const p = placeBubble(box, size, vp);
+    ui.bubble.dataset.placement = p.placement;
+    ui.bubble.style.left = p.x + 'px';
+    ui.bubble.style.top = p.y + 'px';
+    if (box) {
+      ui.bubble.style.setProperty('--caret-x', clamp(box.left + box.width / 2 - p.x, 26, size.w - 26) + 'px');
+      ui.bubble.style.setProperty('--caret-y', clamp(box.top + box.height / 2 - p.y, 26, size.h - 26) + 'px');
+    }
+  }
+
+  function tick(now) {
+    raf = 0;
+    if (!ui || ui.root.hidden) return;
+    const dialogOpen = !!document.querySelector('dialog[open]');
+    ui.root.classList.toggle('bt-away', dialogOpen);
+    if (!dialogOpen) {
+      layout(false);
+      const a = STEPS[idx].action;
+      if (a && !done && now - poll > 120) {
+        poll = now;
+        if (met(a)) markDone();
+      }
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  function exit({ completed = false, quiet = false } = {}) {
+    if (!ui || ui.root.hidden) return;
+    ui.root.hidden = true;
+    document.documentElement.classList.remove('bt-touring');
+    cancelAnimationFrame(raf);
+    raf = 0;
+    const st = storage.get(KEY, {});
+    storage.set(KEY, { ...st, seen: true, completed: st.completed || completed });
+    if (!completed && !quiet && !st.completed) toast('You can start the tour again from Help or from BitPet.', 4000);
+    try {
+      if (returnFocus && document.contains(returnFocus)) returnFocus.focus({ preventScroll: true });
+    } catch {
+      /* element gone */
+    }
+  }
+
+  /** `fromUrl.tour`: true = ?tour (replay), false = ?notour. */
+  function init(a, fromUrl = {}) {
+    app = a;
+    $('helpTour').onclick = () => {
+      $('helpDialog').close();
+      start();
+    };
+    $('helpStory').onclick = () => {
+      $('helpDialog').close();
+      app.showPage('story');
+    };
+    $('petTour').onclick = () => start();
+    root.addEventListener('keydown', (e) => e.key === 'Escape' && ui && !ui.root.hidden && !document.querySelector('dialog[open]') && exit());
+    root.addEventListener('b2b:page', (e) => e.detail.page !== 'studio' && ui && !ui.root.hidden && exit({ completed: STEPS[idx].id === 'end' }));
+    const firstVisit = !storage.get(KEY, {}).seen && !root.location?.search;
+    if (fromUrl.tour === true) setTimeout(() => go(1), 500);
+    else if (fromUrl.tour !== false && firstVisit) setTimeout(() => !document.querySelector('dialog[open]') && app.page() === 'studio' && go(0), 900);
+  }
+
+  /** Start from the first real step (the hello card is only for first visits). */
+  function start() {
+    go(1);
+  }
+
+  B.tour = { init, start, go, exit, isOpen: () => !!ui && !ui.root.hidden, STEPS };
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
 <script>/* src/js/app.js */
 /**
  * Bit2Beat · application entry point.
@@ -7767,7 +9696,7 @@ THE SOFTWARE.
 (function () {
   'use strict';
   const B = window.Bit2Beat || {};
-  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bitpet', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys'];
+  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bitpet', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight'];
   const missing = need.filter((k) => !B[k]);
   if (missing.length) {
     document.body.insertAdjacentHTML('afterbegin', `<p role="alert" style="padding:16px;background:#fbe9d0;color:#14213d">Bit2Beat could not load: ${missing.join(', ')}. Open the single-file build in dist/ or serve the folder.</p>`);
@@ -7855,6 +9784,7 @@ THE SOFTWARE.
     },
     onState: (playing, reason) => {
       setPlayingUI(playing);
+      window.dispatchEvent(new CustomEvent('b2b:play', { detail: { playing, reason } }));
       if (!playing && reason === 'finished') {
         state.position = 0;
         $('caption').textContent = 'Finished. Press Play to listen again.';
@@ -8030,7 +9960,18 @@ THE SOFTWARE.
     $('autoTuneNote').hidden = true;
     pet.setTopic(topicFor(next));
     rebuild({ keepPosition: true });
+    window.dispatchEvent(new CustomEvent('b2b:source', { detail: { mode: state.mode, id: state.choice[state.mode] } }));
   }
+
+  /** Load one source of one tab (used by the story and the tour). */
+  app.choose = (mode, id) => {
+    state.choice[mode] = id;
+    if (state.mode !== mode) return setMode(mode);
+    fillSourceSelect();
+    syncEarthOptions();
+    syncImageOptions();
+    loadChoice();
+  };
 
   function fillSourceSelect() {
     B.sources.fillSourceSelect(state, uploads, src, $('sourceSelect'));
@@ -8404,20 +10345,8 @@ THE SOFTWARE.
     player.applyMix();
   };
 
-  // pages
-  function showPage(page) {
-    const about = page === 'about';
-    $('about').hidden = !about;
-    $('studio').hidden = about;
-    document.querySelector('.transport').hidden = about;
-    $$('.topnav-link').forEach((b) => (b.dataset.page === page ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
-    if (about) player.pause();
-    (about ? $('about') : $('studio')).focus();
-    window.scrollTo(0, 0);
-    if (!about) requestAnimationFrame(drawAll);
-    B.urlState.write(app, page);
-  }
-  $$('[data-page]').forEach((b) => (b.onclick = () => showPage(b.dataset.page)));
+  // pages (Studio, Story, About)
+  const showPage = (app.showPage = B.pages.init(app, () => drawAll()));
 
   B.keys.init(app);
   document.addEventListener('visibilitychange', () => document.hidden && player.playing && player.pause());
@@ -8442,7 +10371,9 @@ THE SOFTWARE.
   if (state.prefs.dark == null) state.prefs.dark = matchMedia('(prefers-color-scheme: dark)').matches;
   applyPrefs();
   setMode(state.mode);
-  if (fromUrl.page === 'about') showPage('about');
+  B.storyView.init(app);
+  if (fromUrl.page && fromUrl.page !== 'studio') showPage(fromUrl.page, { focus: false });
+  B.tour.init(app, fromUrl);
   B.draw.spectrum($('spectrumCanvas'), null, false);
   window.Bit2Beat.app = app; // handy for debugging and tests
 })();

@@ -40,6 +40,8 @@ Bit2Beat is a static web app: plain HTML, CSS and JavaScript with no framework a
 | `feeds.js` | USGS and NASA EONET (events sorted west → east), NASA POWER daily data; live fetch + offline builders share one code path |
 | `geo.js` | Equirectangular projection, 1° land mask, swapped-coordinate repair, distances |
 | `image.js` | sRGB → CIE L\* and CIELAB, background detection, colour keys (read data through a colour bar), band statistics, line and radar scans, pointer probe |
+| `story.js` | Bitty’s eight chapters (scene, narration, *Listen for*) and the facts worked out from the source being heard |
+| `spotlight.js` | Tour geometry: where the speech bubble fits beside a control, the dimmed rectangles around it |
 | `video.js` | Video sampling (two per second, anti-aliased windows), per-frame brightness/colour/motion or colour-key values, channel definitions with minimum pitch span |
 | `csv.js` | CSV/TSV parser with label-column and unit detection |
 | `score.js` | ABC notation with bar-aware accidentals, flats for flat keys, clef choice |
@@ -71,6 +73,10 @@ Bit2Beat is a static web app: plain HTML, CSS and JavaScript with no framework a
 | `url-state.js` | Reads and writes the address bar (see below) |
 | `video-view.js` | Keeps the muted video in step with the music (playback rate, drift correction, exact frame when paused) |
 | `keys.js` | Keyboard shortcuts |
+| `pages.js` | Studio, Story and About pages (one visible at a time) |
+| `story-view.js` | The Story page: chapters, sparklines, Listen / Play the whole story, narration, progress and badge |
+| `tour.js` | Bitty’s guided tour (spotlight, steps that wait for an action) |
+| `bitty-art.js` | Bitty’s SVG artwork (four moods) and the Earth Listener badge |
 | `illustrations.js` | NASA GIBS satellite views, offline pictures |
 
 ### `src/js/data/`
@@ -86,7 +92,7 @@ Bit2Beat is a static web app: plain HTML, CSS and JavaScript with no framework a
 
 ### `src/js/app.js`
 
-Holds the state, loads sources, rebuilds the plan after any change and connects the views. Panels receive an `app` object (`state`, `src`, `plan`, `rebuild`, `seek`, `setSource`, …).
+Holds the state, loads sources, rebuilds the plan after any change and connects the views. Panels receive an `app` object (`state`, `src`, `plan`, `rebuild`, `seek`, `setSource`, `choose(mode, id)`, `showPage`, …). It fires `b2b:play`, `b2b:source` and `b2b:page` window events, which the story and the tour listen to; neither changes how the studio works, they press the same controls you would.
 
 ## State in the address bar
 
@@ -96,7 +102,8 @@ Holds the state, loads sources, rebuilds the plan after any change and connects 
 | --- | --- | --- |
 | `mode` | `data`, `earth`, `image`, `video` | `mode=video` |
 | `src` | source id in the current tab | `src=eonet`, `src=sat:amazon` |
-| `page` | `about` when the team page is open | `page=about` |
+| `page` | `story` or `about` when that page is open | `page=story` |
+| `tour` / `notour` | start the tour / never show it automatically (read once, not written) | `?tour` |
 | `t` | play position (step) | `t=40` |
 | `inst`, `scale`, `key`, `range`, `bpm` | sound settings | `scale=major&bpm=120` |
 | `pts` | averaging (Data) | `pts=60` |

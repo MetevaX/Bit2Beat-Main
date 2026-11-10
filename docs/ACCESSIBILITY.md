@@ -11,6 +11,8 @@ Bit2Beat exists to make Earth data available to people who cannot see a chart, s
 - **Readings table** (`T`) lists every value, note, frequency and time as a real HTML table.
 - **Canvas descriptions.** The chart, map and picture have text alternatives that name the source and the number of steps and point to the table and summary.
 - **Reference tone** and **ticks on sudden jumps** turn visual features (a baseline, an outlier) into sound.
+- **Bitty’s story** works without seeing: every chapter is a heading with its narration, a *Listen for* hint and facts as text; Bitty can read each chapter aloud (speech synthesis) before the music; *Play the whole story* moves on by itself, so a listener only presses one button.
+- **The guided tour** is a non-modal dialog that takes focus, names each control in words, works with `Tab`/`Enter`, closes with `Esc`, and never blocks the page: *Skip the tour* is always one click. It appears once and can be replayed from Help.
 - **Videos** are described by their data (forest height, CO₂) rather than only by brightness, and every sample can be stepped through with the keyboard while the picture shows the matching frame.
 
 ## Seeing more clearly
@@ -18,7 +20,7 @@ Bit2Beat exists to make Earth data available to people who cannot see a chart, s
 - Dark theme and a higher-contrast mode (stronger borders and text).
 - Text size from 100 % to 160 %.
 - Larger buttons (bigger targets for touch and motor impairments).
-- Reduce motion stops animations and transitions (and skips redrawing the map on every note); the system setting is respected by default.
+- Reduce motion stops animations and transitions (including Bitty’s wagging tail and the tour’s pulsing ring) (and skips redrawing the map on every note); the system setting is respected by default.
 - Colours: navy on cream (contrast well above WCAG AA); the amber used for text is darkened to `#8A5A12` for AA contrast on cream.
 - Channel colours are never the only cue: each channel is also named in the legend, captions and table.
 

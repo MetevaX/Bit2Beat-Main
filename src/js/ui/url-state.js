@@ -21,7 +21,9 @@
     const q = new URLSearchParams(search);
     const out = { settings: {}, audio: {}, image: {}, earth: {} };
     const has = (k) => q.has(k) && q.get(k) !== '';
-    if (has('page')) out.page = oneOf(q.get('page'), ['studio', 'about']);
+    if (has('page')) out.page = oneOf(q.get('page'), ['studio', 'story', 'about']);
+    if (q.has('tour')) out.tour = true;
+    if (q.has('notour')) out.tour = false;
     if (has('mode')) out.mode = oneOf(q.get('mode'), MODES);
     if (has('src')) out.choice = q.get('src').slice(0, 40);
     if (has('t')) out.position = num(q.get('t'), 0, 1e6) | 0;
@@ -74,7 +76,7 @@
     const st = app.state;
     const D = B.plan.DEFAULTS;
     const q = new URLSearchParams();
-    if (page === 'about') q.set('page', 'about');
+    if (page === 'about' || page === 'story') q.set('page', page);
     q.set('mode', st.mode);
     const choice = st.choice[st.mode];
     if (choice !== 'upload' && choice !== 'custom') q.set('src', choice);
@@ -118,7 +120,7 @@
     const go = () => {
       last = Date.now();
       timer = 0;
-      const qs = query(app, page ?? (document.getElementById('about')?.hidden === false ? 'about' : 'studio'));
+      const qs = query(app, page ?? app.page?.() ?? 'studio');
       const url = `${location.pathname}${qs ? '?' + qs : ''}`;
       if (url !== location.pathname + location.search) {
         try {

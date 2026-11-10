@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   const B = window.Bit2Beat || {};
-  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bitpet', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys'];
+  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bitpet', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight'];
   const missing = need.filter((k) => !B[k]);
   if (missing.length) {
     document.body.insertAdjacentHTML('afterbegin', `<p role="alert" style="padding:16px;background:#fbe9d0;color:#14213d">Bit2Beat could not load: ${missing.join(', ')}. Open the single-file build in dist/ or serve the folder.</p>`);
@@ -94,6 +94,7 @@
     },
     onState: (playing, reason) => {
       setPlayingUI(playing);
+      window.dispatchEvent(new CustomEvent('b2b:play', { detail: { playing, reason } }));
       if (!playing && reason === 'finished') {
         state.position = 0;
         $('caption').textContent = 'Finished. Press Play to listen again.';
@@ -269,7 +270,18 @@
     $('autoTuneNote').hidden = true;
     pet.setTopic(topicFor(next));
     rebuild({ keepPosition: true });
+    window.dispatchEvent(new CustomEvent('b2b:source', { detail: { mode: state.mode, id: state.choice[state.mode] } }));
   }
+
+  /** Load one source of one tab (used by the story and the tour). */
+  app.choose = (mode, id) => {
+    state.choice[mode] = id;
+    if (state.mode !== mode) return setMode(mode);
+    fillSourceSelect();
+    syncEarthOptions();
+    syncImageOptions();
+    loadChoice();
+  };
 
   function fillSourceSelect() {
     B.sources.fillSourceSelect(state, uploads, src, $('sourceSelect'));
@@ -643,20 +655,8 @@
     player.applyMix();
   };
 
-  // pages
-  function showPage(page) {
-    const about = page === 'about';
-    $('about').hidden = !about;
-    $('studio').hidden = about;
-    document.querySelector('.transport').hidden = about;
-    $$('.topnav-link').forEach((b) => (b.dataset.page === page ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
-    if (about) player.pause();
-    (about ? $('about') : $('studio')).focus();
-    window.scrollTo(0, 0);
-    if (!about) requestAnimationFrame(drawAll);
-    B.urlState.write(app, page);
-  }
-  $$('[data-page]').forEach((b) => (b.onclick = () => showPage(b.dataset.page)));
+  // pages (Studio, Story, About)
+  const showPage = (app.showPage = B.pages.init(app, () => drawAll()));
 
   B.keys.init(app);
   document.addEventListener('visibilitychange', () => document.hidden && player.playing && player.pause());
@@ -681,7 +681,9 @@
   if (state.prefs.dark == null) state.prefs.dark = matchMedia('(prefers-color-scheme: dark)').matches;
   applyPrefs();
   setMode(state.mode);
-  if (fromUrl.page === 'about') showPage('about');
+  B.storyView.init(app);
+  if (fromUrl.page && fromUrl.page !== 'studio') showPage(fromUrl.page, { focus: false });
+  B.tour.init(app, fromUrl);
   B.draw.spectrum($('spectrumCanvas'), null, false);
   window.Bit2Beat.app = app; // handy for debugging and tests
 })();

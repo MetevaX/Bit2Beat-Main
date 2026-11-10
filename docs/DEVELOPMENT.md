@@ -37,6 +37,8 @@ CI (`.github/workflows/ci.yml`) runs check, build and test on every push and pul
 - **page integrity** – unique ids, every `$(id)` used by the scripts exists, every script file exists, no leftover code from removed features.
 - **build** – the single file inlines every script, style and image.
 - **BitPet notes** – every topic has offline notes; excerpts end at real sentence ends.
+- **story** – eight chapters, each loads a real source, unmuted channels exist, facts come from the data (warmest year matches GISTEMP, Svalbard warms faster than the globe, polar-night day count), no Egypt content, broken or missing data never throws.
+- **tour** – the bubble stays on screen in every placement, dimmed areas surround the highlight, every step points at an element that exists, Bitty’s moods render.
 
 ## Project rules
 
@@ -64,4 +66,4 @@ CI (`.github/workflows/ci.yml`) runs check, build and test on every push and pul
 2. `npm run check && npm test && npm run build`.
 3. Open `dist/Bit2Beat-Studio.html` from disk and play each tab once; test offline (airplane mode).
 4. Update screenshots in `docs/screenshots/` if the layout changed.
-5. Commit, tag (`git tag v2.1.0`) and push.
+5. Commit, tag (`git tag v2.3.0`) and push (`publish-to-github.sh` does both).

@@ -387,3 +387,79 @@ test('NASA presets: offline video assets, measured channels, CSV and event plans
   assert.match(built, /gediVideo.*data:video\/mp4;base64,/);
   assert.match(built, /co2Video.*data:video\/mp4;base64,/);
 });
+
+test('story: every chapter plays a real source and its facts come from the numbers heard', () => {
+  const story = require('../src/js/core/story.js');
+  const nasaMedia = require('../src/js/data/nasa-media.js');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const sources = {
+    data: (id) => presets.DATA[id](),
+    earth: (id) => feeds.offline[id](),
+    video: (id) => nasaMedia[id].source,
+  };
+  const global = presets.DATA.gistemp();
+  assert.equal(story.CHAPTERS.length, 8);
+  assert.equal(new Set(story.CHAPTERS.map((c) => c.id)).size, 8, 'unique chapter ids');
+  for (const ch of story.CHAPTERS) {
+    assert.ok(ch.title && ch.text && ch.listen && ch.kicker, `${ch.id} has words`);
+    assert.ok(['happy', 'excited', 'curious', 'joy'].includes(ch.mood));
+    assert.ok(html.includes(`data-mode="${ch.scene.mode}"`), `${ch.id}: tab ${ch.scene.mode} exists`);
+    const src = sources[ch.scene.mode](ch.scene.src);
+    assert.ok(src && src.channels.length, `${ch.id}: source ${ch.scene.src} loads`);
+    for (const n of ch.scene.unmute || []) assert.ok(src.channels.some((c) => c.name.startsWith(n)), `${ch.id}: channel ${n} exists`);
+    const facts = story.factsFor(ch.id, src, { global });
+    assert.ok(facts.length >= 2, `${ch.id}: facts from the data`);
+    for (const f of facts) assert.ok(!/NaN|undefined|Infinity/.test(f), `${ch.id}: clean fact “${f}”`);
+    assert.equal(story.chapterFor(ch.scene.mode, ch.scene.src), ch);
+    assert.ok(!/egypt|cairo|nile/i.test(ch.text + ch.listen + facts.join(' ')), 'no Egypt content');
+  }
+  // the numbers match the data, not hand-typed text
+  const warm = story.factsFor('warming', global).join(' ');
+  const rows = SNAPSHOTS.gistemp.rows;
+  const top = rows.reduce((a, r) => (r[1] > a[1] ? r : a));
+  assert.match(warm, new RegExp(`Warmest year in the record: ${top[0]}, \\+${top[1].toFixed(2)} °C`));
+  const arctic = story.factsFor('arctic', presets.DATA.arcticAnnual(), { global }).join(' ');
+  const ratio = +/about ([\d.]+) times faster/.exec(arctic)[1];
+  assert.ok(ratio > 2 && ratio < 6, `Svalbard warms faster than the globe (${ratio}×)`);
+  const dark = SNAPSHOTS.svalbardDaily.series['Sunlight (MJ/m²/day)'].filter((v) => v === 0).length;
+  assert.match(story.factsFor('polar', presets.DATA.arcticDaily()).join(' '), new RegExp(`^${dark} days`));
+  // live data with gaps or missing channels never breaks a chapter
+  assert.deepEqual(story.factsFor('warming', null), []);
+  assert.deepEqual(story.factsFor('nope', global), []);
+  assert.ok(story.factsFor('quakes', { name: 'x', labels: ['a'], channels: [{ name: 'Earthquakes', values: [null] }] }).length >= 1);
+  assert.deepEqual(story.progress({ listen: true, warming: true }), { n: 2, total: 8, done: false });
+  assert.equal(story.progress(Object.fromEntries(story.CHAPTERS.map((c) => [c.id, true]))).done, true);
+  assert.equal(story.day('2025-03-05'), '5 March');
+});
+
+test('tour: spotlight geometry keeps the bubble on screen; every step points at a real control', () => {
+  const { placeBubble, dimRects } = require('../src/js/core/spotlight.js');
+  const vp = { w: 1280, h: 800, top: 60, bottom: 700 };
+  const size = { w: 380, h: 220 };
+  const on = (p) => p.x >= 12 && p.x + size.w <= vp.w - 12 && p.y >= 12 && p.y + size.h <= vp.h - 12;
+  const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height });
+  assert.equal(placeBubble(null, size, vp).placement, 'center');
+  assert.equal(placeBubble(rect(100, 80, 200, 40), size, vp).placement, 'bottom');
+  assert.equal(placeBubble(rect(100, 640, 200, 40), size, vp).placement, 'top');
+  assert.equal(placeBubble(rect(40, 100, 300, 560), size, vp).placement, 'right');
+  for (const r of [rect(0, 0, 1280, 800), rect(1200, 750, 60, 40), rect(-50, 300, 100, 100)]) assert.ok(on(placeBubble(r, size, vp)), 'stays on screen');
+  const phone = placeBubble(rect(10, 700, 100, 50), { w: 366, h: 240 }, { w: 390, h: 844 });
+  assert.equal(phone.placement, 'dock-top');
+  const d = dimRects({ x: 100, y: 50, w: 200, h: 100 }, { w: 800, h: 600 });
+  assert.deepEqual(d.t, [0, 0, 800, 50]);
+  assert.deepEqual(d.l, [0, 50, 100, 100]);
+  assert.deepEqual(d.r, [300, 50, 500, 100]);
+  assert.deepEqual(d.b, [0, 150, 800, 450]);
+
+  // the tour's selectors exist in the page (read from the source, no browser needed)
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const code = fs.readFileSync(path.join(root, 'src/js/ui/tour.js'), 'utf8');
+  for (const [, id] of code.matchAll(/target: '#([\w-]+)'/g)) assert.ok(html.includes(`id="${id}"`), `#${id} exists`);
+  for (const [, cls] of code.matchAll(/target: '\.([\w-]+)/g)) assert.ok(new RegExp(`class="[^"]*\\b${cls}\\b`).test(html), `.${cls} exists`);
+  for (const [, t] of code.matchAll(/section\('(\w+)'\)/g)) assert.ok(html.includes(`aria-labelledby="${t}"`), `section ${t} exists`);
+
+  const art = require('../src/js/ui/bitty-art.js');
+  for (const m of art.MOODS) assert.match(art.dog(m), /^<svg[^>]+mood-/);
+  assert.match(art.dog('unknown'), /mood-happy/);
+  assert.match(art.badge(false), /not yet earned/);
+});

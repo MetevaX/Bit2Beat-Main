@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="src/styles/dialogs.css">
 <link rel="stylesheet" href="src/styles/glass.css">
 <link rel="stylesheet" href="src/styles/polish.css">
+<link rel="stylesheet" href="src/styles/story.css">
 </head>
 <body>
 <a class="skip" href="#studio">Skip to the studio</a>
@@ -37,6 +38,7 @@
   <a class="brand" href="#studio" aria-label="Bit2Beat home"><img src="assets/img/wordmark.svg" alt="Bit2Beat" width="168" height="41"></a>
   <nav class="topnav" aria-label="Pages">
     <button type="button" class="topnav-link" data-page="studio" aria-current="page">Studio</button>
+    <button type="button" class="topnav-link" data-page="story">Story</button>
     <button type="button" class="topnav-link" data-page="about">About the team</button>
   </nav>
   <div class="topbar-actions">
@@ -171,7 +173,7 @@
       <section class="card bitpet" id="bitPet" aria-labelledby="petTitle">
         <button type="button" class="pet-face" id="petFace" aria-label="Say hello to BitPet"></button>
         <div class="pet-body">
-          <div class="pet-head"><h2 id="petTitle">BitPet’s NASA note</h2><button type="button" class="link-btn" id="petHide">Hide</button></div>
+          <div class="pet-head"><h2 id="petTitle">BitPet’s NASA note</h2><span><button type="button" class="link-btn" id="petTour">Tour</button> <button type="button" class="link-btn" id="petHide">Hide</button></span></div>
           <p id="petFact"></p>
           <div class="pet-foot"><a id="petSource" href="https://images.nasa.gov" target="_blank" rel="noopener noreferrer">Source</a>
             <span><button type="button" class="link-btn" id="petPrev" aria-label="Previous note">Prev</button> <span id="petPage"></span> <button type="button" class="link-btn" id="petNext" aria-label="Next note">Next</button></span></div>
@@ -269,6 +271,38 @@
   </div>
 </main>
 
+<section id="story" class="story" hidden tabindex="-1" aria-labelledby="storyTitle">
+  <div class="story-hero">
+    <div class="story-hero-dog" id="storyDog"></div>
+    <div class="story-hero-text">
+      <p class="story-kicker">A story in eight sounds</p>
+      <h1 id="storyTitle">Bitty listens to Earth</h1>
+      <p class="lead">Bitty is a space pup with very good ears. Satellites send Bitty Earth’s numbers, and Bit2Beat turns them into music. Follow eight short chapters of real NASA and USGS data, from a warming century to the planet’s breath. Each chapter plays in the studio’s own player, so you can open any of them and keep exploring.</p>
+      <div class="story-actions">
+        <button type="button" class="btn btn-primary" id="storyPlayAll" aria-pressed="false">Play the whole story</button>
+        <button type="button" class="btn" id="storyTourBtn">Tour the studio</button>
+        <label class="check check-inline"><input type="checkbox" id="storyNarrate"><span><b>Bitty reads each chapter aloud</b></span></label>
+      </div>
+      <p class="story-progress" id="storyProgress"></p>
+    </div>
+  </div>
+  <ol class="story-chapters" id="storyChapters" aria-label="Chapters"></ol>
+  <section class="story-finale" id="storyFinale" aria-labelledby="finaleTitle">
+    <div class="finale-dog" id="finaleDog"></div>
+    <div class="finale-text">
+      <p class="chapter-kicker">Epilogue</p>
+      <h2 id="finaleTitle">Your turn</h2>
+      <p id="finaleText"></p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="finaleStudio">Open the studio</button>
+        <button type="button" class="btn" id="finaleCsv">Open my own CSV</button>
+        <button type="button" class="btn" id="finaleTour">Tour the studio</button>
+      </div>
+    </div>
+    <div class="finale-badge" id="finaleBadge"></div>
+  </section>
+</section>
+
 <section id="about" class="about" hidden tabindex="-1" aria-labelledby="aboutTitle">
   <div class="about-inner">
     <h1 id="aboutTitle">About Bit2Beat</h1>
@@ -277,7 +311,7 @@
       <section>
         <h2>How it works</h2>
         <p>Every number becomes a note: higher values play higher. Each series is scaled between its own lowest and highest value (or a range shared with series in the same unit) and placed on a musical scale, so equal steps in the data sound like equal steps in the melody. Position in time can also become position in space, from simple stereo to 7.1.4 surround.</p>
-        <p>The data comes from NASA GISTEMP, NASA POWER and NASA EONET, the USGS earthquake feed and Open-Meteo. When there is no internet, Bit2Beat uses real copies of those feeds saved inside the app. Everything runs in your browser; your files never leave your computer.</p>
+        <p>The data comes from NASA GISTEMP, NASA POWER and NASA EONET, the NASA Earth Information Center (Scientific Visualization Studio) and the USGS earthquake feed. When there is no internet, Bit2Beat uses real copies of those feeds saved inside the app. Everything runs in your browser; your files never leave your computer.</p>
       </section>
       <section>
         <h2>Our vision</h2>
@@ -383,6 +417,7 @@
     <li><b>Shape the sound.</b> Change instrument, scale and tempo, mute or solo channels, or press Suggest.</li>
     <li><b>Export.</b> Download audio, the notes as CSV or the score.</li>
   </ol>
+  <div class="btn-row help-bitty"><button type="button" class="btn btn-primary" id="helpTour">Tour the studio with Bitty</button><button type="button" class="btn" id="helpStory">Read Bitty’s story</button></div>
   <h3>Keyboard</h3>
   <dl class="keys">
     <dt><kbd>Space</kbd></dt><dd>Play / pause</dd>
@@ -417,6 +452,8 @@
 <script src="src/js/core/score.js"></script>
 <script src="src/js/core/feeds.js"></script>
 <script src="src/js/core/plan.js"></script>
+<script src="src/js/core/story.js"></script>
+<script src="src/js/core/spotlight.js"></script>
 <script src="src/js/data/presets.js"></script>
 <script src="src/js/data/nasa-keys.js"></script>
 <script src="src/js/data/nasa-media.js"></script>
@@ -428,6 +465,7 @@
 <script src="src/js/ui/draw.js"></script>
 <script src="src/js/ui/score-view.js"></script>
 <script src="src/js/data/nasa-notes.js"></script>
+<script src="src/js/ui/bitty-art.js"></script>
 <script src="src/js/ui/bitpet.js"></script>
 <script src="src/js/ui/sources.js"></script>
 <script src="src/js/ui/panels.js"></script>
@@ -438,6 +476,9 @@
 <script src="src/js/ui/url-state.js"></script>
 <script src="src/js/ui/video-view.js"></script>
 <script src="src/js/ui/keys.js"></script>
+<script src="src/js/ui/pages.js"></script>
+<script src="src/js/ui/story-view.js"></script>
+<script src="src/js/ui/tour.js"></script>
 <script src="src/js/app.js"></script>
 </body>
 </html>
