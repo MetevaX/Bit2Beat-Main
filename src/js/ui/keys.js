@@ -1,5 +1,5 @@
 /**
- * Bit2Beat ui · keyboard shortcuts (Space, ←/→, Shift+←/→, Home/End, L, D, T, ?).
+ * Bit2Beat ui · keyboard shortcuts (Space, ←/→, Shift+←/→, Home/End, L, D, G, T, ?).
  */
 (function (root) {
   'use strict';
@@ -26,6 +26,7 @@
         app.seek(k === 'Home' ? 0 : app.plan.count - 1, { audition: true });
       } else if (k === 'l' || k === 'L') $('loopBtn').click();
       else if (k === 'd' || k === 'D') B.panels.speak(app);
+      else if (k === 'g' || k === 'G') B.tour.hub();
       else if (k === 't' || k === 'T') B.dialogs.openTable(app);
       else if (k === '?') $('helpDialog').showModal();
     });

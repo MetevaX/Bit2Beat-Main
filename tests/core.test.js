@@ -260,15 +260,15 @@ test('build: single-file distribution inlines every script, style and image', ()
   assert.match(html, /worldMap/);
 });
 
-test('BitPet notes: 20 offline notes over every topic, sentence-safe excerpts', () => {
+test('Bitty’s notes: 20 offline notes over every topic, sentence-safe excerpts', () => {
   const { NOTES, QUERIES } = require('../src/js/data/nasa-notes.js');
   assert.ok(NOTES.length >= 20);
   for (const t of Object.keys(QUERIES)) assert.ok(NOTES.some((n) => n.topic === t), `offline note for ${t}`);
   assert.equal(new Set(NOTES.map((n) => n.id)).size, NOTES.length);
   global.self = global.self || {};
   self.Bit2Beat = { dom: {} };
-  require('../src/js/ui/bitpet.js');
-  const { excerpt } = self.Bit2Beat.bitpet;
+  require('../src/js/ui/bitty-card.js');
+  const { excerpt } = self.Bit2Beat.bittyCard;
   const long = 'On Oct. 26, 2015, a magnitude 7.5 earthquake struck the Hindu Kush region of Afghanistan near the border. ' + 'The epicentre was deep below the surface and shaking was felt across several countries in the region. '.repeat(3);
   const e = excerpt(long);
   assert.ok(e.length <= 300 && /\.$/.test(e), 'ends at a full stop');
@@ -451,12 +451,31 @@ test('tour: spotlight geometry keeps the bubble on screen; every step points at 
   assert.deepEqual(d.r, [300, 50, 500, 100]);
   assert.deepEqual(d.b, [0, 150, 800, 450]);
 
-  // the tour's selectors exist in the page (read from the source, no browser needed)
+  // every guide step points at something that exists in the page, and every button goes somewhere
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const code = fs.readFileSync(path.join(root, 'src/js/ui/tour.js'), 'utf8');
-  for (const [, id] of code.matchAll(/target: '#([\w-]+)'/g)) assert.ok(html.includes(`id="${id}"`), `#${id} exists`);
-  for (const [, cls] of code.matchAll(/target: '\.([\w-]+)/g)) assert.ok(new RegExp(`class="[^"]*\\b${cls}\\b`).test(html), `.${cls} exists`);
-  for (const [, t] of code.matchAll(/section\('(\w+)'\)/g)) assert.ok(html.includes(`aria-labelledby="${t}"`), `section ${t} exists`);
+  const { TOURS, TIPS } = require('../src/js/data/guide.js');
+  for (const [tid, tour] of Object.entries(TOURS)) {
+    assert.ok(tour.title && tour.steps.length, `${tid} has steps`);
+    for (const st of tour.steps) {
+      assert.ok(st.title && st.text && ['happy', 'excited', 'curious', 'joy'].includes(st.mood), `${tid}/${st.id} has words and a mood`);
+      if (st.ensure) assert.ok(html.includes(`data-mode="${st.ensure}"`), `${tid}/${st.id}: tab ${st.ensure}`);
+      if (st.interactive) assert.ok(st.action && st.done, `${tid}/${st.id}: waits for an action`);
+      for (const b of st.buttons || []) assert.ok(['next', 'close', 'hub', 'story', 'help'].includes(b.go) || TOURS[b.go.replace(/^tour:/, '')], `${tid}/${st.id}: ${b.go}`);
+      if (!st.target) continue;
+      for (const [, id] of st.target.matchAll(/#([\w-]+)/g)) assert.ok(html.includes(`id="${id}"`), `${tid}/${st.id}: #${id} exists`);
+      for (const [, cls] of st.target.matchAll(/(?:^|[\s>])\.([\w-]+)/g)) assert.ok(new RegExp(`class="[^"]*\\b${cls}\\b`).test(html), `${tid}/${st.id}: .${cls} exists`);
+      for (const [, t] of st.target.matchAll(/aria-labelledby="(\w+)"/g)) assert.ok(html.includes(`aria-labelledby="${t}"`), `${tid}/${st.id}: section ${t}`);
+    }
+  }
+  for (const m of ['data', 'earth', 'image', 'video']) assert.ok(TOURS[m] && TIPS[m], `Bitty explains the ${m} tab`);
+  assert.ok(!/BitPet/.test(html + JSON.stringify(TOURS)), 'Bitty is called Bitty everywhere');
+
+  // reading aloud is cut into sentences, so Pause / Resume work everywhere
+  self.Bit2Beat = { dom: {} };
+  require('../src/js/ui/speech.js');
+  const { sentences } = self.Bit2Beat.speech;
+  assert.deepEqual(sentences('Svalbard warmed about 3.7 times faster. It is “far north”. Done!'), ['Svalbard warmed about 3.7 times faster.', 'It is “far north”.', 'Done!']);
+  assert.ok(sentences('word, '.repeat(80)).every((p) => p.length <= 220), 'long sentences are split');
 
   const art = require('../src/js/ui/bitty-art.js');
   for (const m of art.MOODS) assert.match(art.dog(m), /^<svg[^>]+mood-/);

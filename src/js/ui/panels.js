@@ -119,16 +119,12 @@
     box.append(el('ul', {}, lines.map((t) => el('li', { text: t }))));
   }
 
+  /** Read “What the data says” aloud; pressing again (or D) stops. Pause is in the reading bar. */
   function speak(app) {
+    if (B.speech.owner() === 'insights') return B.speech.stop();
     const text = [...$('insights').querySelectorAll('li')].map((li) => li.textContent).join(' ');
     if (!text) return;
-    announce(text);
-    if ('speechSynthesis' in window) {
-      speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 1;
-      speechSynthesis.speak(u);
-    }
+    B.speech.speak(text, { label: `Reading: ${app.src?.name || 'what the data says'}`, owner: 'insights' });
   }
 
   function renderLegend(app) {
@@ -234,6 +230,11 @@
       };
     });
     $('speakBtn').onclick = () => speak(app);
+    window.addEventListener('b2b:speech', (e) => {
+      const on = e.detail.active && e.detail.owner === 'insights';
+      $('speakBtn').textContent = on ? 'Stop reading' : 'Read aloud';
+      $('speakBtn').setAttribute('aria-pressed', String(on));
+    });
   }
 
   B.panels = { init, renderHeader, renderNow, renderInsights, renderLegend, stepSummary, speak };

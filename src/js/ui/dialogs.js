@@ -202,11 +202,11 @@
       app.applyPrefs();
     };
     $('accessBtn').onclick = () => $('accessDialog').showModal();
-    $('petHide').onclick = () => {
+    $('bittyHide').onclick = () => {
       prefs.pet = false;
       $$('[data-pref="pet"]').forEach((c) => (c.checked = false));
       app.applyPrefs();
-      toast('BitPet hidden. Turn it back on in Accessibility.');
+      toast('Bitty’s card is hidden. Turn it back on in Accessibility; Guide (G) still works.');
     };
     $('helpBtn').onclick = () => $('helpDialog').showModal();
   }

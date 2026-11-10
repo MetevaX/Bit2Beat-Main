@@ -567,24 +567,24 @@ input[type='range'] {
   fill: var(--amber) !important;
 }
 
-/* bitpet */
-.bitpet {
+/* Bitty’s card */
+.bitty-card {
   display: grid;
   grid-template-columns: 64px 1fr;
   gap: 12px;
 }
-.pet-face {
+.bitty-face {
   width: 64px;
   height: 58px;
   padding: 0;
   border: 0;
   background: none;
 }
-.pet-face .dog {
+.bitty-face .dog {
   width: 64px;
   height: 58px;
 }
-.pet-face.hop {
+.bitty-face.hop {
   animation: hop 0.5s ease;
 }
 @keyframes hop {
@@ -592,27 +592,27 @@ input[type='range'] {
     transform: translateY(-6px);
   }
 }
-.pet-head {
+.bitty-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
 }
-.pet-head h2 {
+.bitty-head h2 {
   font-size: 0.85rem;
 }
-.pet-body p {
+.bitty-body p {
   font-size: 0.82rem;
   margin: 4px 0 6px;
   color: var(--muted);
 }
-.pet-foot {
+.bitty-foot {
   display: flex;
   justify-content: space-between;
   gap: 8px;
   font-size: 0.78rem;
   color: var(--muted);
 }
-.pet-foot a {
+.bitty-foot a {
   color: var(--muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -713,14 +713,14 @@ input[type='range'] {
     padding: 7px 9px;
   }
 }
-.pet-body {
+.bitty-body {
   min-width: 0;
 }
-.pet-foot {
+.bitty-foot {
   flex-wrap: wrap;
   align-items: baseline;
 }
-.pet-foot > span {
+.bitty-foot > span {
   white-space: nowrap;
   margin-left: auto;
 }
@@ -750,17 +750,17 @@ input[type='range'] {
   padding: 8px 0;
 }
 
-/* score + BitPet share the bottom row */
+/* score + Bitty’s card share the bottom row */
 .duo-score {
   grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
 }
-.duo-score:has(> .bitpet[hidden]) {
+.duo-score:has(> .bitty-card[hidden]) {
   grid-template-columns: 1fr;
 }
-.duo-score .bitpet {
+.duo-score .bitty-card {
   align-content: start;
 }
-.duo-score .pet-body p {
+.duo-score #bittyFact {
   display: -webkit-box;
   -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;

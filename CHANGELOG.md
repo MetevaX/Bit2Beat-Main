@@ -1,11 +1,18 @@
 # Changelog
 
+## 2.4.0 — 10 November 2026
+- **Bitty is the guide.** A *Guide* button in the top bar (or `G`) opens *How can I help?*: the whole-studio tour or a short tour of one tab (Data, Earth events, Image, Video), the story, or the shortcuts. Each tab tour points at the real controls (Points to play, NASA POWER, CSV; reading the map, Map distance, Get latest; Light / Colour / Colour key and scans; the video that follows the music).
+- **Tips on Bitty’s card.** The first time a tab is opened, Bitty offers *Show me* (or *No thanks*).
+- **Reading aloud can be paused and stopped.** One reader for *What the data says* and the story: sentence by sentence, with a bar at the top showing what is read, **Pause / Resume**, **Stop** and, in the story, **Skip to the music**. *Read aloud* becomes *Stop reading* while it speaks; `D` and `Esc` stop it. Long texts are no longer cut off by the browser.
+- **One name: Bitty.** “BitPet” is now Bitty everywhere: the card, settings, credits, code (`ui/bitty-card.js`) and docs.
+- Everything Bitty says when guiding lives in `src/js/data/guide.js`; a test checks every step points at a real control.
+
 ## 2.3.0 — 10 November 2026
 - **Story page: “Bitty listens to Earth”.** A new *Story* tab next to Studio. Bitty, the space pup from the first prototype, tells eight short chapters, each playing one real data set in the studio’s own player: a rising line to learn how to listen, GISTEMP 1880–2025 with the 1951–1980 reference tone, the Svalbard yearly record, polar night and midnight sun in 2025, the earthquake sweep, NASA EONET events, GEDI forest height and the DYAMOND CO₂ model.
 - **Facts worked out from the data you hear** instead of typed text: warmest year and the ten warmest years, Svalbard’s warming per decade compared with the globe over the same years (about 3.7× faster), days without sunlight, the strongest and deepest quakes, event counts, peak forest height and CO₂. With live feeds the facts follow the live numbers.
 - **Play the whole story** moves to the next chapter when one ends; **Bitty reads each chapter aloud** (optional, speech synthesis) before the music; each chapter shows the shape of its data with a playhead, *Listen for* hints and *Open in the studio*. Chapters heard are remembered in the browser; hearing all eight earns the *Earth Listener* badge.
 - **Guided tour of the studio.** A spotlight walks through tabs, source menu, chart, Play, Now playing, melody and summary, sound, channels, Earth events and Export. Steps that ask you to try something wait for you and cheer (“Do it for me” presses it). Shown once on a first visit (one click to skip), again from Help, BitPet or `?tour`; `?notour` hides it. Keyboard (Esc), screen readers, reduced motion, dark theme and phones are supported.
-- Bitty’s artwork (four moods, headphones, wagging tail) is shared by BitPet, the story and the tour.
+- Bitty’s artwork (four moods, headphones, wagging tail) is shared by Bitty’s card, the story and the tour.
 - The address bar keeps the Story page (`page=story`), so a refresh returns to the chapter that was playing.
 - About page credits the NASA Earth Information Center instead of Open-Meteo, which is no longer used.
 

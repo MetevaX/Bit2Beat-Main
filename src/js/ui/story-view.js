@@ -48,7 +48,7 @@
     $('storyDog').innerHTML = B.bittyArt.dog('excited', 'bitty-hero');
     $('storyNarrate').checked = !!saved.narrate;
     $('storyNarrate').onchange = save;
-    if (!('speechSynthesis' in root)) $('storyNarrate').closest('label').hidden = true;
+    if (!B.speech.supported) $('storyNarrate').closest('label').hidden = true;
 
     CHAPTERS.forEach((ch, i) => {
       const facts = el('ul', { class: 'chapter-facts' });
@@ -96,7 +96,7 @@
       if (st.mode !== 'data') $('tab-data').click();
       $('uploadBtn').click();
     };
-    $('finaleTour').onclick = () => B.tour.start();
+    $('finaleTour').onclick = () => B.tour.hub();
     $('finaleDog').innerHTML = B.bittyArt.dog('joy');
 
     // ---------------------------------------------------------------- drawing
@@ -170,8 +170,8 @@
         r.li.dataset.state = state;
         r.li.classList.toggle('is-heard', !!heard[ch.id]);
         r.li.classList.toggle('is-current', on);
-        r.listen.querySelector('.chapter-play-label').textContent = state === 'playing' ? 'Pause' : state === 'loading' ? 'Bitty is reading…' : heard[ch.id] && !on ? 'Listen again' : 'Listen';
-        r.listen.setAttribute('aria-label', `${state === 'playing' ? 'Pause' : 'Listen to'} “${ch.title}”`);
+        r.listen.querySelector('.chapter-play-label').textContent = state === 'playing' ? 'Pause' : state === 'loading' ? 'Skip to the music' : heard[ch.id] && !on ? 'Listen again' : 'Listen';
+        r.listen.setAttribute('aria-label', `${state === 'playing' ? 'Pause' : state === 'loading' ? 'Skip Bitty’s reading of' : 'Listen to'} “${ch.title}”`);
         r.status.textContent = on && app.plan ? `${app.plan.count} steps · ${B.music.seconds(app.plan.duration)}` : '';
       });
       const p = B.story.progress(heard);
@@ -206,17 +206,13 @@
     }
 
     // ---------------------------------------------------------------- playing
-    function speak(text, then) {
-      if (!$('storyNarrate').checked || !('speechSynthesis' in root)) return then();
-      speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      let done = false;
-      const go = () => !done && ((done = true), then());
-      u.onend = go;
-      u.onerror = go;
-      speechSynthesis.speak(u);
+    /** Bitty reads a text (when “reads aloud” is on), then `then(reason)` runs: done, skip or stop.
+     *  Pause, Resume, Skip and Stop are in the reading bar at the top of the screen. */
+    function speak(text, label, then, skip = '') {
+      if (!$('storyNarrate').checked || !B.speech.supported) return then('done');
+      B.speech.speak(text, { label, owner: 'story', skip, onend: then });
     }
-    const stopSpeech = () => 'speechSynthesis' in root && speechSynthesis.cancel();
+    const stopSpeech = () => B.speech.owner() === 'story' && B.speech.stop();
 
     /** Put the chapter's scene in the studio: tab, source, settings and audible channels. */
     function load(ch) {
@@ -239,17 +235,21 @@
       app.player.pause();
       load(ch);
       syncRows();
-      speak(`${ch.title}. ${ch.text} Listen for this: ${ch.listen}`, () => {
+      speak(`${ch.title}. ${ch.text} Listen for this: ${ch.listen}`, `Bitty is reading “${ch.title}”`, (reason) => {
         if (pendingPlay !== ch) return;
         pendingPlay = null;
-        app.play();
-      });
+        if (reason === 'stop') {
+          auto = false; // Stop in the reading bar stops the story too
+          return syncRows();
+        }
+        if (!app.player.playing) app.play();
+      }, 'Skip to the music');
     }
 
     function toggle(ch) {
       if (pendingPlay === ch) {
+        if (B.speech.owner() === 'story') return B.speech.skip(); // “Skip to the music”
         pendingPlay = null;
-        stopSpeech();
         auto = false;
         return syncRows();
       }
@@ -263,8 +263,8 @@
 
     function openInStudio(ch) {
       auto = false;
-      stopSpeech();
       pendingPlay = null;
+      stopSpeech();
       if (!isActive(ch)) load(ch);
       app.showPage('studio');
     }
@@ -289,7 +289,7 @@
     }
 
     $('storyPlayAll').onclick = playAll;
-    $('storyTourBtn').onclick = () => B.tour.start();
+    $('storyTourBtn').onclick = () => B.tour.hub();
 
     root.addEventListener('b2b:play', (e) => {
       const { playing, reason } = e.detail;
@@ -302,7 +302,7 @@
           else {
             auto = false;
             $('storyFinale').scrollIntoView({ behavior: st.prefs.reduceMotion ? 'auto' : 'smooth', block: 'center' });
-            speak(`${FINALE.title}. ${FINALE.text}`, () => {});
+            speak(`${FINALE.title}. ${FINALE.text}`, 'Bitty is reading the epilogue', () => {});
           }
         }
       } else if (!playing && reason !== 'finished' && !pendingPlay) auto = false;
@@ -320,8 +320,8 @@
     root.addEventListener('b2b:page', (e) => {
       if (e.detail.page !== 'story') {
         auto = false;
-        if (pendingPlay) stopSpeech();
         pendingPlay = null;
+        stopSpeech();
       }
     });
     let resizeTimer = 0;

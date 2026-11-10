@@ -1,5 +1,5 @@
 /**
- * Bit2Beat ui · BitPet, a small companion with short notes from the NASA Image and Video Library.
+ * Bit2Beat ui · Bitty’s card: Bitty the space pup with short notes from the NASA Image and Video Library.
  * Notes follow what is playing (climate, the Arctic, earthquakes, natural events, pictures): 20 saved
  * notes work offline, and fresh ones are fetched from images-api.nasa.gov for the current topic.
  * A new note appears every 20 seconds unless the pointer or keyboard focus is on the card.
@@ -34,7 +34,7 @@
 
   const TOPIC_NAMES = { climate: 'climate', quakes: 'earthquakes', events: 'natural events', arctic: 'the Arctic', image: 'Earth from space' };
 
-  function createPet(getPrefs) {
+  function create(getPrefs) {
     const { NOTES, QUERIES } = B.nasaNotes;
     let pool = NOTES.map((n) => ({ ...n }));
     let topic = 'climate';
@@ -42,7 +42,7 @@
     let timer = 0;
     let paused = false;
     const fetched = new Set();
-    $('petFace').innerHTML = B.bittyArt.dog('happy', 'dog');
+    $('bittyFace').innerHTML = B.bittyArt.dog('happy', 'dog');
 
     const ordered = () => [...pool.filter((n) => n.topic === topic), ...pool.filter((n) => n.topic !== topic)];
     let list = ordered();
@@ -50,18 +50,18 @@
     function show(announce = false) {
       const f = list[index];
       if (!f) return;
-      $('petFact').textContent = f.text;
-      $('petSource').href = 'https://images.nasa.gov/details/' + encodeURIComponent(f.id);
-      $('petSource').textContent = (f.title.length > 44 ? f.title.slice(0, 42) + '…' : f.title) + (f.date ? ` (${f.date.slice(0, 4)})` : '');
-      $('petSource').title = f.title;
-      $('petPage').textContent = `${index + 1}/${list.length}`;
-      $('petTitle').textContent = `BitPet · ${TOPIC_NAMES[f.topic] || 'NASA note'}`;
+      $('bittyFact').textContent = f.text;
+      $('bittySource').href = 'https://images.nasa.gov/details/' + encodeURIComponent(f.id);
+      $('bittySource').textContent = (f.title.length > 44 ? f.title.slice(0, 42) + '…' : f.title) + (f.date ? ` (${f.date.slice(0, 4)})` : '');
+      $('bittySource').title = f.title;
+      $('bittyPage').textContent = `${index + 1}/${list.length}`;
+      $('bittyTitle').textContent = `Bitty · ${TOPIC_NAMES[f.topic] || 'NASA note'}`;
       if (announce) B.dom.announce(f.text);
     }
 
     function hop() {
       if (getPrefs().reduceMotion) return;
-      const d = $('petFace');
+      const d = $('bittyFace');
       d.classList.remove('hop');
       void d.offsetWidth;
       d.classList.add('hop');
@@ -75,7 +75,7 @@
     function schedule() {
       clearInterval(timer);
       timer = setInterval(() => {
-        if (paused || document.hidden || $('bitPet').hidden) return;
+        if (paused || document.hidden || $('bittyCard').hidden) return;
         step(1);
       }, ROTATE_MS);
     }
@@ -134,26 +134,26 @@
 
     function apply() {
       const on = getPrefs().pet !== false;
-      $('bitPet').hidden = !on;
+      $('bittyCard').hidden = !on;
       if (on) refresh(topic);
     }
 
-    $('petNext').onclick = () => {
+    $('bittyNext').onclick = () => {
       step(1, true);
       hop();
       schedule();
     };
-    $('petPrev').onclick = () => {
+    $('bittyPrev').onclick = () => {
       step(-1, true);
       hop();
       schedule();
     };
-    $('petFace').onclick = () => {
+    $('bittyFace').onclick = () => {
       hop();
       step(1, true);
       schedule();
     };
-    const card = $('bitPet');
+    const card = $('bittyCard');
     card.addEventListener('pointerenter', () => (paused = true));
     card.addEventListener('pointerleave', () => (paused = false));
     card.addEventListener('focusin', () => (paused = true));
@@ -163,5 +163,5 @@
     return { apply, hop, show, setTopic };
   }
 
-  B.bitpet = { createPet, excerpt };
+  B.bittyCard = { create, excerpt };
 })(typeof self !== 'undefined' ? self : this);

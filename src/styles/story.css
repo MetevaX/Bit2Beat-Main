@@ -624,10 +624,6 @@
 .bt-progress i.on {
   background: var(--amber);
 }
-.bt-progress i:first-child,
-.bt-progress i:last-child {
-  display: none;
-}
 .bt-foot {
   display: flex;
   flex-wrap: wrap;
@@ -661,7 +657,7 @@
 .help-bitty {
   margin-top: 14px;
 }
-.pet-head > span {
+.bitty-head > span {
   white-space: nowrap;
 }
 
@@ -751,5 +747,146 @@
   .bt-skip {
     order: 3;
     flex-basis: 100%;
+  }
+}
+
+/* ---------------------------------------------------------------- Guide button, tips, menu */
+.guide-btn {
+  border-color: rgba(232, 163, 61, 0.7);
+  padding: 2px 12px 2px 6px;
+}
+.guide-btn:hover {
+  border-color: var(--amber);
+  background: rgba(232, 163, 61, 0.12);
+}
+.guide-btn .guide-face {
+  display: block !important;
+  width: 30px;
+}
+.btn-small {
+  min-height: 30px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+}
+.bitty-tip {
+  margin: 6px 0 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border-left: 3px solid var(--amber);
+  font-size: 0.84rem;
+  color: var(--text) !important;
+}
+.bitty-tip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.bt-menu {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.bt-has-menu .bt-menu {
+  display: grid;
+  gap: 6px;
+  justify-items: stretch;
+}
+.bt-has-menu .bt-menu .btn {
+  justify-content: flex-start;
+  text-align: left;
+}
+.bt-has-menu {
+  text-align: left;
+}
+.bt-has-menu .bt-title,
+.bt-has-menu .bt-text {
+  text-align: center;
+}
+.bt-menu[hidden],
+.bt-foot[hidden] {
+  display: none;
+}
+.bt-note {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- reading-aloud bar */
+.speech-bar {
+  position: fixed;
+  z-index: 90;
+  top: 62px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(760px, calc(100vw - 24px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 10px;
+  border-radius: 14px;
+  background: var(--navy);
+  color: var(--cream);
+  border: 1px solid rgba(232, 163, 61, 0.55);
+  box-shadow: 0 10px 30px rgba(10, 16, 32, 0.3);
+}
+.speech-bar[hidden] {
+  display: none;
+}
+.speech-face {
+  width: 38px;
+  flex: none;
+  background: var(--cream);
+  border-radius: 50%;
+  padding: 3px;
+}
+.speech-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.speech-text span {
+  color: rgba(246, 241, 231, 0.7);
+}
+.speech-actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+.speech-bar .btn:not(.btn-primary) {
+  background: transparent;
+  color: var(--cream);
+  border-color: rgba(246, 241, 231, 0.35);
+}
+.speech-bar .btn[aria-pressed='true'] {
+  background: var(--cream);
+  color: var(--navy);
+}
+:root[data-theme='dark'] .speech-bar {
+  background: #0a1222;
+}
+@media (max-width: 640px) {
+  .speech-bar {
+    top: auto;
+    bottom: 150px;
+    flex-wrap: wrap;
+  }
+  .speech-text {
+    flex-basis: calc(100% - 52px);
+  }
+  .speech-actions {
+    width: 100%;
+  }
+  .speech-actions .btn {
+    flex: 1;
   }
 }

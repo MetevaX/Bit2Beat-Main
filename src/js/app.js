@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   const B = window.Bit2Beat || {};
-  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bitpet', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight'];
+  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight'];
   const missing = need.filter((k) => !B[k]);
   if (missing.length) {
     document.body.insertAdjacentHTML('afterbegin', `<p role="alert" style="padding:16px;background:#fbe9d0;color:#14213d">Bit2Beat could not load: ${missing.join(', ')}. Open the single-file build in dist/ or serve the folder.</p>`);
@@ -233,7 +233,7 @@
     state.mixDefault = state.mix.map((m) => `${Math.round(m.gain * 100)}.${m.mute ? 1 : 0}.${m.solo ? 1 : 0}.${m.instrument || 'inherit'}`).join('_');
   }
 
-  /** Which BitPet topic fits a source. */
+  /** Which of Bitty’s note topics fits a source. */
   function topicFor(s) {
     if (s.kind === 'earth') return s.feed === 'quakes' ? 'quakes' : 'events';
     if (s.kind === 'video') return 'image';
@@ -268,7 +268,7 @@
     }
     state.pointer = null;
     $('autoTuneNote').hidden = true;
-    pet.setTopic(topicFor(next));
+    bitty.setTopic(topicFor(next));
     rebuild({ keepPosition: true });
     window.dispatchEvent(new CustomEvent('b2b:source', { detail: { mode: state.mode, id: state.choice[state.mode] } }));
   }
@@ -477,7 +477,7 @@
     html.style.fontSize = (16 * (p.textSize || 100)) / 100 + 'px';
     $('caption').hidden = !p.captions;
     storage.set('b2b-prefs', p);
-    pet.apply();
+    bitty.apply();
     player.refreshRouting();
     B.scoreView.invalidate();
     if (plan) onPosition(false);
@@ -485,7 +485,7 @@
   app.applyPrefs = applyPrefs;
 
   // ------------------------------------------------------------------ wiring
-  const pet = B.bitpet.createPet(() => state.prefs);
+  const bitty = B.bittyCard.create(() => state.prefs);
   const videoView = B.videoView.init(app);
 
   $$('[data-mode]').forEach((b) => {

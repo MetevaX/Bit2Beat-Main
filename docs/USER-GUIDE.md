@@ -3,7 +3,9 @@
 Bit2Beat turns Earth data into music you can hear, read as a score and export. This guide walks through every part of the studio.
 
 - [Opening Bit2Beat](#opening-bit2beat)
-- [Bitty’s story and tour](#bittys-story-and-tour)
+- [Bitty, your guide](#bitty-your-guide)
+- [Bitty’s story](#bittys-story)
+- [Reading aloud](#reading-aloud)
 - [The studio at a glance](#the-studio-at-a-glance)
 - [Data tab](#data-tab)
 - [Earth events tab](#earth-events-tab)
@@ -25,7 +27,31 @@ Bit2Beat turns Earth data into music you can hear, read as a score and export. T
 
 Bit2Beat runs fully in the browser. Nothing is uploaded: CSV files and pictures you open stay on your computer.
 
-## Bitty’s story and tour
+## Bitty, your guide
+
+Bitty is a space pup with very good ears, and the guide of Bit2Beat. Press **Guide** in the top bar (or `G`) and Bitty asks *How can I help?*:
+
+| Choice | What Bitty shows |
+| --- | --- |
+| **Tour the whole studio** (about a minute) | Tabs, source menu, chart, Play, Now playing, melody and summary, Sound, Channels, Earth events, Export and the Guide button |
+| **How the Data tab works** | Picking a data set, Points to play, NASA POWER for any place and year, your own CSV, the summary, the Readings table |
+| **How Earth events work** | Earthquakes or natural events, reading the map west to east, Even steps vs Map distance, Get latest and the Live / Saved / Bundled label, following one kind of event |
+| **How the Image tab works** | Pictures and satellite views, Light / Colour / Colour key, the three scans, Steps |
+| **How the Video tab works** | The video that follows the music, two notes per second, values read through the colour bar, your own video |
+| **Listen to my story** | Opens the Story page |
+| **Keyboard shortcuts** | Opens Help |
+
+![Guide menu](screenshots/guide.png)
+
+![A guide step](screenshots/tour.png)
+
+Bitty points at the real controls one at a time and dims the rest. Some steps ask you to try the control (press Play, open Earth events) and wait for you; **Do it for me** presses it for you. **Back**, **Next**, **Skip** and `Esc` always work.
+
+- **First visit:** Bitty says hello once and offers the tour or the story; *Not now* is one click.
+- **First time you open a tab:** Bitty’s card (under the score) offers *Show me* for that tab, or *No thanks*.
+- Also from **Help → Let Bitty guide me**, **Guide** on Bitty’s card, the Story page, or `?tour` in the address (`?notour` turns the hello off).
+
+## Bitty’s story
 
 ![Story](screenshots/story.png)
 
@@ -53,9 +79,13 @@ Each chapter shows:
 
 **Play the whole story** plays the chapters one after another (it starts from the first chapter you have not heard). Tick **Bitty reads each chapter aloud** to hear the narration (your browser’s voice) before the music. Chapters you have heard get a tick; hear all eight to earn the **Earth Listener** badge. Progress is kept in this browser only.
 
-![Tour](screenshots/tour.png)
+## Reading aloud
 
-The **tour** highlights the studio’s controls one at a time: tabs, source menu, chart, Play, Now playing, melody and summary, Sound, Channels, Earth events and Export. Some steps ask you to try the control and wait for you; **Do it for me** presses it for you. It appears once on your first visit (one click to skip). Start it again from **Help → Tour the studio with Bitty**, **Tour** on the BitPet card, the Story page, or by adding `?tour` to the address. `Esc` closes it.
+**Read aloud** (in *What the data says*, or `D`) and Bitty’s story narration use your browser’s voice. While Bitty reads, a bar at the top of the screen (bottom on phones) shows what is being read and how far:
+
+- **Pause** / **Resume** – stops and continues from the sentence where you paused.
+- **Skip to the music** (story only) – ends the narration and starts the chapter’s sound.
+- **Stop** – ends the reading (in the story, it also stops *Play the whole story*). `Esc`, or pressing **Read aloud** / `D` again, does the same.
 
 ## The studio at a glance
 
@@ -72,9 +102,10 @@ The **tour** highlights the studio’s controls one at a time: tabs, source menu
 | **Listening aids** | Shared pitch scale, ticks on sudden jumps, reference tone. |
 | **Space & tone** | Output (stereo, binaural, 5.1, 7.1, 7.1.4), movement, room and equaliser. |
 | **Melody** | Every note over time; the amber line is the playhead. |
-| **What the data says** | Trend, highs and lows, sudden jumps, in plain sentences. **Read aloud** speaks them. |
+| **What the data says** | Trend, highs and lows, sudden jumps, in plain sentences. **Read aloud** speaks them; press again to stop. |
 | **Score** | Live sheet music of the lead channel; **Full score** shows every channel; **PNG** downloads it. |
-| **BitPet** | Bitty with short notes from the NASA Image and Video Library that follow what you are playing; **Tour** starts the guided tour. |
+| **Bitty’s card** | Bitty with short notes from the NASA Image and Video Library that follow what you are playing, a tip the first time you open a tab, and **Guide**. |
+| **Guide** (top bar) | Bitty’s guide menu (`G`). |
 | **Player bar** | Restart, Play/Pause, Repeat, position, volume, **Record**, **Readings** table and **Export**. |
 
 ## Data tab
@@ -166,7 +197,9 @@ Press **Play**: the muted video follows the music. Click the picture to play or 
 | `←` `→` | Step back / forward and hear that step (`Shift` = one bar) |
 | `Home` `End` | First / last step |
 | `L` | Repeat on / off |
-| `D` | Read the data summary aloud |
+| `D` | Read the data summary aloud (again to stop) |
+| `G` | Bitty’s guide |
+| `Esc` | Stop reading aloud; close the guide |
 | `T` | Readings table |
 | `?` | Help |
 

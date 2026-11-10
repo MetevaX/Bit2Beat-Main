@@ -36,9 +36,9 @@ CI (`.github/workflows/ci.yml`) runs check, build and test on every push and pul
 - **wav, spatial and adm** – WAV, 7.1.4 channel masks, constant-power panning, ADM BWF chunks.
 - **page integrity** – unique ids, every `$(id)` used by the scripts exists, every script file exists, no leftover code from removed features.
 - **build** – the single file inlines every script, style and image.
-- **BitPet notes** – every topic has offline notes; excerpts end at real sentence ends.
+- **Bitty’s notes** – every topic has offline notes; excerpts end at real sentence ends.
 - **story** – eight chapters, each loads a real source, unmuted channels exist, facts come from the data (warmest year matches GISTEMP, Svalbard warms faster than the globe, polar-night day count), no Egypt content, broken or missing data never throws.
-- **tour** – the bubble stays on screen in every placement, dimmed areas surround the highlight, every step points at an element that exists, Bitty’s moods render.
+- **guide** – the bubble stays on screen in every placement, dimmed areas surround the highlight, every step of every tour points at an element that exists and every button goes somewhere, each tab has a tour and a tip, the page never says “BitPet”, reading aloud is cut into sentences, Bitty’s moods render.
 
 ## Project rules
 

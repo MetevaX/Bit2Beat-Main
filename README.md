@@ -6,7 +6,7 @@ Built for the NASA Space Apps Challenge 2026, *The Earth Information Jukebox*, b
 
 ![Bit2Beat studio](docs/screenshots/studio.png)
 
-New to Bit2Beat? Open the **Story** tab: Bitty the space pup plays eight chapters of real NASA and USGS data, one at a time, with facts worked out from the numbers you hear. Or let Bitty’s **guided tour** walk you through the studio (Help → *Tour the studio with Bitty*).
+New to Bit2Beat? Open the **Story** tab: Bitty the space pup plays eight chapters of real NASA and USGS data, one at a time, with facts worked out from the numbers you hear. Or press **Guide** (or `G`): Bitty shows you the whole studio or how one tab works, pointing at the real buttons.
 
 ![Bitty’s story](docs/screenshots/story.png)
 
@@ -40,7 +40,7 @@ npm test        # 17 test groups: algorithms, file formats, story, tour, page in
 
 ### Listening aids
 
-- **What the data says** – trend (least-squares slope, R² check), highest/lowest with labels, and sudden jumps, in plain sentences you can have read aloud (`D`).
+- **What the data says** – trend (least-squares slope, R² check), highest/lowest with labels, and sudden jumps, in plain sentences you can have read aloud (`D`), with Pause / Resume and Stop.
 - **Tick on sudden jumps** – a quiet click on readings that jump away from their neighbours. Detection uses a leave-one-out local line and the modified z-score (|z| ≥ 3.5, Iglewicz & Hoaglin), refitted without the flagged points, so smooth curves, seasons and steady trends are not flagged.
 - **Reference tone** – a soft drone at the data’s baseline (e.g. GISTEMP’s 1951–1980 average) or its mean, so you hear above vs. below.
 - **Links remember everything** – mode, source, sound settings, mix and play position live in the address bar, so a refresh or a shared link opens the same view.
@@ -62,7 +62,7 @@ src/js/core/                pure, Node-testable logic
   stats.js   trend, sudden jumps, resampling, plain-language summary, suggestions
   plan.js    builds the full note plan (pitch, loudness, time, 3D position) used everywhere
   story.js   Bitty’s eight chapters and the facts worked out from their data
-  spotlight.js  where the tour’s bubble and dimmed areas go
+  spotlight.js  where Bitty’s guide bubble and dimmed areas go
   image.js   L* and colour analysis of pixels
   csv.js     CSV parser with label and unit detection
   feeds.js   USGS, NASA EONET, NASA POWER (live + offline)

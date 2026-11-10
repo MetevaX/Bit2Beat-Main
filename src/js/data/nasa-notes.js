@@ -1,5 +1,5 @@
 /* Bit2Beat · short notes from the NASA Image and Video Library (images.nasa.gov), saved 6–7 Nov 2026
-   so BitPet has something to say offline. Each `topic` matches what is playing. */
+   so Bitty has something to say offline. Each `topic` matches what is playing. */
 (function (root) {
   const NOTES = [
     { topic: 'climate', id: 'PIA24139', title: 'AIRS Temperature Anomalies', date: '2022-01-04', text: "This animation shows a nearly 20-year record of temperature anomalies for two layers in Earth's atmosphere: the lower troposphere, where most of the planet's weather occurs; and the upper stratosphere, which contains the ozone layer." },

@@ -42,6 +42,7 @@
     <button type="button" class="topnav-link" data-page="about">About the team</button>
   </nav>
   <div class="topbar-actions">
+    <button type="button" class="top-btn guide-btn" id="guideBtn" aria-label="Guide: Bitty shows you how to use Bit2Beat (G)"><span class="guide-face" id="guideFace" aria-hidden="true"></span><span>Guide</span></button>
     <button type="button" class="top-btn" id="sessionsBtn">Sessions</button>
     <button type="button" class="top-btn" id="helpBtn" aria-label="Help and keyboard shortcuts">Help</button>
     <button type="button" class="top-btn" id="accessBtn" aria-label="Accessibility"><svg class="i" aria-hidden="true"><use href="#i-person"/></svg><span>Accessibility</span></button>
@@ -170,13 +171,14 @@
         <div id="scorePreview" class="score-preview"></div>
       </section>
 
-      <section class="card bitpet" id="bitPet" aria-labelledby="petTitle">
-        <button type="button" class="pet-face" id="petFace" aria-label="Say hello to BitPet"></button>
-        <div class="pet-body">
-          <div class="pet-head"><h2 id="petTitle">BitPet’s NASA note</h2><span><button type="button" class="link-btn" id="petTour">Tour</button> <button type="button" class="link-btn" id="petHide">Hide</button></span></div>
-          <p id="petFact"></p>
-          <div class="pet-foot"><a id="petSource" href="https://images.nasa.gov" target="_blank" rel="noopener noreferrer">Source</a>
-            <span><button type="button" class="link-btn" id="petPrev" aria-label="Previous note">Prev</button> <span id="petPage"></span> <button type="button" class="link-btn" id="petNext" aria-label="Next note">Next</button></span></div>
+      <section class="card bitty-card" id="bittyCard" aria-labelledby="bittyTitle">
+        <button type="button" class="bitty-face" id="bittyFace" aria-label="Say hello to Bitty (next note)"></button>
+        <div class="bitty-body">
+          <div class="bitty-head"><h2 id="bittyTitle">Bitty’s NASA note</h2><span><button type="button" class="link-btn" id="bittyTour">Guide</button> <button type="button" class="link-btn" id="bittyHide">Hide</button></span></div>
+          <p class="bitty-tip" id="bittyTip" hidden><span id="bittyTipText"></span> <span class="bitty-tip-actions"><button type="button" class="btn btn-primary btn-small" id="bittyTipBtn">Show me</button><button type="button" class="link-btn" id="bittyTipNo">No thanks</button></span></p>
+          <p id="bittyFact"></p>
+          <div class="bitty-foot"><a id="bittySource" href="https://images.nasa.gov" target="_blank" rel="noopener noreferrer">Source</a>
+            <span><button type="button" class="link-btn" id="bittyPrev" aria-label="Previous note">Prev</button> <span id="bittyPage"></span> <button type="button" class="link-btn" id="bittyNext" aria-label="Next note">Next</button></span></div>
         </div>
       </section>
       </div>
@@ -280,7 +282,7 @@
       <p class="lead">Bitty is a space pup with very good ears. Satellites send Bitty Earth’s numbers, and Bit2Beat turns them into music. Follow eight short chapters of real NASA and USGS data, from a warming century to the planet’s breath. Each chapter plays in the studio’s own player, so you can open any of them and keep exploring.</p>
       <div class="story-actions">
         <button type="button" class="btn btn-primary" id="storyPlayAll" aria-pressed="false">Play the whole story</button>
-        <button type="button" class="btn" id="storyTourBtn">Tour the studio</button>
+        <button type="button" class="btn" id="storyTourBtn">Let Bitty guide me</button>
         <label class="check check-inline"><input type="checkbox" id="storyNarrate"><span><b>Bitty reads each chapter aloud</b></span></label>
       </div>
       <p class="story-progress" id="storyProgress"></p>
@@ -296,7 +298,7 @@
       <div class="btn-row">
         <button type="button" class="btn btn-primary" id="finaleStudio">Open the studio</button>
         <button type="button" class="btn" id="finaleCsv">Open my own CSV</button>
-        <button type="button" class="btn" id="finaleTour">Tour the studio</button>
+        <button type="button" class="btn" id="finaleTour">Let Bitty guide me</button>
       </div>
     </div>
     <div class="finale-badge" id="finaleBadge"></div>
@@ -333,7 +335,7 @@
       <li>NASA POWER daily and monthly point data — power.larc.nasa.gov</li>
       <li>NASA Earth Observatory Natural Event Tracker (EONET v3) — eonet.gsfc.nasa.gov</li>
       <li>NASA GIBS satellite imagery (MODIS, VIIRS) — gibs.earthdata.nasa.gov</li>
-      <li>NASA Image and Video Library (BitPet notes) — images.nasa.gov</li>
+      <li>NASA Image and Video Library (Bitty’s notes) — images.nasa.gov</li>
       <li>USGS Earthquake Hazards Program real-time feeds — earthquake.usgs.gov</li>
       <li>abcjs music engraving (MIT licence)</li>
     </ul>
@@ -360,6 +362,15 @@
   </div>
 </footer>
 
+<div class="speech-bar" id="speechBar" role="region" aria-label="Reading aloud" hidden>
+  <span class="speech-face" id="speechFace" aria-hidden="true"></span>
+  <span class="speech-text"><b id="speechLabel">Bitty is reading</b><span id="speechState"></span></span>
+  <span class="speech-actions">
+    <button type="button" class="btn btn-small" id="speechPause" aria-pressed="false">Pause</button>
+    <button type="button" class="btn btn-small btn-primary" id="speechSkip" hidden>Skip to the music</button>
+    <button type="button" class="btn btn-small" id="speechStop">Stop</button>
+  </span>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <div class="sr-only" id="srLive" aria-live="polite"></div>
 
@@ -404,7 +415,7 @@
     <label class="check"><input type="checkbox" data-pref="mono"><span><b>Mono audio</b><small>Same sound in both ears.</small></span></label>
     <label class="check"><input type="checkbox" data-pref="captions" checked><span><b>Show what is playing</b><small>Value, note and place as text.</small></span></label>
     <label class="check"><input type="checkbox" data-pref="announce"><span><b>Screen reader updates while playing</b><small>Every few seconds.</small></span></label>
-    <label class="check"><input type="checkbox" data-pref="pet" checked><span><b>Show BitPet</b></span></label>
+    <label class="check"><input type="checkbox" data-pref="pet" checked><span><b>Show Bitty’s card</b><small>Notes and tips under the score. The Guide button always works.</small></span></label>
   </div>
   <div class="btn-row"><button type="button" class="btn btn-quiet" id="accessReset">Reset</button><button type="button" class="btn btn-primary" data-close>Done</button></div>
 </dialog>
@@ -417,14 +428,16 @@
     <li><b>Shape the sound.</b> Change instrument, scale and tempo, mute or solo channels, or press Suggest.</li>
     <li><b>Export.</b> Download audio, the notes as CSV or the score.</li>
   </ol>
-  <div class="btn-row help-bitty"><button type="button" class="btn btn-primary" id="helpTour">Tour the studio with Bitty</button><button type="button" class="btn" id="helpStory">Read Bitty’s story</button></div>
+  <div class="btn-row help-bitty"><button type="button" class="btn btn-primary" id="helpTour">Let Bitty guide me</button><button type="button" class="btn" id="helpStory">Listen to Bitty’s story</button></div>
   <h3>Keyboard</h3>
   <dl class="keys">
     <dt><kbd>Space</kbd></dt><dd>Play / pause</dd>
     <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Step back / forward and hear that step</dd>
     <dt><kbd>Home</kbd> <kbd>End</kbd></dt><dd>First / last step</dd>
     <dt><kbd>L</kbd></dt><dd>Repeat on / off</dd>
-    <dt><kbd>D</kbd></dt><dd>Read the data summary aloud</dd>
+    <dt><kbd>D</kbd></dt><dd>Read the data summary aloud (press again to stop)</dd>
+    <dt><kbd>G</kbd></dt><dd>Bitty’s guide</dd>
+    <dt><kbd>Esc</kbd></dt><dd>Stop reading aloud, close the guide</dd>
     <dt><kbd>T</kbd></dt><dd>Readings table</dd>
     <dt><kbd>?</kbd></dt><dd>This help</dd>
   </dl>
@@ -466,7 +479,7 @@
 <script src="src/js/ui/score-view.js"></script>
 <script src="src/js/data/nasa-notes.js"></script>
 <script src="src/js/ui/bitty-art.js"></script>
-<script src="src/js/ui/bitpet.js"></script>
+<script src="src/js/ui/bitty-card.js"></script>
 <script src="src/js/ui/sources.js"></script>
 <script src="src/js/ui/panels.js"></script>
 <script src="src/js/ui/mixer.js"></script>
@@ -475,8 +488,10 @@
 <script src="src/js/ui/recorder.js"></script>
 <script src="src/js/ui/url-state.js"></script>
 <script src="src/js/ui/video-view.js"></script>
+<script src="src/js/ui/speech.js"></script>
 <script src="src/js/ui/keys.js"></script>
 <script src="src/js/ui/pages.js"></script>
+<script src="src/js/data/guide.js"></script>
 <script src="src/js/ui/story-view.js"></script>
 <script src="src/js/ui/tour.js"></script>
 <script src="src/js/app.js"></script>
