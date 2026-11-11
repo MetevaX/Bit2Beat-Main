@@ -1,0 +1,264 @@
+/* About page: the team lands one by one, each card is a note, then “Launch the Jukebox”. */
+
+.member.is-waiting,
+.launch.is-waiting {
+  opacity: 0;
+}
+
+.team-title {
+  position: relative;
+  display: inline-block;
+}
+.team-title.is-in::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -5px;
+  height: 3px;
+  width: 100%;
+  border-radius: 2px;
+  background: var(--amber);
+  transform-origin: left;
+  animation: title-line 0.7s 0.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes title-line {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* the cards */
+.member {
+  position: relative;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.member:hover {
+  transform: translateY(-3px);
+  border-color: var(--amber);
+  box-shadow: 0 10px 28px -14px rgba(20, 33, 61, 0.45);
+}
+.member img {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+.member:hover img {
+  transform: scale(1.05) rotate(-2deg);
+}
+.member.is-in {
+  animation: member-in 0.75s calc(0.05s + var(--d, 0s)) cubic-bezier(0.2, 0.9, 0.25, 1.12) both;
+}
+.member.is-in img {
+  animation:
+    photo-pop 0.6s calc(0.2s + var(--d, 0s)) cubic-bezier(0.3, 1.4, 0.5, 1) both,
+    ring 1s calc(0.65s + var(--d, 0s)) ease-out both;
+}
+.member.is-in h3,
+.member.is-in p {
+  animation: text-in 0.6s calc(0.3s + var(--d, 0s)) ease-out both;
+}
+@keyframes member-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.97);
+  }
+}
+@keyframes photo-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.55) rotate(-12deg);
+  }
+}
+@keyframes text-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+@keyframes ring {
+  from {
+    box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.7);
+  }
+  to {
+    box-shadow: 0 0 0 16px rgba(232, 163, 61, 0);
+  }
+}
+
+/* each of us is a note */
+.member h3 {
+  padding-right: 56px;
+}
+.member-note {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.member-note:hover,
+.member-note:focus-visible {
+  border-color: var(--amber);
+}
+.note-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+.note-eq i,
+.launch-eq i {
+  display: block;
+  width: 3px;
+  border-radius: 1px;
+  background: var(--amber);
+}
+.note-eq i {
+  height: 6px;
+}
+.note-eq i:nth-child(2) {
+  height: 10px;
+}
+.member.is-singing .note-eq i {
+  animation: eq 0.32s ease-in-out 3 alternate;
+}
+.member.is-singing .note-eq i:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.member.is-singing .note-eq i:nth-child(3) {
+  animation-delay: 0.2s;
+}
+.member.is-singing img {
+  animation: ring 0.9s ease-out;
+}
+@keyframes eq {
+  to {
+    height: 12px;
+  }
+}
+
+/* launch */
+.launch {
+  margin: 34px 0 8px;
+  padding: 28px 20px;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: radial-gradient(120% 140% at 50% 0%, rgba(232, 163, 61, 0.14), transparent 60%), var(--surface);
+}
+.launch.is-in {
+  animation: member-in 0.8s calc(0.1s + var(--d, 0s)) cubic-bezier(0.2, 0.9, 0.25, 1.12) both;
+}
+.launch-kicker {
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.launch-note {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.launch-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 30px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--navy);
+  color: var(--cream);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.5);
+  animation: launch-glow 2.4s ease-in-out infinite;
+  transition: transform 0.2s ease;
+}
+.launch-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+.launch-btn:active {
+  transform: scale(0.98);
+}
+:root[data-theme='dark'] .launch-btn {
+  background: var(--cream);
+  color: var(--navy);
+}
+.launch-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 20px;
+}
+.launch-eq i {
+  width: 4px;
+  height: 6px;
+  animation: eq-big 1.1s ease-in-out infinite alternate;
+}
+.launch-eq i:nth-child(2) {
+  animation-delay: -0.3s;
+}
+.launch-eq i:nth-child(3) {
+  animation-delay: -0.6s;
+}
+.launch-eq i:nth-child(4) {
+  animation-delay: -0.15s;
+}
+.launch-eq i:nth-child(5) {
+  animation-delay: -0.45s;
+}
+@keyframes eq-big {
+  to {
+    height: 20px;
+  }
+}
+@keyframes launch-glow {
+  50% {
+    box-shadow: 0 0 0 10px rgba(232, 163, 61, 0);
+  }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.45);
+  }
+}
+.launch-btn.is-launching {
+  animation: launch-go 0.65s cubic-bezier(0.5, 0, 0.75, 0) both;
+}
+.launch-btn.is-launching .launch-eq i {
+  animation-duration: 0.18s;
+}
+@keyframes launch-go {
+  0% {
+    box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.7);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 40px rgba(232, 163, 61, 0);
+  }
+}
+
+@media (max-width: 720px) {
+  .member-note {
+    top: 8px;
+    right: 8px;
+  }
+  .launch-btn {
+    padding: 14px 22px;
+    font-size: 1.05rem;
+  }
+}

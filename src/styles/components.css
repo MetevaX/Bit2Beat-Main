@@ -227,6 +227,25 @@
   font-size: 0.78rem;
 }
 
+/* sound moods */
+.mood-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.mood-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.mood-row .seg {
+  flex: 1;
+}
+.mood-row .seg button {
+  flex: 1;
+  padding: 6px 8px;
+}
+
 /* forms */
 select,
 input[type='text'],

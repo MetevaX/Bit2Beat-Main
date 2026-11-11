@@ -119,9 +119,10 @@
     box.append(el('ul', {}, lines.map((t) => el('li', { text: t }))));
   }
 
-  /** Read “What the data says” aloud; pressing again (or D) stops. Pause is in the reading bar. */
+  /** Read “What the data says” aloud; pressing again (or D) pauses, and again resumes from that word.
+   *  Stop is in the reading bar (or Esc). */
   function speak(app) {
-    if (B.speech.owner() === 'insights') return B.speech.stop();
+    if (B.speech.owner() === 'insights') return B.speech.paused() ? B.speech.resume() : B.speech.pause();
     const text = [...$('insights').querySelectorAll('li')].map((li) => li.textContent).join(' ');
     if (!text) return;
     B.speech.speak(text, { label: `Reading: ${app.src?.name || 'what the data says'}`, owner: 'insights' });
@@ -143,6 +144,10 @@
     Object.entries(B.audio.instruments).forEach(([k, v]) => $('instrument').append(new Option(v.name, k)));
     Object.entries(music.SCALES).forEach(([k, v]) => $('scale').append(new Option(v.name, k)));
     music.KEYS.forEach((k, i) => $('key').append(new Option(k, String(i))));
+    const showMood = () => {
+      const mood = music.moodOf(S);
+      $$('#moods button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mood === mood)));
+    };
     const sync = () => {
       $('instrument').value = S.instrument;
       $('scale').value = S.scale;
@@ -150,6 +155,7 @@
       $('range').value = String(S.range);
       $('tempo').value = S.tempo;
       $('tempoOut').textContent = S.tempo + ' BPM';
+      showMood();
       $('sharedScale').checked = S.sharedScale;
       $('cues').checked = S.cues;
       $('drone').value = S.drone;
@@ -167,6 +173,7 @@
     sync();
     const set = (k, v, rebuild = true) => {
       S[k] = v;
+      showMood();
       app.persist();
       if (rebuild) app.rebuild();
     };
@@ -195,6 +202,26 @@
       app.rebuild();
       announce(t.reason);
     };
+    // moods: one click sets the whole sound (always pentatonic); any change by hand leaves the mood
+    $$('#moods button').forEach((b) => {
+      b.onclick = () => {
+        const m = music.MOODS[b.dataset.mood];
+        Object.assign(S, { scale: m.scale, key: m.key, range: m.range, tempo: m.tempo, instrument: m.instrument });
+        app.state.mix.forEach((x) => (x.instrument = 'inherit'));
+        A.room = m.room;
+        A.eq = { ...music.EQ_PRESETS[m.eq] };
+        pressOne($('eqPresets'), $('eqPresets').querySelector(`[data-eq="${m.eq}"]`));
+        sync();
+        const note = `${m.name}: ${m.hint}.`;
+        $('autoTuneNote').hidden = false;
+        $('autoTuneNote').textContent = note;
+        app.player.refreshRouting();
+        app.player.applyMix();
+        app.persist();
+        app.rebuild();
+        announce(note);
+      };
+    });
     // space & tone
     $('output').onchange = (e) => {
       A.output = e.target.value;
@@ -232,7 +259,7 @@
     $('speakBtn').onclick = () => speak(app);
     window.addEventListener('b2b:speech', (e) => {
       const on = e.detail.active && e.detail.owner === 'insights';
-      $('speakBtn').textContent = on ? 'Stop reading' : 'Read aloud';
+      $('speakBtn').textContent = !on ? 'Read aloud' : e.detail.paused ? 'Resume reading' : 'Pause reading';
       $('speakBtn').setAttribute('aria-pressed', String(on));
     });
   }

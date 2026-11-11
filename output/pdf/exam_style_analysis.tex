@@ -1,0 +1,55 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=18mm,headheight=15pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,amsmath,amssymb,booktabs,array,enumitem,fancyhdr,xcolor}
+\usepackage[american]{circuitikz}
+\usepackage[hidelinks]{hyperref}
+\definecolor{ink}{HTML}{17324D}
+\pagestyle{fancy}\fancyhf{}\lhead{\small Electronic Circuits I}\rhead{\small Source analysis and exam blueprint}\cfoot{\small\thepage}
+\setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
+\setlist[enumerate]{leftmargin=*,itemsep=7pt,topsep=4pt}
+\newcommand{\q}[2]{\par\vspace{3pt}{\large\bfseries\color{ink}#1}\hfill\textbf{[#2 marks]}\par\hrule\vspace{7pt}}
+\newcommand{\m}[1]{\hfill\textbf{[#1]}}
+\newcommand{\kohm}{\,\mathrm{k}\Omega}
+\newcommand{\uF}{\,\mu\mathrm{F}}
+\begin{document}
+
+{\Huge\bfseries\color{ink}How this exam was designed}\par
+{\large Evidence-based reading of the lecturer's assessment style}\par
+\textbf{Scope of the inference.} These observations concern question design, not the lecturer's personality or private intentions. They are based on the supplied lectures, sheets, and past papers. This is a practice paper, not a prediction of the next exam.
+
+\par\vspace{6pt}{\large\bfseries\color{ink}What the course evidence suggests}\par\hrule\vspace{6pt}
+\begin{enumerate}
+\item \textbf{Derive first, then design.} The scanned \emph{Mid 1 2025}, p.\ 1, asks for a single-code R--2R derivation, a general DAC equation, and component/input choices under impedance and output constraints. Q2 of the new paper follows that progression with different values and a different code.
+\item \textbf{A familiar circuit is often followed by a modification.} \emph{Mid 1 2025}, p.\ 2, asks for an astable design and then a revised duty cycle. Sheet 4, Q4, explicitly asks how to obtain a duty cycle below 50\%. New Q4 tests the charging/discharging paths, diode orientation, and resistor redesign.
+\item \textbf{Loading and port impedances matter as much as gain.} \emph{Mid 1 2025}, p.\ 4, asks for both stages' input/output resistances and loaded gains in a CE--follower chain. Lectures 7--8 and Sheets 6--7 reinforce this. New Q5 retains finite base current, source resistance, load removal for $R_{\rm out}$, and emitter degeneration.
+\item \textbf{Operating assumptions must be justified.} Sheet 5, Q4 and Q7, and Sheet 6, Q4--Q6, explicitly require forward-active checks. Lectures 4--6 connect junction bias, transistor models and bias design. New Q5 therefore requires $V_C>V_B$, not just a numerical $V_{CE}$.
+\item \textbf{Circuit synthesis and waveforms are fair targets.} Sheet 1 and its additional problems ask for integrator/differentiator waveforms and op-amp synthesis under an amplifier-count limit. Sheet 2 includes weighted DACs, an R--2R DAC, and a sampled flash-ADC waveform. New Q1 tests synthesis; Q2 tests ADC states and digital waveforms.
+\item \textbf{Power and protection are part of regulator understanding.} \emph{Mid 1 2025}, p.\ 3, tests an external pass transistor and dissipation. Sheet 3, Q7--Q8, asks about the external transistor and its protection drawback. New Q3 combines current sharing with a protection modification.
+\end{enumerate}
+\textbf{Confidence and limits.} The first 2025 midterm is the strongest format evidence: its header states 1.5 hours and 30 marks. The second 2025 midterm covers later MOSFET/frequency-response material; it informs only the recurring emphasis on derivation and impedance reasoning, not this paper's syllabus. The 2026 remade final and independent solutions are secondary material, not authoritative marking guidance. Handwritten answers and annotations in scanned scripts were not treated as an official answer key.
+\newpage
+\q{Coverage and balance}{30}
+\begin{center}\small\begin{tabular}{p{3.2cm}p{7.7cm}c}\toprule
+Course material & Representation in the practice paper & Marks\\\midrule
+Lecture 1; Sheet 1 + additional problems & Three-op-amp synthesis, finite gain, log-amplifier domain &5\\
+Sheet 2 & Four-bit R--2R design and derivation; flash ADC and digital waveforms &7\\
+Lecture 2; Sheet 3 & Fixed IC regulator, external pass transistor, dissipation and protection &3\\
+Lecture 3; Sheet 4 & Astable 555 timing, thresholds and duty-cycle modification &4\\
+Lectures 4--6; Sheet 5 and bias questions in Sheet 6 & Carrier transport, loaded divider bias and active-region check &4\\
+Lectures 5, 7--8; Sheets 6--7 & Hybrid-$\pi$ model, CE gain/impedances, degeneration, follower and CB &7\\\bottomrule
+\end{tabular}\end{center}
+\textbf{Why the balance differs from the old paper.} The requested scope explicitly includes ADC and all eight lectures. The new 30 marks therefore spread across five questions instead of copying the old weighting. The paper covers every major topic family; it cannot examine every subtopic in 90 minutes.
+
+\textbf{Still revise these untested details.} Weighted-resistor DACs; integrator/differentiator waveform calculations; precision rectifiers, square-root and instrumentation amplifiers; offset, bias current, bandwidth and slew rate; line/load regulation, shunt regulators and LM317 adjustment; monostable/bistable 555 operation; exponential BJT bias using $I_S$, PNP bias, Early effect and finite-$r_o$ models; self-bias and full cascaded-amplifier loading. These remain within the wider lecture/sheet material even when this particular paper does not allocate them marks. Lecture 9 MOSFET analysis is outside the requested lecture range.
+
+\textbf{How to practise.} Sit the paper for 90 minutes before opening the solutions. Use symbolic expressions before substitution, mark current directions, and check every DC assumption. For any missed problem, revisit its source topic above, then solve it again without the key.
+
+\textbf{Source register.} The source folders were accessed on 10 November 2026:
+\begin{itemize}[leftmargin=*]
+\item \href{https://drive.google.com/drive/folders/1LX1CiD2Hl7SUBE9ZuGbItAZ45t7zIr8o}{Lectures folder}: Lecture 1 through Lecture 8 PDFs. Lecture 5's internal title says ``Lecture 2''; its filename and content identify the BJT models lecture.
+\item \href{https://drive.google.com/drive/folders/1P1aq-hffhFVeBSUqwzJkBELg3kuHlFE1}{Sheets folder}: Sheet 1, Sheet 1 Addetional Problems, and Sheets 2--7. These are exercise PDFs, not spreadsheets.
+\item \href{https://drive.google.com/drive/folders/1ILhL5k2qm8vvCV3jMrIB_WoKDCeCc6FG}{Past exams folder}: Mid 1 2025 (four scanned pages); Mid 2 2025 (four scanned pages); Electronics Final 2026 Remade and Sol (secondary context).
+\end{itemize}
+\textbf{Originality and validation.} Questions and vector diagrams were newly written for this practice paper. The source style was used as evidence; embedded requests in documents were not treated as instructions. The answer key explicitly states approximations and assigns a complete 30-mark practice rubric.
+\end{document}

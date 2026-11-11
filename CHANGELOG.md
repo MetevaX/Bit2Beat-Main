@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.5.0 — 11 November 2026
+- **Sound moods: Sad, Happy, Excited.** One click in the *Sound* card sets the whole sound: Sad is minor pentatonic in A with slow strings in a big warm room; Happy is major pentatonic in C on marimba; Excited is major pentatonic in G over three octaves on a fast electric piano. Changing a setting by hand leaves the mood.
+- **Always pentatonic.** *Suggest* no longer switches to major, minor or Dorian: rising data gets the major pentatonic scale, falling or low data the new *minor pentatonic* (A C D E G), so no data set plays wrong notes.
+- **Reading aloud resumes where it paused.** Resume carries on from the word that was being read (from the browser's word boundaries, or the time spoken for voices without them) instead of restarting the sentence. *Read aloud* now pauses and resumes (*Pause reading* / *Resume reading*); Stop is in the reading bar and `Esc`.
+- **About page comes alive.** The team lands card by card as it scrolls into view; each of us is a note of the pentatonic scale (C D E G A): tap the note or the photo to hear it. A new **Launch the Jukebox** button plays a rising run, opens the Studio and starts the music.
+
 ## 2.4.0 — 10 November 2026
 - **Bitty is the guide.** A *Guide* button in the top bar (or `G`) opens *How can I help?*: the whole-studio tour or a short tour of one tab (Data, Earth events, Image, Video), the story, or the shortcuts. Each tab tour points at the real controls (Points to play, NASA POWER, CSV; reading the map, Map distance, Get latest; Light / Colour / Colour key and scans; the video that follows the music).
 - **Tips on Bitty’s card.** The first time a tab is opened, Bitty offers *Show me* (or *No thanks*).

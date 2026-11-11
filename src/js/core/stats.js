@@ -243,11 +243,13 @@
     const n = Math.max(...normChannels.map((c) => c.length));
     const tempo = Math.round(Math.max(72, Math.min(150, 84 + roughness * 220 + (n > 120 ? 20 : 0))));
     const instrument = roughness > 0.2 ? 'marimba' : roughness < 0.06 ? 'strings' : 'soft';
-    const scale = trend.slope * n > 0.35 ? 'major' : trend.slope * n < -0.35 ? 'minor' : m < 0.4 ? 'dorian' : 'pent';
+    // always pentatonic (no wrong notes): major when the data rises, minor when it falls or stays low
+    const dir = trend.slope * n > 0.35 ? 'rising' : trend.slope * n < -0.35 ? 'falling' : '';
+    const scale = dir === 'falling' || (!dir && m < 0.4) ? 'pentmin' : 'pent';
     const reason =
       `${roughness > 0.2 ? 'Jumpy' : roughness < 0.06 ? 'Smooth' : 'Moderately varied'} data, ` +
-      `${scale === 'major' ? 'rising overall' : scale === 'minor' ? 'falling overall' : 'without a strong overall direction'}: ` +
-      `${(scale === 'pent' ? 'pentatonic' : scale)} scale, ${tempo} BPM, ${instrument === 'soft' ? 'piano' : instrument}.`;
+      `${dir ? dir + ' overall' : 'without a strong overall direction'}: ` +
+      `${scale === 'pent' ? 'major' : 'minor'} pentatonic scale, ${tempo} BPM, ${instrument === 'soft' ? 'piano' : instrument}.`;
     return { scale, tempo, instrument, reason, roughness };
   }
 

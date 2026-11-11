@@ -80,7 +80,13 @@ test('stats: trend, robust jumps (no false alarms on smooth or trending data), r
   assert.match(d.sentences[1], /1\.28°C at 2024/);
 
   const tune = stats.autoTune([Array.from({ length: 40 }, (_, i) => i / 39)]);
-  assert.equal(tune.scale, 'major', 'a rising series gets a major scale');
+  assert.equal(tune.scale, 'pent', 'a rising series gets the major pentatonic scale');
+  assert.equal(stats.autoTune([Array.from({ length: 40 }, (_, i) => 1 - i / 39)]).scale, 'pentmin', 'a falling one, minor pentatonic');
+  for (const [id, m] of Object.entries(music.MOODS)) {
+    assert.ok(['pent', 'pentmin'].includes(m.scale), `${id} stays pentatonic`);
+    assert.equal(music.moodOf(m), id, `${id} is recognised from its settings`);
+  }
+  assert.equal(music.moodOf({ ...music.MOODS.sad, tempo: 67 }), '', 'a hand-made change leaves the mood');
   assert.ok(tune.tempo >= 72 && tune.tempo <= 150);
 });
 
@@ -476,6 +482,39 @@ test('tour: spotlight geometry keeps the bubble on screen; every step points at 
   const { sentences } = self.Bit2Beat.speech;
   assert.deepEqual(sentences('Svalbard warmed about 3.7 times faster. It is “far north”. Done!'), ['Svalbard warmed about 3.7 times faster.', 'It is “far north”.', 'Done!']);
   assert.ok(sentences('word, '.repeat(80)).every((p) => p.length <= 220), 'long sentences are split');
+
+  // Pause and Resume carry on from the word that was being spoken, not from the beginning
+  const spoken = [];
+  self.speechSynthesis = { speak: (u) => spoken.push(u), cancel: () => {} };
+  self.SpeechSynthesisUtterance = function (text) { this.text = text; };
+  self.dispatchEvent = () => true;
+  self.Bit2Beat = { dom: { $: () => null, announce: () => {} } };
+  delete require.cache[require.resolve('../src/js/ui/speech.js')];
+  require('../src/js/ui/speech.js');
+  const sp = self.Bit2Beat.speech;
+  let ended = '';
+  sp.speak('One two three four. Five six.', { owner: 'test', onend: (r) => (ended = r) });
+  assert.equal(spoken.at(-1).text, 'One two three four.');
+  spoken.at(-1).onboundary({ name: 'word', charIndex: 8 }); // now saying “three”
+  sp.pause();
+  assert.ok(sp.paused());
+  sp.resume();
+  assert.equal(spoken.at(-1).text, 'three four.', 'resume starts at the paused word');
+  spoken.at(-1).onboundary({ name: 'word', charIndex: 6 }); // “four”, counted inside the shorter text
+  sp.pause();
+  sp.resume();
+  assert.equal(spoken.at(-1).text, 'four.', 'a second pause in the same sentence also keeps its place');
+  spoken.at(-1).onend();
+  assert.equal(spoken.at(-1).text, 'Five six.', 'then the next sentence');
+  sp.pause(); // no word heard yet: start of that sentence
+  sp.resume();
+  assert.equal(spoken.at(-1).text, 'Five six.');
+  spoken.at(-1).onend();
+  assert.equal(ended, 'done');
+  assert.equal(sp.wordStart('hello world', 8), 6);
+  delete self.speechSynthesis;
+  delete self.SpeechSynthesisUtterance;
+  delete self.dispatchEvent;
 
   const art = require('../src/js/ui/bitty-art.js');
   for (const m of art.MOODS) assert.match(art.dog(m), /^<svg[^>]+mood-/);

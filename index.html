@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="src/styles/glass.css">
 <link rel="stylesheet" href="src/styles/polish.css">
 <link rel="stylesheet" href="src/styles/story.css">
+<link rel="stylesheet" href="src/styles/about.css">
 </head>
 <body>
 <a class="skip" href="#studio">Skip to the studio</a>
@@ -199,6 +200,14 @@
           <h2 id="soundTitle">Sound</h2>
           <button type="button" class="btn btn-quiet" id="autoTuneBtn" title="Choose scale, tempo and instrument from the shape of the data">Suggest</button>
         </div>
+        <div class="mood-row">
+          <span class="mood-label" id="moodLabel">Mood</span>
+          <div class="seg seg-small" role="group" aria-labelledby="moodLabel" id="moods">
+            <button type="button" data-mood="sad" aria-pressed="false" title="Minor pentatonic, slow strings, big warm room">Sad</button>
+            <button type="button" data-mood="happy" aria-pressed="false" title="Major pentatonic, marimba, walking pace">Happy</button>
+            <button type="button" data-mood="excited" aria-pressed="false" title="Major pentatonic, fast electric piano, three octaves">Excited</button>
+          </div>
+        </div>
         <p class="card-note" id="autoTuneNote" hidden></p>
         <div class="form-grid">
           <label class="field">Instrument<select id="instrument"></select></label>
@@ -329,6 +338,11 @@
       <article class="member"><img src="assets/team/mostafa-ragab.jpg" alt="Mostafa Ragab" width="96" height="96"><div><h3>Mostafa Ragab <span class="role">UI Specialist &amp; Engine</span></h3><p>I’m Mostafa Ragab, an EE student as well, 20 years. I don’t have a specific passion that is taking my mind, but I’m always learning. Not far long ago, I was stunned by Quantum Physics, and I have always been dedicated to master Pure Math and advanced complex analysis to help me understand it, but like a flame it never stays at the same level of light and heat. 3 years ago, I discovered that I have a hidden passion to music, either creating, listening or playing. I never actually had the chance to play it due to the poor resources we had, but I always was listening, analyzing what I hear, like this part is indeed from this instrument. I love peaceful beautiful music, because it’s always attached to good memories of mine. Happy to be in the competition!</p></div></article>
       <article class="member"><img src="assets/team/mostafa-mohammed.jpg" alt="Mostafa Mohammed" width="96" height="96"><div><h3>Mostafa Mohammed <span class="role">Core</span></h3><p>Electrical Engineering student and member of the Bit2Beat team, working together from scratch to turn images and scientific Earth data into sound and visual experiences.</p></div></article>
     </div>
+    <div class="launch">
+      <p class="launch-kicker">Five of us, one planet, every number a note.</p>
+      <button type="button" class="launch-btn" id="launchBtn"><span class="launch-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>Launch the Jukebox</button>
+      <p class="launch-note">Opens the Studio and starts the music.</p>
+    </div>
     <h2 class="team-title">Data sources &amp; credits</h2>
     <ul class="credits">
       <li>NASA GISS Surface Temperature Analysis (GISTEMP v4) — data.giss.nasa.gov/gistemp</li>
@@ -425,7 +439,7 @@
   <ol class="help-steps">
     <li><b>Pick something to hear.</b> Data has NASA climate series and your own CSV files. Video has offline NASA EIC presets and turns uploaded videos into brightness, detail and frame-change melodies. Earth events has live earthquakes and natural events, played across the map from west to east. Image turns a picture or a satellite view into sound.</li>
     <li><b>Press Play.</b> Higher values play higher. The Melody panel and the score show the same notes.</li>
-    <li><b>Shape the sound.</b> Change instrument, scale and tempo, mute or solo channels, or press Suggest.</li>
+    <li><b>Shape the sound.</b> Pick a mood (sad, happy or excited), change instrument, scale and tempo, mute or solo channels, or press Suggest.</li>
     <li><b>Export.</b> Download audio, the notes as CSV or the score.</li>
   </ol>
   <div class="btn-row help-bitty"><button type="button" class="btn btn-primary" id="helpTour">Let Bitty guide me</button><button type="button" class="btn" id="helpStory">Listen to Bitty’s story</button></div>
@@ -435,7 +449,7 @@
     <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Step back / forward and hear that step</dd>
     <dt><kbd>Home</kbd> <kbd>End</kbd></dt><dd>First / last step</dd>
     <dt><kbd>L</kbd></dt><dd>Repeat on / off</dd>
-    <dt><kbd>D</kbd></dt><dd>Read the data summary aloud (press again to stop)</dd>
+    <dt><kbd>D</kbd></dt><dd>Read the data summary aloud (press again to pause, and again to carry on)</dd>
     <dt><kbd>G</kbd></dt><dd>Bitty’s guide</dd>
     <dt><kbd>Esc</kbd></dt><dd>Stop reading aloud, close the guide</dd>
     <dt><kbd>T</kbd></dt><dd>Readings table</dd>
@@ -493,6 +507,7 @@
 <script src="src/js/ui/pages.js"></script>
 <script src="src/js/data/guide.js"></script>
 <script src="src/js/ui/story-view.js"></script>
+<script src="src/js/ui/about-view.js"></script>
 <script src="src/js/ui/tour.js"></script>
 <script src="src/js/app.js"></script>
 </body>
