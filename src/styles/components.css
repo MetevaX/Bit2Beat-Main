@@ -411,6 +411,54 @@ input[type='range'] {
   color: var(--muted);
 }
 
+/* NASA Earth Information Center form: its own row under the data options */
+.eic-form {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.eic-form .eic-dataset {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.eic-form .eic-dataset select {
+  width: 100%;
+}
+.eic-info {
+  flex-basis: 100%;
+  margin: 0;
+}
+.eic-info:empty {
+  display: none;
+}
+.eic-more {
+  flex-basis: 100%;
+  font-size: 0.85rem;
+}
+.eic-more summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.eic-more[open] {
+  display: grid;
+  gap: 8px;
+}
+.eic-more input {
+  width: 100%;
+}
+.eic-more code {
+  overflow-wrap: anywhere;
+}
+.eic-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* legend, insights */
 .legend {
   display: flex;

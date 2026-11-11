@@ -50,6 +50,11 @@ CI (`.github/workflows/ci.yml`) runs check, build and test on every push and pul
 
 ## Adding a data source
 
+The quickest way needs no code: any STAC catalogue with a raster statistics API plays in the Data tab (*NASA Earth Information Center → Use another catalogue*). See [Add your own data](ADD-DATA.md).
+
+To build a new kind of source:
+
+
 1. Write a builder in `src/js/core/feeds.js` (or a preset in `src/js/data/presets.js`) that returns a *source*: `{ name, kind, view, origin, labels, channels: [{ name, unit, values, instrument }] }`. Add `points` (lat/lon) for map views and `loudBy` for a separate loudness measure.
 2. Add a real offline snapshot to `src/js/data/snapshots.js` with `source`, `url` and `fetched`.
 3. Add the menu entry (`DATA_MENU` in `presets.js` or `EARTH_MENU`/`IMAGE_MENU` in `ui/sources.js`).

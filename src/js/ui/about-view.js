@@ -35,7 +35,15 @@
       );
       btn.onclick = () => sing(card, i);
       card.append(btn);
-      card.querySelector('img')?.addEventListener('click', () => sing(card, i));
+      // the photo sits in a frame: the frame rings and bounces when the note plays, so the photo's own
+      // entrance animation is never restarted (that made it vanish for a moment)
+      const img = card.querySelector('img');
+      if (img) {
+        const frame = el('span', { class: 'member-photo' });
+        img.replaceWith(frame);
+        frame.append(img);
+        frame.addEventListener('click', () => sing(card, i));
+      }
     });
 
     /** Each part lands when it scrolls into view (cards that arrive together come one after another);

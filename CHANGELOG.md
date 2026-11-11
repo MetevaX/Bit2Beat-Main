@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.6.0 — 11 November 2026
+- **NASA Earth Information Center data API.** The Data tab can play any time-series data set of earth.gov's open catalogue (CO₂ and methane fluxes, GEOS column CO₂, ODIAC and Vulcan emissions, MiCASA carbon flux, population density and more): choose the data set, the whole world or one of 18 places, and the latest 24, 60 or 120 maps. Each note is one map: its average over the place (a 2° box) with the highest value as a second channel; data sets with several layers per date get a channel per layer. New data sets appear by themselves.
+- **Any other catalogue.** *Use another catalogue* reads any STAC API with a raster statistics API, such as NASA VEDA or the U.S. Greenhouse Gas Center. New guide: [Add your own data](docs/ADD-DATA.md).
+- **About page:** tapping a team member's note no longer makes the photo vanish for a moment; the photo now bounces with a ring around it.
+
 ## 2.5.0 — 11 November 2026
 - **Sound moods: Sad, Happy, Excited.** One click in the *Sound* card sets the whole sound: Sad is minor pentatonic in A with slow strings in a big warm room; Happy is major pentatonic in C on marimba; Excited is major pentatonic in G over three octaves on a fast electric piano. Changing a setting by hand leaves the mood.
 - **Always pentatonic.** *Suggest* no longer switches to major, minor or Dorian: rising data gets the major pentatonic scale, falling or low data the new *minor pentatonic* (A C D E G), so no data set plays wrong notes.

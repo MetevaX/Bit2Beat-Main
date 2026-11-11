@@ -138,8 +138,30 @@
 .member.is-singing .note-eq i:nth-child(3) {
   animation-delay: 0.2s;
 }
-.member.is-singing img {
+.member-photo {
+  position: relative;
+  display: block;
+  align-self: start;
+  line-height: 0;
+  border-radius: 50%;
+}
+.member-photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.member.is-singing .member-photo {
+  animation: bop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.member.is-singing .member-photo::after {
   animation: ring 0.9s ease-out;
+}
+@keyframes bop {
+  40% {
+    transform: scale(1.08);
+  }
 }
 @keyframes eq {
   to {

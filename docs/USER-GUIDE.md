@@ -121,6 +121,7 @@ Options:
 
 - **Points to play** – long series can be averaged to 240, 120, 60 or 30 steps (each step is the mean of its bucket; labels become ranges).
 - **NASA POWER daily data** – pick one of 18 places around the world and a year since 1981, then **Load** (online).
+- **NASA Earth Information Center** – pick any data set of earth.gov's catalogue, the whole world or a place, and how many maps (24, 60 or 120), then **Load** (online). Each note is one map: its average over the place, with the highest value as a second channel. **Use another catalogue** reads any other STAC catalogue with a raster API, such as NASA VEDA.
 - **Open CSV** (or drop a file on the chart) – comma, semicolon or tab separated; up to six numeric columns; a year/date/name column becomes the labels; a unit in brackets (`Temp (°C)`) is detected.
 
 ## Earth events tab

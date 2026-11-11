@@ -12,6 +12,7 @@ Every sound in Bit2Beat comes from public, key-free data. Live requests go strai
 | GIBS WMS | NASA Global Imagery Browse Services | `https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi` | Satellite views (MODIS Terra, VIIRS NOAA-20, VIIRS Black Marble) | Last view saved in the browser |
 | Image and Video Library | NASA | `https://images-api.nasa.gov/search` | Bitty’s notes | 20 notes, saved 6–7 Nov 2026 |
 | Earth Information Center gallery | NASA Scientific Visualization Studio | [SVS 4950](https://svs.gsfc.nasa.gov/4950/) GEDI forest height (Kel Elkins), [SVS 5196](https://svs.gsfc.nasa.gov/5196/) DYAMOND global CO₂ (AJ Christensen; science Lesley Ott) | Video and Image presets, read through their colour bars | 640×360 silent previews and print stills in `assets/nasa/` |
+| Earth Information Center data API | NASA and partner agencies, via earth.gov | STAC `https://earth.gov/eic/api/stac`, statistics `https://earth.gov/eic/api/raster/cog/statistics` | Any time-series data set of the catalogue (CO₂ and methane fluxes, GEOS column CO₂, ODIAC and Vulcan emissions, MiCASA carbon flux, population density…): the latest 24–120 maps, averaged over the whole world or a 2° box around a place | None: online only (the catalogue lists ~30 data sets and grows) |
 | Earthquake feeds | U.S. Geological Survey | `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/{feed}.geojson` | Earthquakes (2.5+ day, 4.5+ week, 4.5+ month, significant month) | 91 quakes, 30 Oct – 6 Nov 2026 |
 
 ## NASA EIC colour bars
@@ -22,6 +23,17 @@ Every sound in Bit2Beat comes from public, key-free data. Live requests go strai
 | DYAMOND CO₂ | `dyamondCbar_6-27-2024a.png` on SVS 5196 | 380–460 ppm, transparent below ~420 ppm | hue angle only (plumes are semi-transparent over a dark globe); the date stamp is masked out |
 
 The ramps are stored in `src/js/data/nasa-keys.js`. Values are what the visualisation *shows* (exaggerated 3D height, model CO₂), not new measurements.
+
+## Earth Information Center data API
+
+The [Earth Information Center](https://earth.gov/) publishes its data as maps (cloud-optimised GeoTIFFs) through two open APIs. Bit2Beat:
+
+1. lists the data sets of the STAC catalogue (`/collections`, following every *next* page) and keeps those that change over time;
+2. asks for the latest N items of the chosen data set (`POST /search`, newest first). Items that share a date are layers of that date (GEOS: CO₂, CH₄, CO) and each layer becomes a channel;
+3. for every map asks the raster API for its statistics: `POST /cog/statistics` with a 2° × 2° box around the place, or `GET /cog/statistics?max_size=512` for the whole world. The map's own *no data* value is passed on;
+4. plays the **average** (one channel per layer) and the **highest value** (muted at first), one note per map, oldest first. Units come from the map's `raster:bands`.
+
+At most 180 statistics requests are made per load (6 at a time). Some data sets only cover the United States (Vulcan, EPA); for those, choose Houston, Death Valley, Kennedy Space Center or the whole world.
 
 ## NASA POWER places
 

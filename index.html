@@ -101,6 +101,21 @@
             <label class="field"><span class="sr-only">Year</span><select id="powerYear" aria-label="Year"></select></label>
             <button type="submit" class="btn" id="powerBtn">Load</button>
           </form>
+          <form class="eic-form" id="eicForm">
+            <span class="power-title" id="eicTitle">NASA Earth Information Center</span>
+            <label class="field eic-dataset"><span class="sr-only">Data set</span><select id="eicDataset" aria-label="Earth Information Center data set"><option value="">Data sets load when you open this menu</option></select></label>
+            <label class="field"><span class="sr-only">Place</span><select id="eicPlace" aria-label="Place (a 2° box around it)"></select></label>
+            <label class="field"><span class="sr-only">Time steps</span><select id="eicSteps" aria-label="How many time steps"><option value="24">Latest 24 maps</option><option value="60" selected>Latest 60 maps</option><option value="120">Latest 120 maps</option></select></label>
+            <button type="submit" class="btn" id="eicBtn">Load</button>
+            <p class="card-note eic-info" id="eicInfo"></p>
+            <details class="eic-more">
+              <summary>Use another catalogue</summary>
+              <p class="card-note">Any STAC catalogue with a raster statistics API works, for example NASA VEDA: <code>https://openveda.cloud/api/stac</code> and <code>https://openveda.cloud/api/raster</code>.</p>
+              <label class="field">STAC API<input type="url" id="eicStac" spellcheck="false" autocomplete="off"></label>
+              <label class="field">Raster API<input type="url" id="eicRaster" spellcheck="false" autocomplete="off"></label>
+              <div class="eic-actions"><button type="button" class="btn" id="eicUse">Use this catalogue</button><button type="button" class="btn btn-quiet" id="eicReset">Back to earth.gov</button></div>
+            </details>
+          </form>
         </div>
 
         <div class="source-options" id="opts-video" hidden>
@@ -478,6 +493,7 @@
 <script src="src/js/core/video.js"></script>
 <script src="src/js/core/score.js"></script>
 <script src="src/js/core/feeds.js"></script>
+<script src="src/js/core/eic.js"></script>
 <script src="src/js/core/plan.js"></script>
 <script src="src/js/core/story.js"></script>
 <script src="src/js/core/spotlight.js"></script>
@@ -508,6 +524,7 @@
 <script src="src/js/data/guide.js"></script>
 <script src="src/js/ui/story-view.js"></script>
 <script src="src/js/ui/about-view.js"></script>
+<script src="src/js/ui/eic-view.js"></script>
 <script src="src/js/ui/tour.js"></script>
 <script src="src/js/app.js"></script>
 </body>

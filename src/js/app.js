@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   const B = window.Bit2Beat || {};
-  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView'];
+  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView', 'eic', 'eicView'];
   const missing = need.filter((k) => !B[k]);
   if (missing.length) {
     document.body.insertAdjacentHTML('afterbegin', `<p role="alert" style="padding:16px;background:#fbe9d0;color:#14213d">Bit2Beat could not load: ${missing.join(', ')}. Open the single-file build in dist/ or serve the folder.</p>`);
@@ -77,6 +77,7 @@
     seek,
     persist,
     setSource,
+    busy: (on, label) => setBusy(on, label),
     play: togglePlay,
     drawAll: () => drawAll(),
     fillSourceSelect: () => fillSourceSelect(),
@@ -296,6 +297,7 @@
         if (id === 'upload' && uploads.data) return setSource(uploads.data);
         if (B.presets.DATA[id]) return setSource(B.presets.DATA[id]());
         if (id === 'power' && state.power) return loadPower(state.power);
+        if (id === 'eic' && state.eic) return B.eicView.load(state.eic);
         state.choice.data = 'gistemp';
         fillSourceSelect();
         return setSource(B.presets.DATA.gistemp());
@@ -683,6 +685,7 @@
   setMode(state.mode);
   B.storyView.init(app);
   B.aboutView.init(app);
+  B.eicView.init(app);
   if (fromUrl.page && fromUrl.page !== 'studio') showPage(fromUrl.page, { focus: false });
   B.tour.init(app, fromUrl);
   B.draw.spectrum($('spectrumCanvas'), null, false);

@@ -25,7 +25,7 @@ npm test        # 17 test groups: algorithms, file formats, story, tour, page in
 
 | Tab | Sources | Notes |
 | --- | --- | --- |
-| **Data** | NASA GISTEMP global temperature 1880–2025 · NASA POWER Arctic (Svalbard) yearly 1981–2024 and daily 2025 · NASA POWER daily data for 18 places around the world and any year since 1981 (online) · NASA GISTEMP CSV sample · your CSV · four practice shapes | CSV: comma, semicolon or tab, quoted cells, decimal commas, up to 6 numeric columns; a year/date/name column becomes the labels, `Temp (°C)` gives the unit. |
+| **Data** | NASA GISTEMP global temperature 1880–2025 · NASA POWER Arctic (Svalbard) yearly 1981–2024 and daily 2025 · NASA POWER daily data for 18 places around the world and any year since 1981 (online) · **every time-series data set of the NASA Earth Information Center (earth.gov) data API**, for the whole world or a place (online) · NASA GISTEMP CSV sample · your CSV · four practice shapes | CSV: comma, semicolon or tab, quoted cells, decimal commas, up to 6 numeric columns; a year/date/name column becomes the labels, `Temp (°C)` gives the unit. |
 | **Video** | Bundled NASA Earth Information Center videos: GEDI forest height and global CO₂ · your own MP4/WebM, up to 200 MB | Two samples per second, each averaged over its half second. NASA presets are **read through their own colour bar**: forest height in metres and land in view, CO₂ in ppm and the area above ~420 ppm. Your videos play brightness, colour and motion of the picture, with empty background left out. The muted video follows the music: Play starts both. |
 | **Earth events** | USGS earthquakes (past day, week or month) · NASA EONET natural events (wildfires, storms, floods, sea ice…) | Played as one sweep across the map from west to east: further north = higher note, bigger = louder. Explicit offline samples are available for both feeds. Live sources update when online; if unavailable they use the last live copy saved in the browser, then a real snapshot bundled with the app. The header always says which one you hear. |
 | **Image** | Bundled NASA EIC GEDI forest-height and global CO₂ stills · NASA GIBS satellite views (whole Earth today, Earth at night, Amazon, Himalaya, Greenland, Sahara) · bundled world map · two generated illustrations · your picture | Measure **Light** (CIE L* brightness, detail, height of bright areas), **Colour** (R, G, B) or, for NASA presets, **Colour key** (data values read through the colour bar). Empty background around a globe is silent. Scan left to right, around the centre, or follow the pointer. |
@@ -66,6 +66,7 @@ src/js/core/                pure, Node-testable logic
   image.js   L* and colour analysis of pixels
   csv.js     CSV parser with label and unit detection
   feeds.js   USGS, NASA EONET, NASA POWER (live + offline)
+  eic.js     NASA Earth Information Center data API (STAC catalogue + raster statistics)
   geo.js     projection, land mask, coordinate repair
   score.js   ABC notation with correct accidentals and clefs
   spatial.js wav.js adm.js   3D panning, WAV and ADM BWF writers
@@ -87,6 +88,7 @@ tests/core.test.js          tests
 | [Accessibility](docs/ACCESSIBILITY.md) | Listening without seeing, visual and hearing options |
 | [Architecture](docs/ARCHITECTURE.md) | Modules, data flow, URL state, performance, build |
 | [Development](docs/DEVELOPMENT.md) | Scripts, tests, adding a data source, publishing |
+| [Add your own data](docs/ADD-DATA.md) | The Earth Information Center API, other catalogues, CSV, and code |
 | [Changelog](CHANGELOG.md) | What changed in each version |
 
 ## Team

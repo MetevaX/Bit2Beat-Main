@@ -521,3 +521,50 @@ test('tour: spotlight geometry keeps the bubble on screen; every step points at 
   assert.match(art.dog('unknown'), /mood-happy/);
   assert.match(art.badge(false), /not yet earned/);
 });
+
+test('NASA Earth Information Center API: catalogue, layers, area averages and a playable source', async () => {
+  const eic = require('../src/js/core/eic.js');
+  // a small fake catalogue that answers like earth.gov/eic/api (STAC + raster statistics)
+  const col = (id, extra = {}) => ({ id, title: id.toUpperCase(), extent: { temporal: { interval: [['2020-01-01T00:00:00Z', '2020-12-01T00:00:00Z']] } }, renders: { dashboard: { assets: ['flux'] } }, 'dashboard:time_density': 'month', providers: [{ name: 'NASA' }], ...extra });
+  const months = Array.from({ length: 12 }, (_, i) => `2020-${String(12 - i).padStart(2, '0')}-01T00:00:00Z`);
+  const items = months.flatMap((d) => ['XCO2', 'XCH4'].map((g) => ({ id: `geos_${g}_x1440_daily_${d.slice(0, 7).replace('-', '')}01`, properties: { datetime: d }, assets: { flux: { href: `s3://bucket/${g}/${d}.tif`, roles: ['data'], 'raster:bands': [{ unit: 'ppm', nodata: -9999 }] } } })));
+  const calls = [];
+  const get = async (url, init = {}) => {
+    calls.push([init.method || 'GET', url.replace(/\?.*$/, '')]);
+    if (url.includes('/collections?')) return url.includes('offset') ? { collections: [col('aa-flux')], links: [] } : { collections: [col('geos'), col('plume-v1'), col('single', { extent: { temporal: { interval: [['2020-01-01', '2020-01-01']] } } })], links: [{ rel: 'next', href: 'https://x/stac/collections?offset=3' }] };
+    if (url.endsWith('/search')) return { features: items.slice(0, init.body.limit) };
+    if (url.includes('/cog/statistics')) {
+      assert.match(url, /nodata=-9999/, 'nodata from raster:bands is passed on');
+      const month = +decodeURIComponent(url).match(/2020-(\d\d)/)[1];
+      const base = url.includes('XCH4') ? 1900 : 410;
+      const b1 = { mean: base + month, max: base + month + 5, count: 400 };
+      return init.body ? { properties: { statistics: { b1 } } } : { b1 };
+    }
+    throw new Error('unexpected ' + url);
+  };
+  const list = await eic.listCollections(get, 'https://x/stac/');
+  assert.deepEqual(list.map((c) => c.id), ['aa-flux', 'geos'], 'pages are followed; plumes and single maps are left out; sorted by title');
+  assert.equal(list[1].asset, 'flux', 'the layer the dashboard shows');
+  assert.deepEqual(eic.layerNames(['geos_XCO_x1_20250531', 'geos_XCO2_x1_20250531', 'geos_XCH4_x1_20250531']), ['XCO', 'XCO2', 'XCH4']);
+  assert.deepEqual(eic.layerNames(['a_20250101', 'a_20250201']), ['', ''], 'one layer: no names');
+  assert.deepEqual(eic.layerNames(['set_2024-12_CO2', 'set_2024-12_CH4']), ['CO2', 'CH4'], 'dates with dashes too');
+  assert.deepEqual(eic.area({ lat: 89.5, lon: 10 }).geometry.coordinates[0][2], [11, 90], 'the box stays on the globe');
+  assert.equal(eic.area(eic.WORLD), null);
+  assert.equal(eic.prettyUnit('g C m-2 day-1'), 'g C m⁻² day⁻¹');
+  assert.equal(eic.prettyUnit('ppm'), 'ppm');
+  let progress = 0;
+  const s = await eic.load({ info: list[1], place: { name: 'London', lat: 51.5, lon: -0.1 }, steps: 6 }, { get, stac: 'https://x/stac', raster: 'https://x/raster', progress: (d) => (progress = d) });
+  assert.deepEqual(s.labels, ['2020-07', '2020-08', '2020-09', '2020-10', '2020-11', '2020-12'], 'the latest 6 months, oldest first');
+  assert.deepEqual(s.channels.map((c) => c.name), ['XCO2, average', 'XCH4, average', 'XCO2, highest', 'XCH4, highest'], 'one channel per layer');
+  assert.deepEqual(s.channels[0].values, [417, 418, 419, 420, 421, 422]);
+  assert.equal(s.channels[0].unit, 'ppm');
+  assert.ok(s.channels[1].mute && s.channels[2].mute, 'one voice at first');
+  assert.equal(progress, 12, '6 dates × 2 layers');
+  assert.ok(calls.some(([m, u]) => m === 'POST' && u.endsWith('/raster/cog/statistics')), 'a place is averaged inside its box');
+  const w = await eic.load({ info: list[1], place: eic.WORLD, steps: 2 }, { get, stac: 'https://x/stac', raster: 'https://x/raster' });
+  assert.match(w.name, /whole world/);
+  assert.equal(w.channels[0].values.length, 2);
+  const empty = async (url, init) => (url.includes('/cog/statistics') ? { properties: { statistics: { b1: { count: 0, mean: NaN } } } } : get(url, init));
+  await assert.rejects(eic.load({ info: list[1], place: { name: 'Nowhere', lat: 0, lon: 0 }, steps: 3 }, { get: empty, stac: 'https://x/stac', raster: 'https://x/raster' }), /No data for Nowhere/);
+});
+

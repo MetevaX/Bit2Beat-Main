@@ -254,6 +254,7 @@
       if (uploads.data) add(sel, ['upload', 'Your file: ' + uploads.data.name]);
       if (state.choice.data === 'custom') add(sel, ['custom', src?.name || 'Saved session data']);
       if (state.choice.data === 'power') add(sel, ['power', src?.name || 'NASA POWER data']);
+      if (state.choice.data === 'eic') add(sel, ['eic', src?.name || 'NASA Earth Information Center data']);
     } else if (state.mode === 'video') {
       B.sources.VIDEO_MENU.forEach((it) => add(sel, it));
       if (uploads.video) add(sel, ['upload', 'Your video: ' + uploads.video.name]);

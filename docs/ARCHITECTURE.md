@@ -38,6 +38,7 @@ Bit2Beat is a static web app: plain HTML, CSS and JavaScript with no framework a
 | `stats.js` | Trend (least squares), sudden jumps (leave-one-out local line + modified z-score), resampling, plain-language summaries, *Suggest* |
 | `plan.js` | Builds the plan: scaling (shared per unit, log, invert), pitch, loudness (`loudBy`), timing (even or source `times`), 3D positions, drone |
 | `feeds.js` | USGS and NASA EONET (events sorted west → east), NASA POWER daily data; live fetch + offline builders share one code path |
+| `eic.js` | NASA Earth Information Center (or any STAC + titiler) API: playable data sets, latest maps per date and layer, area statistics, the source; `get` is injected so it is tested offline |
 | `geo.js` | Equirectangular projection, 1° land mask, swapped-coordinate repair, distances |
 | `image.js` | sRGB → CIE L\* and CIELAB, background detection, colour keys (read data through a colour bar), band statistics, line and radar scans, pointer probe |
 | `story.js` | Bitty’s eight chapters (scene, narration, *Listen for*) and the facts worked out from the source being heard |
