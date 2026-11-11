@@ -4,7 +4,7 @@ Bit2Beat exists to make Earth data available to people who cannot see a chart, s
 
 ## Listening without seeing
 
-- **Everything is reachable by keyboard.** Tabs move with arrow keys; `Space` plays; `←`/`→` step through the data and play each step; `Shift` jumps a bar; `Home`/`End` go to the ends.
+- **Everything is reachable by keyboard.** Tabs move with arrow keys; `Space` plays; `←`/`→` step through the data and play each step; `Shift` jumps a bar; `Home`/`End` go to the ends. Menus open with `↓`, `Enter` or `Space`; longer ones have a search box (a combobox with a listbox, announced with the current choice).
 - **Captions** state exactly what is sounding: “Yearly anomaly 1.28 °C → C5”.
 - **Screen-reader updates** (optional) announce the caption every few seconds while playing; every action (play, source change, export) is announced through a polite live region.
 - **What the data says** gives the trend, extremes and sudden jumps in plain sentences and can be read aloud (`D`). Reading is sentence by sentence with **Pause / Resume** and **Stop** in a bar at the top of the screen; `Esc` or `D` again stops it.

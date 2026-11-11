@@ -75,6 +75,7 @@ Bit2Beat is a static web app: plain HTML, CSS and JavaScript with no framework a
 | `url-state.js` | Reads and writes the address bar (see below) |
 | `video-view.js` | Keeps the muted video in step with the music (playback rate, drift correction, exact frame when paused) |
 | `keys.js` | Keyboard shortcuts |
+| `combo.js` | Every menu: a button and a list that opens below it (above only when there is more room), with search for menus of six or more choices; the hidden `<select>` stays the source of truth |
 | `pages.js` | Studio, Story and About pages (one visible at a time) |
 | `story-view.js` | The Story page: chapters, sparklines, Listen / Play the whole story, narration, progress and badge |
 | `tour.js` | Bitty the guide: hello, *How can I help?* menu, spotlight tours, tab tips (words in `data/guide.js`) |

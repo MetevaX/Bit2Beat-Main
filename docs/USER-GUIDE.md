@@ -95,6 +95,7 @@ Each chapter shows:
 | --- | --- |
 | **Pages** (Studio · Story · About the team) | Story is Bitty’s guided listening journey; see above. |
 | **Tabs** (Data · Earth events · Image · Video) | Choose what kind of thing to listen to. The menu beside them picks the source. |
+| **Menus** | Open just below their button. Menus with six or more choices have a search box: type any words to narrow the list, `↑`/`↓` and `Enter` to choose, `Esc` to close. |
 | **Source card** | The chart, map or picture you are hearing, its source line (where the numbers come from and when), and options for that tab. Hover to read a value; click to hear that step. |
 | **Now playing** (navy panel) | The current step, its note and frequency, the reading behind it and live sound bars. |
 | **Sound** | Instrument, scale, key, range and tempo. **Suggest** picks them from the shape of the data. |

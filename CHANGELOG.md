@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.7.2 — 11 November 2026
+- **Menus open in the same place every time.** Every menu now opens just below its button (above only when there is clearly more room there), fits the window and scrolls inside, instead of the browser's own list that could jump up or down. It also works inside dialogs and follows its button when the page scrolls.
+- **Search in menus.** Menus with six or more choices (sources, instruments, scales, keys, places, Earth Information Center data sets) start with a search box: type any words, in any order, accents ignored. Arrow keys, `Home`/`End`, `Enter` and `Esc` work as before; short menus jump to a choice by its first letter.
+- **New tab icon:** an amber square with four sound bars, sharp at every size (SVG, plus 32 px PNG and a 180 px home-screen icon).
+
 ## 2.7.1 — 11 November 2026
 - **Earth Information Center pictures and time-lapses fixed.** Maps were drawn with each data set's dashboard range, which can miss the values of a place entirely (GEOS methane near Singapore is 1,895–2,096 ppb; the dashboard range stops at 1,900), so the picture came out one flat colour and the colour key heard nothing. Maps are now coloured over the real spread of the data in the area shown (2nd to 98th percentile, from the raster API), the colour key uses the same range, and an even map is read as data instead of being skipped as empty background.
 - If a data set has the same value everywhere in the area (for example wetland methane around Mauna Loa, which is 0), Bit2Beat now says so and suggests another place or the whole world, instead of playing a flat line.

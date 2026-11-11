@@ -605,3 +605,20 @@ test('NASA Earth Information Center API: catalogue, layers, area averages and a 
   await assert.rejects(eic.load({ info: list[1], place: { name: 'Nowhere', lat: 0, lon: 0 }, steps: 3 }, { get: empty, stac: 'https://x/stac', raster: 'https://x/raster' }), /No data for Nowhere/);
 });
 
+
+test('menus: search matches every word (accents ignored) and the list opens below unless the room is above', () => {
+  global.self = global.self || {};
+  self.Bit2Beat = self.Bit2Beat || {};
+  require('../src/js/ui/combo.js');
+  const { matches, place, SEARCH_FROM } = self.Bit2Beat.combo;
+  assert.ok(matches('São Paulo, Brazil', 'sao pau'));
+  assert.ok(matches('MiCASA Net Primary Production (monthly)', 'net monthly'));
+  assert.ok(!matches('Methane emissions', 'carbon'));
+  assert.ok(SEARCH_FROM > 5 && SEARCH_FROM < 12, 'short menus have no search box');
+  const at = (top, bottom) => ({ getBoundingClientRect: () => ({ top, bottom, left: 10, width: 200 }) });
+  const view = { w: 1280, h: 800 };
+  assert.equal(place(at(100, 136), 300, view).up, false, 'plenty of room below: opens below');
+  assert.equal(place(at(700, 736), 300, view).up, true, 'near the bottom: opens above');
+  assert.equal(place(at(700, 736), 40, view).up, false, 'a short list still fits below');
+  assert.ok(place(at(100, 136), 300, view).maxHeight <= 380, 'never taller than the window allows');
+});
