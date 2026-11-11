@@ -213,6 +213,18 @@
       g.moveTo(cx, cy);
       g.lineTo(cx + Math.cos(a1) * rad, cy + Math.sin(a1) * rad);
       g.stroke();
+    } else if (ui.scan === 'down' && n) {
+      // a horizontal band that moves from the top of the picture to the bottom
+      const by = R.y + (pos / n) * R.h;
+      g.fillStyle = 'rgba(232,163,61,0.22)';
+      g.fillRect(R.x, by, R.w, R.h / n);
+      g.fillStyle = t.amber;
+      g.fillRect(R.x, by + R.h / n / 2 - 1, R.w, 2);
+      g.beginPath();
+      g.moveTo(R.x - 9, by + R.h / n / 2 - 6);
+      g.lineTo(R.x - 1, by + R.h / n / 2);
+      g.lineTo(R.x - 9, by + R.h / n / 2 + 6);
+      g.fill();
     } else if (n) {
       const b = src.bounds;
       const x0 = b ? R.x + b.x0 * R.w : R.x;

@@ -155,7 +155,7 @@ Events are played **from west to east**, as one sweep across the map, like readi
 Options:
 
 - **Light** – three voices: brightness (CIE L\*), detail (how much brightness varies) and the height of bright areas. **Colour** – red, green and blue. **Colour key** (NASA EIC stills) – the data value read through the picture's colour bar, and how much of each band shows data. Empty background is silent.
-- **Left to right**, **Around the centre** (like a radar sweep) or **Follow pointer** (hear what is under your mouse or finger).
+- **Left to right**, **Top to bottom** (a line moves down the picture, row by row; with height speakers the sound comes down too), **Around the centre** (like a radar sweep) or **Follow pointer** (hear what is under your mouse or finger).
 - **Steps** – how many bands the picture is cut into (16–160).
 
 ## Video tab

@@ -516,6 +516,14 @@ test('tour: spotlight geometry keeps the bubble on screen; every step points at 
   delete self.SpeechSynthesisUtterance;
   delete self.dispatchEvent;
 
+  // top to bottom: horizontal bands, labelled by how far down they are, and sound that comes down
+  const imgm = require('../src/js/core/image.js');
+  const px = new Uint8ClampedArray(10 * 20 * 4).map((_, i) => (i % 4 === 3 ? 255 : Math.floor(i / 40 / 4) * 12));
+  const down = imgm.scan(px, 10, 20, { steps: 4, path: 'down', analysis: 'light', background: false });
+  assert.deepEqual(down.labels, ['13% down', '38% down', '63% down', '88% down']);
+  assert.ok(down.channels[0].values.every((v, i, a) => i === 0 || v > a[i - 1]), 'a picture that gets lighter downwards plays rising notes');
+  const spatialm = require('../src/js/core/spatial.js');
+  assert.ok(spatialm.objectPosition({ path: 'fall', progress: 0 }).z > spatialm.objectPosition({ path: 'fall', progress: 1 }).z, 'the sound comes down');
   const art = require('../src/js/ui/bitty-art.js');
   for (const m of art.MOODS) assert.match(art.dog(m), /^<svg[^>]+mood-/);
   assert.match(art.dog('unknown'), /mood-happy/);
@@ -588,6 +596,11 @@ test('NASA Earth Information Center API: catalogue, layers, area averages and a 
   const m = await eic.latestMap({ info: list[1], place: { name: 'London', lat: 51.5, lon: -0.1 } }, { get: async (u, i) => (u.includes('/colorMaps/') ? cmap : get(u, i)), stac: 'https://x/stac', raster: 'https://x/raster' });
   assert.equal(m.date, '2020-12');
   assert.ok(m.key && m.key.ramp.length > 30 && /bbox\/-16\.1,41\.5,15\.9,61\.5\//.test(m.url), 'newest map, a window around the place, and its colour key');
+  assert.deepEqual(eic.rangeOf([{ mean: 1900, min: 1895, max: 2096, p2: 1897, p98: 1933 }]), [1897, 1933], 'pictures use the spread of the data in the area');
+  assert.deepEqual(eic.rangeOf([{ mean: 0.01, min: 0, max: 6.9, p2: 0, p98: 0 }]), [0, 6.9], 'falls back to min–max when most of the map is one value');
+  assert.equal(eic.rangeOf([{ mean: 0, min: 0, max: 0, p2: 0, p98: 0 }]), null, 'one value everywhere: nothing to show');
+  const zero = async (url, init) => (url.includes('/cog/statistics') ? { properties: { statistics: { b1: { count: 9, mean: 0, min: 0, max: 0 } } } } : get(url, init));
+  await assert.rejects(eic.timelapse({ info: list[1], place: { name: 'Mauna Loa', lat: 19.5, lon: -155.6 }, steps: 3 }, { get: zero, stac: 'https://x/stac', raster: 'https://x/raster' }), /every value of this data set around Mauna Loa is 0/);
   const empty = async (url, init) => (url.includes('/cog/statistics') ? { properties: { statistics: { b1: { count: 0, mean: NaN } } } } : get(url, init));
   await assert.rejects(eic.load({ info: list[1], place: { name: 'Nowhere', lat: 0, lon: 0 }, steps: 3 }, { get: empty, stac: 'https://x/stac', raster: 'https://x/raster' }), /No data for Nowhere/);
 });

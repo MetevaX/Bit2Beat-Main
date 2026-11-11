@@ -10,8 +10,8 @@
  * around a globe, a white page around a chart), pixels of that colour are left out, and a band
  * that is (almost) all background is silent instead of playing the background as data.
  *
- * Two scan paths: 'line' (vertical bands from left to right) and 'radar' (sectors around the
- * centre, starting at 12 o'clock and turning clockwise). Every pixel of a band is used
+ * Three scan paths: 'line' (vertical bands from left to right), 'down' (horizontal bands from
+ * top to bottom) and 'radar' (sectors around the centre, starting at 12 o'clock and turning clockwise). Every pixel of a band is used
  * (sub-sampled only above ~4000 pixels per band), not a single column.
  */
 (function (root, factory) {
@@ -210,9 +210,20 @@
         }
       };
     }
+    if (path === 'down') {
+      const y0 = Math.floor((i / n) * h);
+      const y1 = Math.max(y0 + 1, Math.floor(((i + 1) / n) * h));
+      return (fn) => eachInRect(w, 0, w, y0, y1, 4000, fn);
+    }
     const x0 = Math.floor((i / n) * w);
     const x1 = Math.max(x0 + 1, Math.floor(((i + 1) / n) * w));
     return (fn) => eachInRect(w, x0, x1, 0, h, 4000, fn);
+  }
+
+  /** Where step `i` of `n` is, in words. */
+  function bandLabel(path, i, n) {
+    const pct = Math.round(((i + 0.5) / n) * 100);
+    return path === 'radar' ? `${Math.round(((i + 0.5) / n) * 360)}°` : path === 'down' ? `${pct}% down` : `${pct}% across`;
   }
 
   const CHANNELS = {
@@ -229,25 +240,26 @@
   };
 
   /** Scan an image. Returns { channels: [{name, unit, hint, values}], labels }. */
-  function scan(px, w, h, { steps = 48, path = 'line', analysis = 'light', key = null } = {}) {
-    if (analysis === 'key' && key) return scanKey(px, w, h, { steps, path, key });
+  function scan(px, w, h, { steps = 48, path = 'line', analysis = 'light', key = null, background: useBg = true } = {}) {
+    if (analysis === 'key' && key) return scanKey(px, w, h, { steps, path, key, useBg });
     const defs = CHANNELS[analysis] || CHANNELS.light;
     const cols = defs.map((d) => ({ name: d.name, unit: d.unit, hint: d.hint, values: [] }));
-    const bg = background(px, w, h);
+    const bg = useBg ? background(px, w, h) : null;
     for (let i = 0; i < steps; i++) {
       const s = bandStats(px, w, h, bandVisitor(path, w, h, i, steps), bg);
       defs.forEach((d, k) => cols[k].values.push(s ? +s[d.key].toFixed(2) : null));
     }
     const labels = Array.from({ length: steps }, (_, i) =>
-      path === 'radar' ? `${Math.round(((i + 0.5) / steps) * 360)}°` : `${Math.round(((i + 0.5) / steps) * 100)}% across`,
+      bandLabel(path, i, steps),
     );
     return { channels: cols, labels, background: bg };
   }
 
   /** Scan with a colour key: the visualisation's own data value per band, and how much of the band shows data. */
-  function scanKey(px, w, h, { steps, path, key }) {
+  function scanKey(px, w, h, { steps, path, key, useBg = true }) {
     const k = makeKey(key);
-    const bg = background(px, w, h);
+    // a data map has no empty background: an even map is data, not a blank page
+    const bg = useBg && !key.noBackground ? background(px, w, h) : null;
     const lo = key.min ?? k.min;
     const hi = key.max ?? k.max;
     // minSpan: a few ppm of difference should not sound like the whole colour bar
@@ -259,7 +271,7 @@
       cover.values.push(s ? +s.cover.toFixed(1) : null);
     }
     const labels = Array.from({ length: steps }, (_, i) =>
-      path === 'radar' ? `${Math.round(((i + 0.5) / steps) * 360)}°` : `${Math.round(((i + 0.5) / steps) * 100)}% across`,
+      bandLabel(path, i, steps),
     );
     return { channels: [value, cover], labels, background: bg };
   }
@@ -287,5 +299,5 @@
     return defs.map((d) => (d.key === 'height' ? (1 - ny) * 100 : s[d.key]));
   }
 
-  return { lightness, lab, chroma, background, isBackground, makeKey, keyStats, ignored, scan, probe, CHANNELS };
+  return { lightness, lab, chroma, background, isBackground, makeKey, keyStats, ignored, scan, probe, bandLabel, CHANNELS };
 });

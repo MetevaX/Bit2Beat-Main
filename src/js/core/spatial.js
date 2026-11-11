@@ -81,7 +81,7 @@
   /**
    * Position of a sonified reading.
    * @param {object} o
-   * @param {'sweep'|'orbit'|'fixed'} o.path  motion path
+   * @param {'sweep'|'orbit'|'fixed'|'fall'} o.path  motion path ('fall': from above the listener down to ear level)
    * @param {number} o.progress  0..1 playback position
    * @param {number} o.index     channel index
    * @param {number} o.count     number of channels
@@ -99,6 +99,11 @@
       const a = (p + index / Math.max(1, count)) * 2 * Math.PI;
       x = Math.sin(a) * width;
       y = Math.cos(a);
+    } else if (path === 'fall') {
+      // top to bottom: every channel keeps its place across the front, and the sound comes down
+      x = (spread * 2 - 1) * 0.6 * width;
+      y = 0.7;
+      return { x: round(x), y: round(y), z: round(1 - p) };
     } else if (path === 'fixed') {
       const a = (spread * 2 - 1) * 60 * deg * width;
       x = Math.sin(a);

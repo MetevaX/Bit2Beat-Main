@@ -129,7 +129,8 @@
           meta: {
             name: `${info.title} · ${m.region.name} · ${m.date}`,
             key: m.key,
-            origin: { source: `${api.name || 'STAC catalogue'} · ${info.provider || 'NASA'} · map of ${m.date}`, url: api.site || api.stac, fetched: new Date().toISOString(), live: true, note: `The newest map of ${info.id}, drawn by the raster API in the data set's own colours (${(info.rescale || []).join('–')} ${m.unit}). “Colour key” reads the values back out of the picture.` },
+            noBackground: true,
+            origin: { source: `${api.name || 'STAC catalogue'} · ${info.provider || 'NASA'} · map of ${m.date}`, url: api.site || api.stac, fetched: new Date().toISOString(), live: true, note: `The newest map of ${info.id}, drawn by the raster API in the data set's colours from ${m.range.join(' to ')} ${m.unit} (the spread of the data in this area). “Colour key” reads the values back out of the picture.` },
           },
         };
       });

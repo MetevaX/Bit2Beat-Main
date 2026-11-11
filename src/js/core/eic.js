@@ -230,8 +230,8 @@
   }
 
   /** PNG of one map inside a region, drawn with the data set's colour map and range. */
-  function mapUrl(raster, layer, info, reg, size = 1) {
-    const r = info.rescale || [layer.bands?.statistics?.minimum ?? 0, layer.bands?.statistics?.maximum ?? 1];
+  function mapUrl(raster, layer, info, reg, size = 1, range = null) {
+    const r = range || info.rescale || [layer.bands?.statistics?.minimum ?? 0, layer.bands?.statistics?.maximum ?? 1];
     const nodata = layer.bands?.nodata;
     const q = [
       `url=${encodeURIComponent(layer.href)}`,
@@ -247,8 +247,8 @@
    * A colour key (see core/image.js) made from the colour map the API draws with:
    * colormap = { 0: [r, g, b, a], …, 255: [r, g, b, a] } spread over the data set's range.
    */
-  function colorKey(colormap, info, unit, name) {
-    const [lo, hi] = info.rescale || [0, 1];
+  function colorKey(colormap, info, unit, name, range = null) {
+    const [lo, hi] = range || info.rescale || [0, 1];
     const ramp = [];
     for (let i = 0; i < 256; i += 8) {
       const c = colormap[i] || colormap[String(i)];
@@ -256,13 +256,50 @@
     }
     const last = colormap[255] || colormap['255'];
     if (last) ramp.push([last[0], last[1], last[2], hi]);
-    return { name, unit, coverName: 'Area with data', min: lo, max: hi, ramp, wL: 1, tol: 12, minChroma: 0 };
+    // noBackground: an even map is data (one value everywhere), never an empty page to skip
+    return { name, unit, coverName: 'Area with data', min: lo, max: hi, ramp, wL: 1, tol: 12, minChroma: 0, noBackground: true };
   }
 
   /** With several layers per date, the one the dashboard draws (its asset name, e.g. xco2 → XCO2). */
   function pickLayer(names, info) {
     return names.find((n) => n.toLowerCase().replace(/[^a-z0-9]/g, '') === String(info.asset).toLowerCase().replace(/[^a-z0-9]/g, '')) || names[0];
   }
+
+  const boxOf = (reg) => ({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[reg.bbox[0], reg.bbox[1]], [reg.bbox[2], reg.bbox[1]], [reg.bbox[2], reg.bbox[3]], [reg.bbox[0], reg.bbox[3]], [reg.bbox[0], reg.bbox[1]]]] } });
+
+  /** Statistics of one map inside a region (with the 2nd and 98th percentiles). */
+  async function regionStats(get, raster, layer, reg) {
+    const nodata = layer.bands?.nodata;
+    const j = await get(`${trim(raster)}/cog/statistics?url=${encodeURIComponent(layer.href)}&max_size=512&p=2&p=98${nodata != null && nodata !== 'nan' ? `&nodata=${encodeURIComponent(nodata)}` : ''}`, { method: 'POST', body: boxOf(reg) });
+    const b = j?.properties?.statistics?.b1 || Object.values(j?.properties?.statistics || {})[0];
+    if (!b || !b.count || !Number.isFinite(b.mean)) return { mean: null, max: null, min: null, p2: null, p98: null };
+    const min = b.min ?? b.mean;
+    const max = b.max ?? b.mean;
+    return { mean: b.mean, max, min, p2: b.percentile_2 ?? min, p98: b.percentile_98 ?? max };
+  }
+
+  /**
+   * The colour range for pictures of these statistics: the real spread of the data in the area
+   * (2nd to 98th percentile), so the map is never one flat colour because the data set's
+   * dashboard range does not fit this place. null when every value is the same.
+   */
+  function rangeOf(stats) {
+    const ok = stats.filter((s) => s && s.mean != null);
+    if (!ok.length) return null;
+    let lo = Math.min(...ok.map((s) => s.p2));
+    let hi = Math.max(...ok.map((s) => s.p98));
+    if (!(hi - lo > Math.abs(hi) * 1e-6)) {
+      lo = Math.min(...ok.map((s) => s.min));
+      hi = Math.max(...ok.map((s) => s.max));
+    }
+    if (!(hi - lo > Math.abs(hi) * 1e-6)) return null;
+    const nice = (v) => +v.toPrecision(4);
+    return [nice(lo), nice(hi)];
+  }
+  const flat = (where, stats, unit) => {
+    const v = stats.find((s) => s.mean != null)?.mean ?? 0;
+    return new Error(`every value of this data set ${where === 'whole world' ? 'in the whole world' : 'around ' + where} is ${+v.toPrecision(3)}${unit ? ' ' + unit : ''}, so there is nothing to hear there. Try another place or the whole world.`);
+  };
 
   /** The newest map of a data set as a picture: { url, date, layer, unit, key, region, source text }. */
   async function latestMap({ info, place }, opts = {}) {
@@ -274,13 +311,17 @@
     const reg = region(place);
     const unit = prettyUnit(layer.bands?.unit);
     const title = String(layer.title || '').split(',')[0].replace(/^.*\bdefault\b.*$/i, '').trim() || name || info.title;
+    const st = await regionStats(get, raster, layer, reg);
+    if (st.mean == null) throw new Error(`this map has no data ${reg.name === 'whole world' ? 'at all' : 'around ' + reg.name}. Try the whole world.`);
+    const range = rangeOf([st]);
+    if (!range) throw flat(reg.name, [st], unit);
     let key = null;
     try {
-      key = colorKey(await get(`${trim(raster)}/colorMaps/${encodeURIComponent(info.colormap || 'viridis')}`), info, unit, title);
+      key = colorKey(await get(`${trim(raster)}/colorMaps/${encodeURIComponent(info.colormap || 'viridis')}`), info, unit, title, range);
     } catch {
       key = null;
     }
-    return { url: mapUrl(raster, layer, info, reg), date: label(t.date, info.density), layer: name, title, unit, key, region: reg };
+    return { url: mapUrl(raster, layer, info, reg, 1, range), date: label(t.date, info.density), layer: name, title, unit, key, range, region: reg };
   }
 
   /**
@@ -294,19 +335,12 @@
     const reg = region(place);
     const layerName = pickLayer(Object.keys(times[times.length - 1].layers), info);
     const frames = times.map((t) => t.layers[layerName] || Object.values(t.layers)[0]);
-    const geo = { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[reg.bbox[0], reg.bbox[1]], [reg.bbox[2], reg.bbox[1]], [reg.bbox[2], reg.bbox[3]], [reg.bbox[0], reg.bbox[3]], [reg.bbox[0], reg.bbox[1]]]] } };
-    const stats = await pool(frames, 6, async (layer) => {
-      try {
-        const nodata = layer.bands?.nodata;
-        const j = await get(`${trim(raster)}/cog/statistics?url=${encodeURIComponent(layer.href)}&max_size=512${nodata != null && nodata !== 'nan' ? `&nodata=${encodeURIComponent(nodata)}` : ''}`, { method: 'POST', body: geo });
-        const b = j?.properties?.statistics?.b1 || Object.values(j?.properties?.statistics || {})[0];
-        return b && b.count && Number.isFinite(b.mean) ? { mean: b.mean, max: b.max } : { mean: null, max: null };
-      } catch {
-        return { mean: null, max: null };
-      }
-    }, progress);
-    if (!stats.some((s) => s.mean != null)) throw new Error(`no data for the ${reg.name} in this data set. Try the whole world.`);
+    const stats = await pool(frames, 6, (layer) => regionStats(get, raster, layer, reg).catch(() => ({ mean: null, max: null })), progress);
+    if (!stats.some((s) => s.mean != null)) throw new Error(`these maps have no data ${reg.name === 'whole world' ? 'at all' : 'around ' + reg.name}. Try the whole world.`);
     const unit = prettyUnit(frames[0].bands?.unit);
+    // one colour range for every frame, fitted to the data in this area, so changes show as colour
+    const range = rangeOf(stats);
+    if (!range) throw flat(reg.name, stats, unit);
     const title = String(frames[0].title || '').split(',')[0].replace(/^.*\bdefault\b.*$/i, '').trim() || layerName || info.title.replace(/\s*\(.*?\)\s*/g, ' ').replace(/,?\s*v\d[\w.]*$/i, '').trim();
     const per = 0.5; // seconds of time-lapse per map
     return {
@@ -316,7 +350,8 @@
       labels: times.map((t) => label(t.date, info.density)),
       times: times.map((_, i) => (i + 0.5) * per),
       duration: times.length * per,
-      frames: frames.map((l) => mapUrl(raster, l, info, reg, 0.75)),
+      frames: frames.map((l) => mapUrl(raster, l, info, reg, 0.75, range)),
+      range,
       channels: [
         { name: `${title}, average`, unit, values: stats.map((s) => s.mean), instrument: 'soft', hint: `Average of the map over the ${reg.name === 'whole world' ? 'whole world' : 'area shown around ' + reg.name}.` },
         { name: 'Highest value', unit, values: stats.map((s) => s.max), instrument: 'marimba', mute: true, hint: 'Highest value in the area shown.' },
@@ -326,10 +361,10 @@
         url: site,
         live: true,
         fetched: new Date().toISOString(),
-        note: `Time-lapse of the latest ${times.length} maps (${info.id}), drawn in the data set's own colours. Each note is the average of the area in the picture.`,
+        note: `Time-lapse of the latest ${times.length} maps (${info.id}) in the data set's own colours, from ${range[0]} to ${range[1]} ${unit}. Each note is the average of the area in the picture.`,
       },
     };
   }
 
-  return { ENDPOINTS, WORLD, BOX, MAX_REQUESTS, prettyUnit, assetKey, playable, describe, listCollections, area, layerNames, label, timeSteps, statistics, pool, load, region, mapUrl, colorKey, pickLayer, latestMap, timelapse };
+  return { ENDPOINTS, WORLD, BOX, MAX_REQUESTS, prettyUnit, assetKey, playable, describe, listCollections, area, layerNames, label, timeSteps, statistics, pool, load, region, mapUrl, colorKey, pickLayer, regionStats, rangeOf, latestMap, timelapse };
 });

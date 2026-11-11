@@ -612,7 +612,7 @@
       pressOne($('scanGroup'), b);
       state.image.scan = b.dataset.scan;
       state.pointer = null;
-      if (b.dataset.scan === 'pointer') toast('Move the pointer over the picture to hear it. Play still scans left to right.', 4000);
+      if (b.dataset.scan === 'pointer') toast('Move the pointer over the picture to hear it. Play scans from left to right.', 4000);
       analyseImage();
     };
   });

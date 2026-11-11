@@ -136,7 +136,7 @@
       steps: [
         { id: 'i-source', mood: 'curious', target: '.source-pick', ensure: 'image', title: 'Pick a picture', text: 'NASA Earth Information Center pictures, live NASA satellite views (choose a date), an offline world map, or Open picture for your own.' },
         { id: 'i-look', mood: 'happy', target: '#analysisGroup', ensure: 'image', title: 'What to hear', text: 'Light plays brightness, detail and where the bright areas are. Colour plays red, green and blue. Colour key (NASA pictures) reads the real value through the picture’s own colour bar.' },
-        { id: 'i-scan', mood: 'excited', target: '#scanGroup', ensure: 'image', title: 'How to scan', text: 'Left to right, around the centre like a radar, or Follow pointer: move your mouse or finger over the picture and hear what is under it.' },
+        { id: 'i-scan', mood: 'excited', target: '#scanGroup', ensure: 'image', title: 'How to scan', text: 'Left to right, top to bottom, around the centre like a radar, or Follow pointer: move your mouse or finger over the picture and hear what is under it.' },
         { id: 'i-steps', mood: 'curious', target: '#opts-image .field-range', ensure: 'image', title: 'Steps', text: 'How many bands the picture is cut into, from 16 to 160. More steps means more detail and a longer melody. Empty background around a globe stays silent.' },
       ],
     },

@@ -23,7 +23,7 @@ Every successful live request is also saved in the browser and used next time th
 
 ## 2. Pictures
 
-Pixels are converted from sRGB to linear light and then to **CIE L\*** (0 = black, 100 = white), which is close to how bright people perceive a colour. For each band of the picture (a vertical strip, or a sector around the centre for the radar scan) Bit2Beat uses up to ~4000 pixels, not a single column:
+Pixels are converted from sRGB to linear light and then to **CIE L\*** (0 = black, 100 = white), which is close to how bright people perceive a colour. For each band of the picture (a vertical strip, a horizontal strip for the top-to-bottom scan, or a sector around the centre for the radar scan) Bit2Beat uses up to ~4000 pixels, not a single column:
 
 - **Brightness** – mean L\*.
 - **Detail** – standard deviation of L\* inside the band (texture, edges, cloud structure).

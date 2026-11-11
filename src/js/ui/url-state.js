@@ -39,7 +39,7 @@
     if (has('ref')) S.drone = oneOf(q.get('ref'), ['off', 'baseline', 'mean']);
     if (has('tick')) S.cues = q.get('tick') === '1';
     if (has('shared')) S.sharedScale = q.get('shared') === '1';
-    if (has('move')) S.path = oneOf(q.get('move'), ['auto', 'sweep', 'orbit', 'fixed']);
+    if (has('move')) S.path = oneOf(q.get('move'), ['auto', 'sweep', 'fall', 'orbit', 'fixed']);
 
     if (has('out')) out.audio.output = oneOf(q.get('out'), ['stereo', 'binaural', '5.1', '7.1', '7.1.4']);
     if (has('room')) out.audio.room = num(q.get('room'), 0, 100) / 100;
@@ -48,7 +48,7 @@
     if (has('days')) out.earth.eonetDays = oneOf(+q.get('days'), [7, 30, 60]);
 
     if (has('look')) out.image.analysis = oneOf(q.get('look'), ['light', 'color', 'key']);
-    if (has('scan')) out.image.scan = oneOf(q.get('scan'), ['line', 'radar', 'pointer']);
+    if (has('scan')) out.image.scan = oneOf(q.get('scan'), ['line', 'down', 'radar', 'pointer']);
     if (has('steps')) out.image.steps = num(q.get('steps'), 16, 160);
     if (has('date') && /^\d{4}-\d\d-\d\d$/.test(q.get('date'))) out.image.date = q.get('date');
 

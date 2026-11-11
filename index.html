@@ -156,6 +156,7 @@
           </div>
           <div class="seg" role="group" aria-label="How to scan" id="scanGroup">
             <button type="button" data-scan="line" aria-pressed="true">Left to right</button>
+            <button type="button" data-scan="down" aria-pressed="false">Top to bottom</button>
             <button type="button" data-scan="radar" aria-pressed="false">Around the centre</button>
             <button type="button" data-scan="pointer" aria-pressed="false">Follow pointer</button>
           </div>
@@ -285,6 +286,7 @@
             <select id="path">
               <option value="auto">Automatic</option>
               <option value="sweep">Left to right</option>
+              <option value="fall">Top to bottom</option>
               <option value="orbit">Circle around</option>
               <option value="fixed">Fixed places</option>
             </select>

@@ -24,6 +24,11 @@
       const x = e.clientX - r.left;
       const y = e.clientY - r.top;
       const R = hitInfo.rect;
+      if (hitInfo.kind === 'image' && app.state.image.scan === 'down') {
+        if (y < R.y || y > R.y + R.h || x < R.x || x > R.x + R.w) return null;
+        const v = (y - R.y) / R.h;
+        return { i: Math.min(plan.count - 1, Math.floor(v * plan.count)), x, y, u: (x - R.x) / R.w, v };
+      }
       if (hitInfo.kind === 'chart' || hitInfo.kind === 'image') {
         if (x < R.x || x > R.x + R.w) return null;
         const u = (x - R.x) / R.w;

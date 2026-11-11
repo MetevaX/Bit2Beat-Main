@@ -72,9 +72,9 @@
   function fromCanvas(canvas, meta, { analysis = 'light', scan = 'line', steps = 48 } = {}) {
     const g = canvas.getContext('2d', { willReadFrequently: true });
     const px = g.getImageData(0, 0, canvas.width, canvas.height).data;
-    const path = scan === 'radar' ? 'radar' : 'line';
+    const path = ['radar', 'down'].includes(scan) ? scan : 'line';
     const key = analysis === 'key' ? meta.key || null : null;
-    const res = B.image.scan(px, canvas.width, canvas.height, { steps, path, analysis: key ? 'key' : analysis === 'key' ? 'light' : analysis, key });
+    const res = B.image.scan(px, canvas.width, canvas.height, { steps, path, analysis: key ? 'key' : analysis === 'key' ? 'light' : analysis, key, background: !meta.noBackground });
     return {
       name: meta.name,
       kind: 'image',

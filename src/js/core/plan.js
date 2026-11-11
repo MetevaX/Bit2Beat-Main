@@ -156,7 +156,7 @@
     });
 
     // --- positions ---
-    const resolvedPath = o.path === 'auto' ? (o.imagePath === 'radar' ? 'orbit' : 'sweep') : o.path;
+    const resolvedPath = o.path === 'auto' ? ({ radar: 'orbit', down: 'fall' }[o.imagePath] || 'sweep') : o.path;
     function position(i, j, v) {
       const p = src.points?.[i];
       if (p && Number.isFinite(p.lat)) {

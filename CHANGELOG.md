@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.7.1 — 11 November 2026
+- **Earth Information Center pictures and time-lapses fixed.** Maps were drawn with each data set's dashboard range, which can miss the values of a place entirely (GEOS methane near Singapore is 1,895–2,096 ppb; the dashboard range stops at 1,900), so the picture came out one flat colour and the colour key heard nothing. Maps are now coloured over the real spread of the data in the area shown (2nd to 98th percentile, from the raster API), the colour key uses the same range, and an even map is read as data instead of being skipped as empty background.
+- If a data set has the same value everywhere in the area (for example wetland methane around Mauna Loa, which is 0), Bit2Beat now says so and suggests another place or the whole world, instead of playing a flat line.
+- **New scan: Top to bottom.** In the Image tab a line now moves down the picture row by row; *Movement: Top to bottom* (automatic for this scan) brings the sound down from above to ear level.
+
 ## 2.7.0 — 11 November 2026
 - **NASA Earth Information Center in the Image and Video tabs too.** *Image*: load the newest map of any data set (whole world or a 32° × 20° window around a place), drawn by the EIC raster API in the data set's own colours, then read it back value by value through its colour bar (*Colour key*), or by light or colour. *Video*: make a time-lapse of the latest 24, 48 or 96 maps; each map is one picture and one note, the average (and highest value) of exactly the area on screen, and the maps follow the music.
 - EIC channels are named after the map layer (for example *Net Primary Production (NPP)*); data sets with several layers per date use the layer their dashboard draws.

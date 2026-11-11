@@ -3171,6 +3171,7 @@ THE SOFTWARE.
           </div>
           <div class="seg" role="group" aria-label="How to scan" id="scanGroup">
             <button type="button" data-scan="line" aria-pressed="true">Left to right</button>
+            <button type="button" data-scan="down" aria-pressed="false">Top to bottom</button>
             <button type="button" data-scan="radar" aria-pressed="false">Around the centre</button>
             <button type="button" data-scan="pointer" aria-pressed="false">Follow pointer</button>
           </div>
@@ -3300,6 +3301,7 @@ THE SOFTWARE.
             <select id="path">
               <option value="auto">Automatic</option>
               <option value="sweep">Left to right</option>
+              <option value="fall">Top to bottom</option>
               <option value="orbit">Circle around</option>
               <option value="fixed">Fixed places</option>
             </select>
@@ -4390,7 +4392,7 @@ THE SOFTWARE.
   /**
    * Position of a sonified reading.
    * @param {object} o
-   * @param {'sweep'|'orbit'|'fixed'} o.path  motion path
+   * @param {'sweep'|'orbit'|'fixed'|'fall'} o.path  motion path ('fall': from above the listener down to ear level)
    * @param {number} o.progress  0..1 playback position
    * @param {number} o.index     channel index
    * @param {number} o.count     number of channels
@@ -4408,6 +4410,11 @@ THE SOFTWARE.
       const a = (p + index / Math.max(1, count)) * 2 * Math.PI;
       x = Math.sin(a) * width;
       y = Math.cos(a);
+    } else if (path === 'fall') {
+      // top to bottom: every channel keeps its place across the front, and the sound comes down
+      x = (spread * 2 - 1) * 0.6 * width;
+      y = 0.7;
+      return { x: round(x), y: round(y), z: round(1 - p) };
     } else if (path === 'fixed') {
       const a = (spread * 2 - 1) * 60 * deg * width;
       x = Math.sin(a);
@@ -4775,8 +4782,8 @@ THE SOFTWARE.
  * around a globe, a white page around a chart), pixels of that colour are left out, and a band
  * that is (almost) all background is silent instead of playing the background as data.
  *
- * Two scan paths: 'line' (vertical bands from left to right) and 'radar' (sectors around the
- * centre, starting at 12 o'clock and turning clockwise). Every pixel of a band is used
+ * Three scan paths: 'line' (vertical bands from left to right), 'down' (horizontal bands from
+ * top to bottom) and 'radar' (sectors around the centre, starting at 12 o'clock and turning clockwise). Every pixel of a band is used
  * (sub-sampled only above ~4000 pixels per band), not a single column.
  */
 (function (root, factory) {
@@ -4975,9 +4982,20 @@ THE SOFTWARE.
         }
       };
     }
+    if (path === 'down') {
+      const y0 = Math.floor((i / n) * h);
+      const y1 = Math.max(y0 + 1, Math.floor(((i + 1) / n) * h));
+      return (fn) => eachInRect(w, 0, w, y0, y1, 4000, fn);
+    }
     const x0 = Math.floor((i / n) * w);
     const x1 = Math.max(x0 + 1, Math.floor(((i + 1) / n) * w));
     return (fn) => eachInRect(w, x0, x1, 0, h, 4000, fn);
+  }
+
+  /** Where step `i` of `n` is, in words. */
+  function bandLabel(path, i, n) {
+    const pct = Math.round(((i + 0.5) / n) * 100);
+    return path === 'radar' ? `${Math.round(((i + 0.5) / n) * 360)}°` : path === 'down' ? `${pct}% down` : `${pct}% across`;
   }
 
   const CHANNELS = {
@@ -4994,25 +5012,26 @@ THE SOFTWARE.
   };
 
   /** Scan an image. Returns { channels: [{name, unit, hint, values}], labels }. */
-  function scan(px, w, h, { steps = 48, path = 'line', analysis = 'light', key = null } = {}) {
-    if (analysis === 'key' && key) return scanKey(px, w, h, { steps, path, key });
+  function scan(px, w, h, { steps = 48, path = 'line', analysis = 'light', key = null, background: useBg = true } = {}) {
+    if (analysis === 'key' && key) return scanKey(px, w, h, { steps, path, key, useBg });
     const defs = CHANNELS[analysis] || CHANNELS.light;
     const cols = defs.map((d) => ({ name: d.name, unit: d.unit, hint: d.hint, values: [] }));
-    const bg = background(px, w, h);
+    const bg = useBg ? background(px, w, h) : null;
     for (let i = 0; i < steps; i++) {
       const s = bandStats(px, w, h, bandVisitor(path, w, h, i, steps), bg);
       defs.forEach((d, k) => cols[k].values.push(s ? +s[d.key].toFixed(2) : null));
     }
     const labels = Array.from({ length: steps }, (_, i) =>
-      path === 'radar' ? `${Math.round(((i + 0.5) / steps) * 360)}°` : `${Math.round(((i + 0.5) / steps) * 100)}% across`,
+      bandLabel(path, i, steps),
     );
     return { channels: cols, labels, background: bg };
   }
 
   /** Scan with a colour key: the visualisation's own data value per band, and how much of the band shows data. */
-  function scanKey(px, w, h, { steps, path, key }) {
+  function scanKey(px, w, h, { steps, path, key, useBg = true }) {
     const k = makeKey(key);
-    const bg = background(px, w, h);
+    // a data map has no empty background: an even map is data, not a blank page
+    const bg = useBg && !key.noBackground ? background(px, w, h) : null;
     const lo = key.min ?? k.min;
     const hi = key.max ?? k.max;
     // minSpan: a few ppm of difference should not sound like the whole colour bar
@@ -5024,7 +5043,7 @@ THE SOFTWARE.
       cover.values.push(s ? +s.cover.toFixed(1) : null);
     }
     const labels = Array.from({ length: steps }, (_, i) =>
-      path === 'radar' ? `${Math.round(((i + 0.5) / steps) * 360)}°` : `${Math.round(((i + 0.5) / steps) * 100)}% across`,
+      bandLabel(path, i, steps),
     );
     return { channels: [value, cover], labels, background: bg };
   }
@@ -5052,7 +5071,7 @@ THE SOFTWARE.
     return defs.map((d) => (d.key === 'height' ? (1 - ny) * 100 : s[d.key]));
   }
 
-  return { lightness, lab, chroma, background, isBackground, makeKey, keyStats, ignored, scan, probe, CHANNELS };
+  return { lightness, lab, chroma, background, isBackground, makeKey, keyStats, ignored, scan, probe, bandLabel, CHANNELS };
 });
 
 </script>
@@ -5777,8 +5796,8 @@ THE SOFTWARE.
   }
 
   /** PNG of one map inside a region, drawn with the data set's colour map and range. */
-  function mapUrl(raster, layer, info, reg, size = 1) {
-    const r = info.rescale || [layer.bands?.statistics?.minimum ?? 0, layer.bands?.statistics?.maximum ?? 1];
+  function mapUrl(raster, layer, info, reg, size = 1, range = null) {
+    const r = range || info.rescale || [layer.bands?.statistics?.minimum ?? 0, layer.bands?.statistics?.maximum ?? 1];
     const nodata = layer.bands?.nodata;
     const q = [
       `url=${encodeURIComponent(layer.href)}`,
@@ -5794,8 +5813,8 @@ THE SOFTWARE.
    * A colour key (see core/image.js) made from the colour map the API draws with:
    * colormap = { 0: [r, g, b, a], …, 255: [r, g, b, a] } spread over the data set's range.
    */
-  function colorKey(colormap, info, unit, name) {
-    const [lo, hi] = info.rescale || [0, 1];
+  function colorKey(colormap, info, unit, name, range = null) {
+    const [lo, hi] = range || info.rescale || [0, 1];
     const ramp = [];
     for (let i = 0; i < 256; i += 8) {
       const c = colormap[i] || colormap[String(i)];
@@ -5803,13 +5822,50 @@ THE SOFTWARE.
     }
     const last = colormap[255] || colormap['255'];
     if (last) ramp.push([last[0], last[1], last[2], hi]);
-    return { name, unit, coverName: 'Area with data', min: lo, max: hi, ramp, wL: 1, tol: 12, minChroma: 0 };
+    // noBackground: an even map is data (one value everywhere), never an empty page to skip
+    return { name, unit, coverName: 'Area with data', min: lo, max: hi, ramp, wL: 1, tol: 12, minChroma: 0, noBackground: true };
   }
 
   /** With several layers per date, the one the dashboard draws (its asset name, e.g. xco2 → XCO2). */
   function pickLayer(names, info) {
     return names.find((n) => n.toLowerCase().replace(/[^a-z0-9]/g, '') === String(info.asset).toLowerCase().replace(/[^a-z0-9]/g, '')) || names[0];
   }
+
+  const boxOf = (reg) => ({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[reg.bbox[0], reg.bbox[1]], [reg.bbox[2], reg.bbox[1]], [reg.bbox[2], reg.bbox[3]], [reg.bbox[0], reg.bbox[3]], [reg.bbox[0], reg.bbox[1]]]] } });
+
+  /** Statistics of one map inside a region (with the 2nd and 98th percentiles). */
+  async function regionStats(get, raster, layer, reg) {
+    const nodata = layer.bands?.nodata;
+    const j = await get(`${trim(raster)}/cog/statistics?url=${encodeURIComponent(layer.href)}&max_size=512&p=2&p=98${nodata != null && nodata !== 'nan' ? `&nodata=${encodeURIComponent(nodata)}` : ''}`, { method: 'POST', body: boxOf(reg) });
+    const b = j?.properties?.statistics?.b1 || Object.values(j?.properties?.statistics || {})[0];
+    if (!b || !b.count || !Number.isFinite(b.mean)) return { mean: null, max: null, min: null, p2: null, p98: null };
+    const min = b.min ?? b.mean;
+    const max = b.max ?? b.mean;
+    return { mean: b.mean, max, min, p2: b.percentile_2 ?? min, p98: b.percentile_98 ?? max };
+  }
+
+  /**
+   * The colour range for pictures of these statistics: the real spread of the data in the area
+   * (2nd to 98th percentile), so the map is never one flat colour because the data set's
+   * dashboard range does not fit this place. null when every value is the same.
+   */
+  function rangeOf(stats) {
+    const ok = stats.filter((s) => s && s.mean != null);
+    if (!ok.length) return null;
+    let lo = Math.min(...ok.map((s) => s.p2));
+    let hi = Math.max(...ok.map((s) => s.p98));
+    if (!(hi - lo > Math.abs(hi) * 1e-6)) {
+      lo = Math.min(...ok.map((s) => s.min));
+      hi = Math.max(...ok.map((s) => s.max));
+    }
+    if (!(hi - lo > Math.abs(hi) * 1e-6)) return null;
+    const nice = (v) => +v.toPrecision(4);
+    return [nice(lo), nice(hi)];
+  }
+  const flat = (where, stats, unit) => {
+    const v = stats.find((s) => s.mean != null)?.mean ?? 0;
+    return new Error(`every value of this data set ${where === 'whole world' ? 'in the whole world' : 'around ' + where} is ${+v.toPrecision(3)}${unit ? ' ' + unit : ''}, so there is nothing to hear there. Try another place or the whole world.`);
+  };
 
   /** The newest map of a data set as a picture: { url, date, layer, unit, key, region, source text }. */
   async function latestMap({ info, place }, opts = {}) {
@@ -5821,13 +5877,17 @@ THE SOFTWARE.
     const reg = region(place);
     const unit = prettyUnit(layer.bands?.unit);
     const title = String(layer.title || '').split(',')[0].replace(/^.*\bdefault\b.*$/i, '').trim() || name || info.title;
+    const st = await regionStats(get, raster, layer, reg);
+    if (st.mean == null) throw new Error(`this map has no data ${reg.name === 'whole world' ? 'at all' : 'around ' + reg.name}. Try the whole world.`);
+    const range = rangeOf([st]);
+    if (!range) throw flat(reg.name, [st], unit);
     let key = null;
     try {
-      key = colorKey(await get(`${trim(raster)}/colorMaps/${encodeURIComponent(info.colormap || 'viridis')}`), info, unit, title);
+      key = colorKey(await get(`${trim(raster)}/colorMaps/${encodeURIComponent(info.colormap || 'viridis')}`), info, unit, title, range);
     } catch {
       key = null;
     }
-    return { url: mapUrl(raster, layer, info, reg), date: label(t.date, info.density), layer: name, title, unit, key, region: reg };
+    return { url: mapUrl(raster, layer, info, reg, 1, range), date: label(t.date, info.density), layer: name, title, unit, key, range, region: reg };
   }
 
   /**
@@ -5841,19 +5901,12 @@ THE SOFTWARE.
     const reg = region(place);
     const layerName = pickLayer(Object.keys(times[times.length - 1].layers), info);
     const frames = times.map((t) => t.layers[layerName] || Object.values(t.layers)[0]);
-    const geo = { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[reg.bbox[0], reg.bbox[1]], [reg.bbox[2], reg.bbox[1]], [reg.bbox[2], reg.bbox[3]], [reg.bbox[0], reg.bbox[3]], [reg.bbox[0], reg.bbox[1]]]] } };
-    const stats = await pool(frames, 6, async (layer) => {
-      try {
-        const nodata = layer.bands?.nodata;
-        const j = await get(`${trim(raster)}/cog/statistics?url=${encodeURIComponent(layer.href)}&max_size=512${nodata != null && nodata !== 'nan' ? `&nodata=${encodeURIComponent(nodata)}` : ''}`, { method: 'POST', body: geo });
-        const b = j?.properties?.statistics?.b1 || Object.values(j?.properties?.statistics || {})[0];
-        return b && b.count && Number.isFinite(b.mean) ? { mean: b.mean, max: b.max } : { mean: null, max: null };
-      } catch {
-        return { mean: null, max: null };
-      }
-    }, progress);
-    if (!stats.some((s) => s.mean != null)) throw new Error(`no data for the ${reg.name} in this data set. Try the whole world.`);
+    const stats = await pool(frames, 6, (layer) => regionStats(get, raster, layer, reg).catch(() => ({ mean: null, max: null })), progress);
+    if (!stats.some((s) => s.mean != null)) throw new Error(`these maps have no data ${reg.name === 'whole world' ? 'at all' : 'around ' + reg.name}. Try the whole world.`);
     const unit = prettyUnit(frames[0].bands?.unit);
+    // one colour range for every frame, fitted to the data in this area, so changes show as colour
+    const range = rangeOf(stats);
+    if (!range) throw flat(reg.name, stats, unit);
     const title = String(frames[0].title || '').split(',')[0].replace(/^.*\bdefault\b.*$/i, '').trim() || layerName || info.title.replace(/\s*\(.*?\)\s*/g, ' ').replace(/,?\s*v\d[\w.]*$/i, '').trim();
     const per = 0.5; // seconds of time-lapse per map
     return {
@@ -5863,7 +5916,8 @@ THE SOFTWARE.
       labels: times.map((t) => label(t.date, info.density)),
       times: times.map((_, i) => (i + 0.5) * per),
       duration: times.length * per,
-      frames: frames.map((l) => mapUrl(raster, l, info, reg, 0.75)),
+      frames: frames.map((l) => mapUrl(raster, l, info, reg, 0.75, range)),
+      range,
       channels: [
         { name: `${title}, average`, unit, values: stats.map((s) => s.mean), instrument: 'soft', hint: `Average of the map over the ${reg.name === 'whole world' ? 'whole world' : 'area shown around ' + reg.name}.` },
         { name: 'Highest value', unit, values: stats.map((s) => s.max), instrument: 'marimba', mute: true, hint: 'Highest value in the area shown.' },
@@ -5873,12 +5927,12 @@ THE SOFTWARE.
         url: site,
         live: true,
         fetched: new Date().toISOString(),
-        note: `Time-lapse of the latest ${times.length} maps (${info.id}), drawn in the data set's own colours. Each note is the average of the area in the picture.`,
+        note: `Time-lapse of the latest ${times.length} maps (${info.id}) in the data set's own colours, from ${range[0]} to ${range[1]} ${unit}. Each note is the average of the area in the picture.`,
       },
     };
   }
 
-  return { ENDPOINTS, WORLD, BOX, MAX_REQUESTS, prettyUnit, assetKey, playable, describe, listCollections, area, layerNames, label, timeSteps, statistics, pool, load, region, mapUrl, colorKey, pickLayer, latestMap, timelapse };
+  return { ENDPOINTS, WORLD, BOX, MAX_REQUESTS, prettyUnit, assetKey, playable, describe, listCollections, area, layerNames, label, timeSteps, statistics, pool, load, region, mapUrl, colorKey, pickLayer, regionStats, rangeOf, latestMap, timelapse };
 });
 
 </script>
@@ -6041,7 +6095,7 @@ THE SOFTWARE.
     });
 
     // --- positions ---
-    const resolvedPath = o.path === 'auto' ? (o.imagePath === 'radar' ? 'orbit' : 'sweep') : o.path;
+    const resolvedPath = o.path === 'auto' ? ({ radar: 'orbit', down: 'fall' }[o.imagePath] || 'sweep') : o.path;
     function position(i, j, v) {
       const p = src.points?.[i];
       if (p && Number.isFinite(p.lat)) {
@@ -7863,6 +7917,18 @@ THE SOFTWARE.
       g.moveTo(cx, cy);
       g.lineTo(cx + Math.cos(a1) * rad, cy + Math.sin(a1) * rad);
       g.stroke();
+    } else if (ui.scan === 'down' && n) {
+      // a horizontal band that moves from the top of the picture to the bottom
+      const by = R.y + (pos / n) * R.h;
+      g.fillStyle = 'rgba(232,163,61,0.22)';
+      g.fillRect(R.x, by, R.w, R.h / n);
+      g.fillStyle = t.amber;
+      g.fillRect(R.x, by + R.h / n / 2 - 1, R.w, 2);
+      g.beginPath();
+      g.moveTo(R.x - 9, by + R.h / n / 2 - 6);
+      g.lineTo(R.x - 1, by + R.h / n / 2);
+      g.lineTo(R.x - 9, by + R.h / n / 2 + 6);
+      g.fill();
     } else if (n) {
       const b = src.bounds;
       const x0 = b ? R.x + b.x0 * R.w : R.x;
@@ -8702,9 +8768,9 @@ ${m.mouth}
   function fromCanvas(canvas, meta, { analysis = 'light', scan = 'line', steps = 48 } = {}) {
     const g = canvas.getContext('2d', { willReadFrequently: true });
     const px = g.getImageData(0, 0, canvas.width, canvas.height).data;
-    const path = scan === 'radar' ? 'radar' : 'line';
+    const path = ['radar', 'down'].includes(scan) ? scan : 'line';
     const key = analysis === 'key' ? meta.key || null : null;
-    const res = B.image.scan(px, canvas.width, canvas.height, { steps, path, analysis: key ? 'key' : analysis === 'key' ? 'light' : analysis, key });
+    const res = B.image.scan(px, canvas.width, canvas.height, { steps, path, analysis: key ? 'key' : analysis === 'key' ? 'light' : analysis, key, background: !meta.noBackground });
     return {
       name: meta.name,
       kind: 'image',
@@ -9486,6 +9552,11 @@ ${m.mouth}
       const x = e.clientX - r.left;
       const y = e.clientY - r.top;
       const R = hitInfo.rect;
+      if (hitInfo.kind === 'image' && app.state.image.scan === 'down') {
+        if (y < R.y || y > R.y + R.h || x < R.x || x > R.x + R.w) return null;
+        const v = (y - R.y) / R.h;
+        return { i: Math.min(plan.count - 1, Math.floor(v * plan.count)), x, y, u: (x - R.x) / R.w, v };
+      }
       if (hitInfo.kind === 'chart' || hitInfo.kind === 'image') {
         if (x < R.x || x > R.x + R.w) return null;
         const u = (x - R.x) / R.w;
@@ -9676,7 +9747,7 @@ ${m.mouth}
     if (has('ref')) S.drone = oneOf(q.get('ref'), ['off', 'baseline', 'mean']);
     if (has('tick')) S.cues = q.get('tick') === '1';
     if (has('shared')) S.sharedScale = q.get('shared') === '1';
-    if (has('move')) S.path = oneOf(q.get('move'), ['auto', 'sweep', 'orbit', 'fixed']);
+    if (has('move')) S.path = oneOf(q.get('move'), ['auto', 'sweep', 'fall', 'orbit', 'fixed']);
 
     if (has('out')) out.audio.output = oneOf(q.get('out'), ['stereo', 'binaural', '5.1', '7.1', '7.1.4']);
     if (has('room')) out.audio.room = num(q.get('room'), 0, 100) / 100;
@@ -9685,7 +9756,7 @@ ${m.mouth}
     if (has('days')) out.earth.eonetDays = oneOf(+q.get('days'), [7, 30, 60]);
 
     if (has('look')) out.image.analysis = oneOf(q.get('look'), ['light', 'color', 'key']);
-    if (has('scan')) out.image.scan = oneOf(q.get('scan'), ['line', 'radar', 'pointer']);
+    if (has('scan')) out.image.scan = oneOf(q.get('scan'), ['line', 'down', 'radar', 'pointer']);
     if (has('steps')) out.image.steps = num(q.get('steps'), 16, 160);
     if (has('date') && /^\d{4}-\d\d-\d\d$/.test(q.get('date'))) out.image.date = q.get('date');
 
@@ -10277,7 +10348,7 @@ ${m.mouth}
       steps: [
         { id: 'i-source', mood: 'curious', target: '.source-pick', ensure: 'image', title: 'Pick a picture', text: 'NASA Earth Information Center pictures, live NASA satellite views (choose a date), an offline world map, or Open picture for your own.' },
         { id: 'i-look', mood: 'happy', target: '#analysisGroup', ensure: 'image', title: 'What to hear', text: 'Light plays brightness, detail and where the bright areas are. Colour plays red, green and blue. Colour key (NASA pictures) reads the real value through the picture’s own colour bar.' },
-        { id: 'i-scan', mood: 'excited', target: '#scanGroup', ensure: 'image', title: 'How to scan', text: 'Left to right, around the centre like a radar, or Follow pointer: move your mouse or finger over the picture and hear what is under it.' },
+        { id: 'i-scan', mood: 'excited', target: '#scanGroup', ensure: 'image', title: 'How to scan', text: 'Left to right, top to bottom, around the centre like a radar, or Follow pointer: move your mouse or finger over the picture and hear what is under it.' },
         { id: 'i-steps', mood: 'curious', target: '#opts-image .field-range', ensure: 'image', title: 'Steps', text: 'How many bands the picture is cut into, from 16 to 160. More steps means more detail and a longer melody. Empty background around a globe stays silent.' },
       ],
     },
@@ -10890,7 +10961,8 @@ ${m.mouth}
           meta: {
             name: `${info.title} · ${m.region.name} · ${m.date}`,
             key: m.key,
-            origin: { source: `${api.name || 'STAC catalogue'} · ${info.provider || 'NASA'} · map of ${m.date}`, url: api.site || api.stac, fetched: new Date().toISOString(), live: true, note: `The newest map of ${info.id}, drawn by the raster API in the data set's own colours (${(info.rescale || []).join('–')} ${m.unit}). “Colour key” reads the values back out of the picture.` },
+            noBackground: true,
+            origin: { source: `${api.name || 'STAC catalogue'} · ${info.provider || 'NASA'} · map of ${m.date}`, url: api.site || api.stac, fetched: new Date().toISOString(), live: true, note: `The newest map of ${info.id}, drawn by the raster API in the data set's colours from ${m.range.join(' to ')} ${m.unit} (the spread of the data in this area). “Colour key” reads the values back out of the picture.` },
           },
         };
       });
@@ -11914,7 +11986,7 @@ ${m.mouth}
       pressOne($('scanGroup'), b);
       state.image.scan = b.dataset.scan;
       state.pointer = null;
-      if (b.dataset.scan === 'pointer') toast('Move the pointer over the picture to hear it. Play still scans left to right.', 4000);
+      if (b.dataset.scan === 'pointer') toast('Move the pointer over the picture to hear it. Play scans from left to right.', 4000);
       analyseImage();
     };
   });
