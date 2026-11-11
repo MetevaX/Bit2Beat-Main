@@ -13,6 +13,11 @@ The [Earth Information Center](https://earth.gov/) shares its data sets through 
 
 When the centre publishes a new data set, it appears in the menu by itself.
 
+The same catalogue is in the other tabs:
+
+- **Image** → *NASA Earth Information Center map*: the newest map of a data set, for the whole world or a 32° × 20° window around a place, drawn in the data set's own colours. *Colour key* reads the values back out of the picture.
+- **Video** → *NASA Earth Information Center time-lapse*: the latest 24, 48 or 96 maps, one picture and one note each. Each note is the average of the area on screen.
+
 ## 2. Another catalogue (no code)
 
 Open **Use another catalogue** and paste two addresses:

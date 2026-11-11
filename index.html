@@ -77,6 +77,7 @@
         </div>
         <div class="video-box" id="videoBox" hidden>
           <video id="videoPreview" muted playsinline preload="auto" tabindex="0" aria-label="Source video. It follows the music: press Play to play both."></video>
+          <img id="framePreview" alt="" hidden>
           <span class="video-chip" aria-hidden="true">Muted · follows the music</span>
         </div>
         <div class="canvas-wrap" id="dropZone">
@@ -120,6 +121,13 @@
 
         <div class="source-options" id="opts-video" hidden>
           <p class="card-note" id="videoNote">Two frames per second. NASA presets are read through their own colour bar; your videos (MP4 or WebM) play brightness, colour and motion. The picture follows the music.</p>
+          <form class="eic-form" id="eicVidForm">
+            <span class="power-title">NASA Earth Information Center time-lapse</span>
+            <label class="field eic-dataset"><span class="sr-only">Data set</span><select id="eicVidDataset" aria-label="Earth Information Center data set for the time-lapse"><option value="">Data sets load when you open this menu</option></select></label>
+            <label class="field"><span class="sr-only">Area</span><select id="eicVidPlace" aria-label="Area of the time-lapse"></select></label>
+            <label class="field"><span class="sr-only">Maps</span><select id="eicVidSteps" aria-label="How many maps"><option value="24" selected>Latest 24 maps</option><option value="48">Latest 48 maps</option><option value="96">Latest 96 maps</option></select></label>
+            <button type="submit" class="btn" id="eicVidBtn">Make time-lapse</button>
+          </form>
         </div>
 
         <div class="source-options" id="opts-earth" hidden>
@@ -155,6 +163,12 @@
             <input type="range" id="stepsRange" min="16" max="160" step="8" value="48">
           </label>
           <label class="field" id="satDateField" hidden>Date <input type="date" id="satDate"></label>
+          <form class="eic-form" id="eicImgForm">
+            <span class="power-title">NASA Earth Information Center map</span>
+            <label class="field eic-dataset"><span class="sr-only">Data set</span><select id="eicImgDataset" aria-label="Earth Information Center data set for the picture"><option value="">Data sets load when you open this menu</option></select></label>
+            <label class="field"><span class="sr-only">Area</span><select id="eicImgPlace" aria-label="Area of the map"></select></label>
+            <button type="submit" class="btn" id="eicImgBtn">Load latest map</button>
+          </form>
         </div>
       </section>
 

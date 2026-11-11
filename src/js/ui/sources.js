@@ -259,6 +259,7 @@
       B.sources.VIDEO_MENU.forEach((it) => add(sel, it));
       if (uploads.video) add(sel, ['upload', 'Your video: ' + uploads.video.name]);
       if (state.choice.video === 'custom') add(sel, ['custom', src?.name || 'Saved video analysis']);
+      if (state.choice.video === 'eic') add(sel, ['eic', B.eicView?.video?.name || 'NASA Earth Information Center time-lapse']);
     } else if (state.mode === 'earth') B.sources.EARTH_MENU.forEach((it) => add(sel, it));
     else {
       B.sources.IMAGE_MENU.forEach(([label, items]) => {
@@ -268,6 +269,7 @@
         sel.append(og);
       });
       if (uploads.image) add(sel, ['upload', 'Your picture: ' + uploads.image.meta.name]);
+      if (state.choice.image === 'eic') add(sel, ['eic', B.eicView?.image?.meta.name || 'NASA Earth Information Center map']);
     }
     sel.value = state.choice[state.mode];
   }

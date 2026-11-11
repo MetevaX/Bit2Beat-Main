@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.7.0 — 11 November 2026
+- **NASA Earth Information Center in the Image and Video tabs too.** *Image*: load the newest map of any data set (whole world or a 32° × 20° window around a place), drawn by the EIC raster API in the data set's own colours, then read it back value by value through its colour bar (*Colour key*), or by light or colour. *Video*: make a time-lapse of the latest 24, 48 or 96 maps; each map is one picture and one note, the average (and highest value) of exactly the area on screen, and the maps follow the music.
+- EIC channels are named after the map layer (for example *Net Primary Production (NPP)*); data sets with several layers per date use the layer their dashboard draws.
+
 ## 2.6.0 — 11 November 2026
 - **NASA Earth Information Center data API.** The Data tab can play any time-series data set of earth.gov's open catalogue (CO₂ and methane fluxes, GEOS column CO₂, ODIAC and Vulcan emissions, MiCASA carbon flux, population density and more): choose the data set, the whole world or one of 18 places, and the latest 24, 60 or 120 maps. Each note is one map: its average over the place (a 2° box) with the highest value as a second channel; data sets with several layers per date get a channel per layer. New data sets appear by themselves.
 - **Any other catalogue.** *Use another catalogue* reads any STAC API with a raster statistics API, such as NASA VEDA or the U.S. Greenhouse Gas Center. New guide: [Add your own data](docs/ADD-DATA.md).

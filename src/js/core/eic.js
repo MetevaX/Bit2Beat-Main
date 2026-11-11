@@ -52,6 +52,7 @@
       from: String(from).slice(0, 10),
       to: String(to).slice(0, 10),
       rescale: col.renders?.dashboard?.rescale?.[0] || null,
+      colormap: col.renders?.dashboard?.colormap_name || '',
       provider: (col.providers || []).map((p) => p.name).filter(Boolean).join(', '),
       text: String(col.description || '').replace(/\s+/g, ' ').trim(),
     };
@@ -127,7 +128,7 @@
       if (!href) return;
       const date = f.properties.datetime || f.properties.start_datetime;
       if (!byDate.has(date)) byDate.set(date, {});
-      byDate.get(date)[names[i]] = { href, bands: f.assets?.[info.asset]?.['raster:bands']?.[0] || null };
+      byDate.get(date)[names[i]] = { href, bands: f.assets?.[info.asset]?.['raster:bands']?.[0] || null, title: f.assets?.[info.asset]?.title || '' };
     });
     return [...byDate.entries()]
       .sort((a, b) => (a[0] < b[0] ? -1 : 1))
@@ -189,7 +190,9 @@
     const instruments = ['soft', 'strings', 'flute', 'marimba'];
     const channels = [];
     layerIds.forEach((l, i) => {
-      const nameOf = l ? l : info.title.replace(/\s*\(.*?\)\s*/g, ' ').replace(/,?\s*v\d[\w.]*$/i, '').trim();
+      // the map layer's own name when it has one ("Net Primary Production (NPP), MiCASA Model v1" → "Net Primary Production (NPP)")
+      const layerTitle = String(Object.values(times[0].layers)[0]?.title || '').split(',')[0].replace(/^.*\bdefault\b.*$/i, '').trim();
+      const nameOf = l || layerTitle || info.title.replace(/\s*\(.*?\)\s*/g, ' ').replace(/,?\s*v\d[\w.]*$/i, '').trim();
       channels.push({ name: `${nameOf}, average`, unit, values: series[l].mean, instrument: instruments[i % 4], mute: i > 0, hint: `Average of the map ${where === 'whole world' ? 'over the whole world' : 'in a 2° box around ' + where}.` });
     });
     layerIds.forEach((l, i) => {
@@ -212,5 +215,121 @@
     };
   }
 
-  return { ENDPOINTS, WORLD, BOX, MAX_REQUESTS, prettyUnit, assetKey, playable, describe, listCollections, area, layerNames, label, timeSteps, statistics, pool, load };
+
+  // ------------------------------------------------------------------ maps as pictures and time-lapses
+  // The raster API also draws any map as a PNG in the data set's own colours (its dashboard
+  // colour map and range). Bit2Beat uses that for the Image tab (one map, read back through its
+  // colour bar) and the Video tab (a time-lapse of the latest maps, one map per note).
+
+  /** The area a picture shows: the whole world, or a 32° × 20° window around a place. */
+  function region(place) {
+    if (!place || place === WORLD) return { bbox: [-180, -90, 180, 90], width: 960, height: 480, name: 'whole world' };
+    const s = Math.max(-90, place.lat - 10);
+    const n = Math.min(90, place.lat + 10);
+    return { bbox: [place.lon - 16, s, place.lon + 16, n], width: 768, height: Math.round((768 * (n - s)) / 32), name: place.name };
+  }
+
+  /** PNG of one map inside a region, drawn with the data set's colour map and range. */
+  function mapUrl(raster, layer, info, reg, size = 1) {
+    const r = info.rescale || [layer.bands?.statistics?.minimum ?? 0, layer.bands?.statistics?.maximum ?? 1];
+    const nodata = layer.bands?.nodata;
+    const q = [
+      `url=${encodeURIComponent(layer.href)}`,
+      `rescale=${r.join(',')}`,
+      `colormap_name=${encodeURIComponent(info.colormap || 'viridis')}`,
+      nodata != null && nodata !== 'nan' ? `nodata=${encodeURIComponent(nodata)}` : '',
+    ].filter(Boolean).join('&');
+    const [w, s, e, n] = reg.bbox.map((v) => +v.toFixed(3));
+    return `${trim(raster)}/cog/bbox/${w},${s},${e},${n}/${Math.round(reg.width * size)}x${Math.round(reg.height * size)}.png?${q}`;
+  }
+
+  /**
+   * A colour key (see core/image.js) made from the colour map the API draws with:
+   * colormap = { 0: [r, g, b, a], …, 255: [r, g, b, a] } spread over the data set's range.
+   */
+  function colorKey(colormap, info, unit, name) {
+    const [lo, hi] = info.rescale || [0, 1];
+    const ramp = [];
+    for (let i = 0; i < 256; i += 8) {
+      const c = colormap[i] || colormap[String(i)];
+      if (c) ramp.push([c[0], c[1], c[2], +(lo + ((hi - lo) * i) / 255).toPrecision(4)]);
+    }
+    const last = colormap[255] || colormap['255'];
+    if (last) ramp.push([last[0], last[1], last[2], hi]);
+    return { name, unit, coverName: 'Area with data', min: lo, max: hi, ramp, wL: 1, tol: 12, minChroma: 0 };
+  }
+
+  /** With several layers per date, the one the dashboard draws (its asset name, e.g. xco2 → XCO2). */
+  function pickLayer(names, info) {
+    return names.find((n) => n.toLowerCase().replace(/[^a-z0-9]/g, '') === String(info.asset).toLowerCase().replace(/[^a-z0-9]/g, '')) || names[0];
+  }
+
+  /** The newest map of a data set as a picture: { url, date, layer, unit, key, region, source text }. */
+  async function latestMap({ info, place }, opts = {}) {
+    const { get, stac = ENDPOINTS.stac, raster = ENDPOINTS.raster } = opts;
+    const times = await timeSteps(get, stac, info, 1);
+    const t = times[times.length - 1];
+    const name = pickLayer(Object.keys(t.layers), info);
+    const layer = t.layers[name];
+    const reg = region(place);
+    const unit = prettyUnit(layer.bands?.unit);
+    const title = String(layer.title || '').split(',')[0].replace(/^.*\bdefault\b.*$/i, '').trim() || name || info.title;
+    let key = null;
+    try {
+      key = colorKey(await get(`${trim(raster)}/colorMaps/${encodeURIComponent(info.colormap || 'viridis')}`), info, unit, title);
+    } catch {
+      key = null;
+    }
+    return { url: mapUrl(raster, layer, info, reg), date: label(t.date, info.density), layer: name, title, unit, key, region: reg };
+  }
+
+  /**
+   * A time-lapse of the latest maps for the Video tab: one picture and one note per map.
+   * Each note is the average (and highest value) of exactly the area the picture shows.
+   */
+  async function timelapse({ info, place, steps = 24 }, opts = {}) {
+    const { get, stac = ENDPOINTS.stac, raster = ENDPOINTS.raster, progress, name = ENDPOINTS.name, site = ENDPOINTS.site } = opts;
+    const times = await timeSteps(get, stac, info, steps);
+    if (times.length < 2) throw new Error('this data set is a single map, so there is no time-lapse. Pick another one.');
+    const reg = region(place);
+    const layerName = pickLayer(Object.keys(times[times.length - 1].layers), info);
+    const frames = times.map((t) => t.layers[layerName] || Object.values(t.layers)[0]);
+    const geo = { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[reg.bbox[0], reg.bbox[1]], [reg.bbox[2], reg.bbox[1]], [reg.bbox[2], reg.bbox[3]], [reg.bbox[0], reg.bbox[3]], [reg.bbox[0], reg.bbox[1]]]] } };
+    const stats = await pool(frames, 6, async (layer) => {
+      try {
+        const nodata = layer.bands?.nodata;
+        const j = await get(`${trim(raster)}/cog/statistics?url=${encodeURIComponent(layer.href)}&max_size=512${nodata != null && nodata !== 'nan' ? `&nodata=${encodeURIComponent(nodata)}` : ''}`, { method: 'POST', body: geo });
+        const b = j?.properties?.statistics?.b1 || Object.values(j?.properties?.statistics || {})[0];
+        return b && b.count && Number.isFinite(b.mean) ? { mean: b.mean, max: b.max } : { mean: null, max: null };
+      } catch {
+        return { mean: null, max: null };
+      }
+    }, progress);
+    if (!stats.some((s) => s.mean != null)) throw new Error(`no data for the ${reg.name} in this data set. Try the whole world.`);
+    const unit = prettyUnit(frames[0].bands?.unit);
+    const title = String(frames[0].title || '').split(',')[0].replace(/^.*\bdefault\b.*$/i, '').trim() || layerName || info.title.replace(/\s*\(.*?\)\s*/g, ' ').replace(/,?\s*v\d[\w.]*$/i, '').trim();
+    const per = 0.5; // seconds of time-lapse per map
+    return {
+      name: `${info.title} · ${reg.name} · time-lapse`,
+      kind: 'video',
+      view: 'chart',
+      labels: times.map((t) => label(t.date, info.density)),
+      times: times.map((_, i) => (i + 0.5) * per),
+      duration: times.length * per,
+      frames: frames.map((l) => mapUrl(raster, l, info, reg, 0.75)),
+      channels: [
+        { name: `${title}, average`, unit, values: stats.map((s) => s.mean), instrument: 'soft', hint: `Average of the map over the ${reg.name === 'whole world' ? 'whole world' : 'area shown around ' + reg.name}.` },
+        { name: 'Highest value', unit, values: stats.map((s) => s.max), instrument: 'marimba', mute: true, hint: 'Highest value in the area shown.' },
+      ],
+      origin: {
+        source: `${name} · ${info.provider || 'NASA'}`,
+        url: site,
+        live: true,
+        fetched: new Date().toISOString(),
+        note: `Time-lapse of the latest ${times.length} maps (${info.id}), drawn in the data set's own colours. Each note is the average of the area in the picture.`,
+      },
+    };
+  }
+
+  return { ENDPOINTS, WORLD, BOX, MAX_REQUESTS, prettyUnit, assetKey, playable, describe, listCollections, area, layerNames, label, timeSteps, statistics, pool, load, region, mapUrl, colorKey, pickLayer, latestMap, timelapse };
 });

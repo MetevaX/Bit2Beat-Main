@@ -170,7 +170,8 @@ main {
   overflow: hidden;
   background: #04070f;
 }
-.video-box video {
+.video-box video,
+.video-box img {
   display: block;
   width: 100%;
   height: 100%;

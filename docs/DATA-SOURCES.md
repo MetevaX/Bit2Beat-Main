@@ -33,6 +33,8 @@ The [Earth Information Center](https://earth.gov/) publishes its data as maps (c
 3. for every map asks the raster API for its statistics: `POST /cog/statistics` with a 2° × 2° box around the place, or `GET /cog/statistics?max_size=512` for the whole world. The map's own *no data* value is passed on;
 4. plays the **average** (one channel per layer) and the **highest value** (muted at first), one note per map, oldest first. Units come from the map's `raster:bands`.
 
+The **Image** tab asks `GET /cog/bbox/{w},{s},{e},{n}/{width}x{height}.png` with the data set's dashboard colour map and range, and builds its colour key from `GET /colorMaps/{name}` (256 colours spread over that range). The **Video** tab does the same for each of the latest 24–96 maps and plays the average of exactly the area in the picture (`POST /cog/statistics?max_size=512` with that box).
+
 At most 180 statistics requests are made per load (6 at a time). Some data sets only cover the United States (Vulcan, EPA); for those, choose Houston, Death Valley, Kennedy Space Center or the whole world.
 
 ## NASA POWER places

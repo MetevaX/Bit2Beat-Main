@@ -78,6 +78,7 @@
     persist,
     setSource,
     busy: (on, label) => setBusy(on, label),
+    useImage: (res) => ((state.image.analysis = res.meta?.key ? 'key' : state.image.analysis), (imageBase = res), syncImageOptions(), analyseImage()),
     play: togglePlay,
     drawAll: () => drawAll(),
     fillSourceSelect: () => fillSourceSelect(),
@@ -305,6 +306,7 @@
       if (state.mode === 'video') {
         if (id === 'custom') return;
         if (id === 'upload' && uploads.video) return setSource(uploads.video);
+        if (id === 'eic') return B.eicView.video ? setSource(B.eicView.video) : B.eicView.loadVideo(state.eicVideo || {});
         return setSource(B.sources.videoPreset(id));
       }
       if (state.mode === 'earth') {
@@ -316,6 +318,7 @@
       // image
       let res;
       if (id === 'upload' && uploads.image) res = uploads.image;
+      else if (id === 'eic') return B.eicView.image ? app.useImage(B.eicView.image) : B.eicView.loadImage(state.eicImage || {});
       else {
         setBusy(true, 'Loading picture…');
         res = await B.sources.imageCanvas(id, state.image.date);

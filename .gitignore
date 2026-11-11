@@ -27,3 +27,8 @@ video/build/
 __pycache__/
 *.pyc
 *.wav
+
+# scratch folders and the Manim Python environment (never publish)
+/tmp/
+/output/
+video/.venv/
