@@ -16,7 +16,9 @@
   const STEPS = { data: [24, 60, 120], video: [24, 48, 96] };
   const DEFAULT_STEPS = { data: 60, video: 24 };
   const DENSITY = { day: 'daily', month: 'monthly', year: 'yearly' };
-  const HELLO = 'Results appear as you type. Turn on AI mode to ask in your own words.';
+  // more ideas for the suggestions while typing (the first six are also the "Try:" buttons)
+  const MORE_IDEAS = ['Carbon dioxide over the Amazon', 'Methane from rice fields', 'Fossil fuel emissions in cities', 'Fire emissions in Australia', 'Population in India', 'Land carbon flux', 'Wetland methane in Siberia', 'Greenhouse gases over the whole world'];
+  const HELLO = 'Results and suggestions appear as you type. Turn on Gemini to ask in your own words.';
 
   function init(app) {
     const S = app.state;
@@ -70,7 +72,7 @@
       ai = !ai;
       storage.set('b2b-ai-search', ai);
       syncAi();
-      say(ai ? 'AI mode on: write what you want to hear and press Ask Gemini. It only finds Earth data.' : 'Keyword search: results appear as you type.');
+      say(ai ? 'Gemini is on: write what you want to hear and press Ask Gemini. It only finds Earth data.' : 'Gemini is off: keyword search, results appear as you type.');
       $('searchInput').focus();
     };
 
@@ -135,7 +137,7 @@
       const found = X.rank(list, q, 6);
       const near = X.detectPlace(q, B.snapshots.PLACES);
       if (near) setPlace(near);
-      show(found, found.length ? `${found.length} data set${found.length > 1 ? 's' : ''} match “${q}”.${ai ? '' : ' Choose one to listen.'}` : quiet ? '' : `Nothing matches “${q}”. Try another word, or turn on AI mode.`);
+      show(found, found.length ? `${found.length} data set${found.length > 1 ? 's' : ''} match “${q}”.${ai ? '' : ' Choose one to listen.'}` : quiet ? '' : `Nothing matches “${q}”. Try another word, or turn on Gemini.`);
       return found;
     }
 
@@ -188,10 +190,63 @@
             ]
           : []),
       );
-      $('searchClear').hidden = !$('searchInput').value;
+      $('searchClear').hidden = !$('searchInput').value && !results.length;
+    }
+
+    // ---------------------------------------------------------------- suggestions while typing
+    // up to 6: ideas that contain the words, then data sets whose title matches (a data set plays at once)
+    let hints = [];
+    let hintAt = -1;
+    function closeHints() {
+      hints = [];
+      hintAt = -1;
+      $('searchHints').hidden = true;
+      $('searchHints').replaceChildren();
+      $('searchInput').setAttribute('aria-expanded', 'false');
+      $('searchInput').removeAttribute('aria-activedescendant');
+    }
+    function showHints(q) {
+      const list = B.eicView.catalogue();
+      const f = X.fold(q);
+      const ideas = [...X.SUGGESTIONS, ...MORE_IDEAS].filter((t) => X.fold(t).includes(f) && X.fold(t) !== f).map((t) => ({ kind: 'idea', text: t }));
+      const sets = (list.length ? X.rank(list, q, 5) : []).map((r) => ({ kind: 'set', id: r.id, text: info(r.id).title }));
+      hints = [...ideas.slice(0, 3), ...sets].slice(0, 6);
+      hintAt = -1;
+      if (!hints.length || q.length < 2) return closeHints();
+      $('searchHints').replaceChildren(
+        ...hints.map((h, k) => {
+          const li = el('li', { id: `searchHint${k}`, role: 'option', class: 'hint hint-' + h.kind, 'aria-selected': 'false' }, el('span', { text: h.text }), el('small', { text: h.kind === 'set' ? 'Play' : 'Search' }));
+          li.addEventListener('pointerdown', (e) => {
+            e.preventDefault(); // keep focus in the box
+            pickHint(k);
+          });
+          return li;
+        }),
+      );
+      $('searchHints').hidden = false;
+      $('searchInput').setAttribute('aria-expanded', 'true');
+    }
+    function moveHint(by) {
+      if (!hints.length) return;
+      hintAt = (hintAt + by + hints.length) % hints.length;
+      [...$('searchHints').children].forEach((li, k) => li.setAttribute('aria-selected', String(k === hintAt)));
+      $('searchInput').setAttribute('aria-activedescendant', `searchHint${hintAt}`);
+      $('searchHints').children[hintAt]?.scrollIntoView({ block: 'nearest' });
+    }
+    function pickHint(k) {
+      const h = hints[k];
+      closeHints();
+      if (!h) return;
+      if (h.kind === 'set') {
+        $('searchInput').value = h.text;
+        show([{ id: h.id }], `Playing ${h.text}.`);
+        return choose(h.id);
+      }
+      return run(h.text);
     }
 
     function run(q) {
+      closeHints();
       $('searchInput').value = q;
       $('searchClear').hidden = !q;
       if (!q) return listAll();
@@ -202,6 +257,7 @@
     }
     function clear() {
       ++token;
+      closeHints();
       $('searchInput').value = '';
       $('searchBtn').disabled = false;
       box.classList.remove('is-thinking');
@@ -217,11 +273,24 @@
       const q = X.clean($('searchInput').value);
       $('searchClear').hidden = !q;
       clearTimeout(typing);
-      if (!q) return show([], HELLO);
-      // keyword mode: results as you type; AI mode waits for Ask Gemini
-      if (!ai && q.length >= 2) typing = setTimeout(() => keywords(q, true), 220);
+      if (!q) return closeHints(), show([], HELLO);
+      // keyword mode: results as you type; AI mode waits for Ask Gemini. Both show suggestions.
+      typing = setTimeout(() => {
+        showHints(q);
+        if (!ai && q.length >= 2) keywords(q, true);
+      }, 180);
     });
-    $('searchInput').addEventListener('keydown', (e) => e.key === 'Escape' && $('searchInput').value && (e.preventDefault(), clear()));
+    $('searchInput').addEventListener('keydown', (e) => {
+      const open = !$('searchHints').hidden;
+      if (e.key === 'ArrowDown' && open) moveHint(1);
+      else if (e.key === 'ArrowUp' && open) moveHint(-1);
+      else if (e.key === 'Enter' && open && hintAt >= 0) pickHint(hintAt);
+      else if (e.key === 'Escape' && open) closeHints();
+      else if (e.key === 'Escape' && ($('searchInput').value || results.length)) clear();
+      else return;
+      e.preventDefault();
+    });
+    $('searchInput').addEventListener('blur', () => setTimeout(closeHints, 120));
     $('searchClear').onclick = clear;
 
     // changing the area or the number of maps replays the data set that is playing

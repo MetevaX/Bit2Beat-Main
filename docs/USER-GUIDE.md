@@ -113,8 +113,8 @@ Each chapter shows:
 
 Above the Image, Video and Data tabs is one search for the whole NASA Earth Information Center catalogue.
 
-- **Keyword search** (the default): type a subject such as *carbon dioxide*, *methane* or *fire*; results appear as you type. Everyday words work too (*swamp* finds wetlands, *trees* finds forest growth). The **Try:** ideas under the box run a search in one click; **All data sets** lists everything. **×** (or `Esc`) clears the search.
-- **AI mode** (switch at the top right, *Gemini*): write what you want to hear in your own words, for example *methane from wetlands in the Amazon*, and press **Ask Gemini**. Gemini picks the best data sets and finds the place (its latitude and longitude, even if it is not one of the 18 places); the **Area** menu shows it. It only searches for Earth data: other questions get a polite “only Earth data” answer.
+- **Keyword search** (the default): type a subject such as *carbon dioxide*, *methane* or *fire*; results appear as you type. Everyday words work too (*swamp* finds wetlands, *trees* finds forest growth). While you type, **suggestions** open under the box (search ideas, and data sets marked *Play* that start at once; `↑` `↓` `Enter` pick one). The **Try:** ideas under the box run a search in one click; **All data sets** lists everything. **Clear** (or `Esc`) empties the search.
+- **Gemini** (the sparkle button at the top right; amber when on): write what you want to hear in your own words, for example *methane from wetlands in the Amazon*, and press **Ask Gemini**. Gemini picks the best data sets and finds the place (its latitude and longitude, even if it is not one of the 18 places); the **Area** menu shows it. It only searches for Earth data: other questions get a polite “only Earth data” answer.
 
 Choose a result to hear it in the tab that is open: **Image** draws its newest map, **Video** makes a time-lapse of the latest 24, 48 or 96 maps, **Data** plays one note per map (24, 60 or 120). Changing the area or the number of maps replays it. **Reload** (next to the menu) loads the current source again with the newest data.
 

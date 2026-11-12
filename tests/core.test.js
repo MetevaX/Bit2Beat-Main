@@ -764,7 +764,7 @@ test('sound set: six instruments (violin, no organ/bass/synth), drums are opt-in
   const media = require('../src/js/data/nasa-media.js');
   for (const k of ['gedi', 'co2']) {
     assert.ok(!media[k].source.channels.find((c) => c.name === 'Motion').mute);
-    assert.match(media[k].source.origin.url, /^https:\/\/earth\.gov\//, 'View original source opens the Earth Information Center');
+    assert.match(media[k].source.origin.url, /^https:\/\/svs\.gsfc\.nasa\.gov\/(4950|5196)\/$/, 'View original source opens this exact visualization (its EIC gallery page)');
   }
   for (const c of Object.values(feeds.EONET_CATEGORIES)) assert.ok(engine.instruments[c.instrument], `${c.name} uses an instrument that exists`);
 });

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.9.2 — 12 November 2026
+- **Suggestions while you type:** a list under the search box offers search ideas and matching data sets (*Play* starts a data set at once); `↑` `↓` and `Enter` pick one, `Esc` closes it. Works with and without Gemini.
+- **Clear** is now a labelled button in the search box whenever there is something to clear (also `Esc`).
+- **The AI switch is a Gemini button** with a sparkle: amber when Gemini answers your searches.
+
+## 2.9.1 — 12 November 2026
+- **View original source opens the exact visualization**: the GEDI forest-height and DYAMOND CO₂ pictures and videos link to their own pages in NASA's Earth Information Center gallery (hosted by NASA's Scientific Visualization Studio: SVS 4950 and SVS 5196), with the video, the still image and the credits, instead of the earth.gov home page.
+
 ## 2.9.0 — 12 November 2026
 - **Search: keywords first, AI when you want it.** Results now appear as you type, from the catalogue (no AI needed). **AI mode** (a switch, *Gemini*) sends your question in your own words to Gemini; it is remembered. **×** / `Esc` clears the search, and **Try:** ideas run a search in one click.
 - **Boundaries for the AI.** Gemini only searches the Earth Information Center: questions that are not about Earth data get “only Earth data”, the question is treated as data (never as instructions), answers keep only real catalogue ids, Egypt is never a place, questions are cleaned and cut to 200 characters, only this site may call the server (other origins are refused) and each address has a limit per minute.

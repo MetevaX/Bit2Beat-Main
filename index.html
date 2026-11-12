@@ -36,6 +36,7 @@
   <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4"/></symbol>
   <symbol id="i-table" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 10h16M4 14.5h16M10 5v14"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3c.6 4.6 3.4 7.4 8 8-4.6.6-7.4 3.4-8 8-.6-4.6-3.4-7.4-8-8 4.6-.6 7.4-3.4 8-8z" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5m0 0-4 6m4-6 4 6"/></symbol>
 </svg>
@@ -74,12 +75,13 @@
     <form id="searchForm" role="search" class="search-form">
       <div class="search-head">
         <label for="searchInput" id="searchLabel" class="search-label"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Search <span id="eicTitle">NASA Earth Information Center</span></label>
-        <button type="button" class="ai-toggle" id="aiMode" aria-pressed="false" title="Gemini reads your question and picks the data sets and the place">AI mode <span class="beta">Gemini</span></button>
+        <button type="button" class="ai-toggle" id="aiMode" aria-pressed="false" aria-label="Ask Gemini (AI search)" title="Ask Gemini: write your question in your own words; Gemini picks the data sets and the place"><svg class="i sparkle" aria-hidden="true"><use href="#i-sparkle"/></svg><span>Gemini</span></button>
       </div>
       <div class="search-row">
         <div class="search-box">
-          <input type="search" id="searchInput" maxlength="200" autocomplete="off" spellcheck="false" placeholder="Type a subject, e.g. carbon dioxide, methane, fire" aria-describedby="searchStatus">
-          <button type="button" class="search-clear" id="searchClear" aria-label="Clear the search" hidden><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button>
+          <input type="search" id="searchInput" maxlength="200" autocomplete="off" spellcheck="false" placeholder="Type a subject, e.g. carbon dioxide, methane, fire" aria-describedby="searchStatus" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="searchHints">
+          <button type="button" class="search-clear" id="searchClear" title="Clear the search (Esc)" hidden><svg class="i" aria-hidden="true"><use href="#i-close"/></svg><span>Clear</span></button>
+          <ul class="search-hints" id="searchHints" role="listbox" aria-label="Suggestions" hidden></ul>
         </div>
         <label class="field search-place"><span class="sr-only">Area</span><select id="searchPlace" aria-label="Area"></select></label>
         <label class="field" id="searchStepsField"><span class="sr-only">Maps</span><select id="searchSteps" aria-label="How many maps"></select></label>
@@ -87,7 +89,7 @@
       </div>
     </form>
     <div class="search-suggest" id="searchSuggest" aria-label="Ideas to search"></div>
-    <p class="search-status" id="searchStatus" role="status">Results appear as you type. Turn on AI mode to ask in your own words.</p>
+    <p class="search-status" id="searchStatus" role="status">Results and suggestions appear as you type. Turn on Gemini to ask in your own words.</p>
     <ul class="search-results" id="searchResults" aria-label="Search results"></ul>
     <details class="eic-more">
       <summary>Use another catalogue</summary>
