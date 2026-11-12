@@ -62,7 +62,8 @@
     studio: {
       title: 'The studio',
       steps: [
-        { id: 'tabs', mood: 'curious', target: '.modes', ensure: 'data', title: 'Four ways to listen', text: 'Data plays NASA climate series and your own CSV files. Earth events plays earthquakes and natural events across the map. Image turns pictures and satellite views into sound. Video follows NASA animations frame by frame.' },
+        { id: 'tabs', mood: 'curious', target: '.modes', ensure: 'data', title: 'Four ways to listen', text: 'Image turns NASA maps and satellite views into sound. Video follows NASA animations and time-lapses. Earth events plays natural events and earthquakes across the map. Data plays climate series and your own CSV files.' },
+        { id: 'search', mood: 'excited', target: '#eicSearch', ensure: 'data', title: 'Ask for any Earth data', text: 'Type what you want to hear in your own words, like “methane from wetlands in the Amazon”. I search NASA’s Earth Information Center (Gemini helps me pick) and play it in the tab you are in: a map in Image, a time-lapse in Video, a melody in Data.' },
         { id: 'source', mood: 'happy', target: '.source-pick', ensure: 'data', title: 'Pick a source', text: 'Each tab has its own menu. Everything in it is real data with a source line, and it works offline too. “Open CSV” brings your own numbers.' },
         { id: 'chart', mood: 'curious', target: '#sourceCard', ensure: 'data', title: 'This is what you hear', text: 'Left to right is time. Higher on the chart means a higher note. Hover to read a value; click anywhere to hear that one step.' },
         {
@@ -86,9 +87,9 @@
           target: '#tab-earth',
           interactive: true,
           title: 'Earth is busy',
-          text: 'Now open Earth events. Earthquakes play as one sweep from west to east: further north sounds higher, stronger sounds louder.',
+          text: 'Now open Earth events. Natural events and earthquakes play as one sweep from west to east: further north sounds higher, bigger sounds louder.',
           action: { type: 'mode', value: 'earth', show: 'Take me there' },
-          done: 'See the map? Each dot is a real earthquake, played from west to east.',
+          done: 'See the map? Each dot is a real event: wildfires, storms, floods, ice and earthquakes (the bass), played from west to east.',
         },
         { id: 'export', mood: 'happy', target: '#exportBtn', title: 'Take it home', text: 'Export makes WAV files (stereo, binaural or surround), the notes as CSV and the score. The address bar remembers everything, so a refresh or a shared link opens this exact view.' },
         { id: 'guide', mood: 'happy', target: '#guideBtn', title: 'I’m always here', text: 'Press Guide (or G) whenever you want me to explain a tab. My card under the score also gives a tip when you open a tab for the first time.' },
@@ -123,7 +124,7 @@
     earth: {
       title: 'Earth events',
       steps: [
-        { id: 'e-source', mood: 'curious', target: '.source-pick', ensure: 'earth', title: 'Earthquakes or natural events', text: 'USGS earthquakes or NASA EONET natural events (wildfires, storms, floods, ice). The offline samples always work, even without internet.' },
+        { id: 'e-source', mood: 'curious', target: '.source-pick', ensure: 'earth', title: 'Natural events and earthquakes', text: 'NASA EONET natural events (wildfires, storms, floods, ice) and USGS earthquakes play together; earthquakes are one more channel, the bass. The offline sample always works, even without internet.' },
         { id: 'e-map', mood: 'excited', target: '#dropZone', ensure: 'earth', title: 'Read the map like a page', text: 'Each dot is one event. When you press Play, the amber line sweeps from west to east: further north is a higher note, bigger is louder and a bigger dot. Hover a dot to read it; click it to hear it.' },
         { id: 'e-options', mood: 'happy', target: '#opts-earth', ensure: 'earth', title: 'Rhythm of the sweep', text: 'Choose the period. Even steps plays one event per note; Map distance keeps the real gaps along the sweep, so busy places sound busy and empty oceans go quiet.' },
         { id: 'e-live', mood: 'curious', target: '#fetchBtn', ensure: 'earth', title: 'Live, saved or bundled', text: 'Get latest asks USGS or NASA for the newest events. The label on the card always says whether you hear Live data, a Saved copy or the Bundled snapshot.' },
@@ -134,7 +135,8 @@
     image: {
       title: 'The Image tab',
       steps: [
-        { id: 'i-source', mood: 'curious', target: '.source-pick', ensure: 'image', title: 'Pick a picture', text: 'NASA Earth Information Center pictures, live NASA satellite views (choose a date), an offline world map, or Open picture for your own.' },
+        { id: 'i-search', mood: 'excited', target: '#eicSearch', ensure: 'image', title: 'Search the Earth Information Center', text: 'Type a subject and a place in your own words. Choose a result and I draw its newest map, coloured over the real spread of the data, and play it.' },
+        { id: 'i-source', mood: 'curious', target: '.source-pick', ensure: 'image', title: 'Or pick a picture', text: 'NASA pictures that work offline, live NASA satellite views (choose a date), an offline world map, or Open picture (next to Steps) for your own.' },
         { id: 'i-look', mood: 'happy', target: '#analysisGroup', ensure: 'image', title: 'What to hear', text: 'Light plays brightness, detail and where the bright areas are. Colour plays red, green and blue. Colour key (NASA pictures) reads the real value through the picture’s own colour bar.' },
         { id: 'i-scan', mood: 'excited', target: '#scanGroup', ensure: 'image', title: 'How to scan', text: 'Left to right, top to bottom, around the centre like a radar, or Follow pointer: move your mouse or finger over the picture and hear what is under it.' },
         { id: 'i-steps', mood: 'curious', target: '#opts-image .field-range', ensure: 'image', title: 'Steps', text: 'How many bands the picture is cut into, from 16 to 160. More steps means more detail and a longer melody. Empty background around a globe stays silent.' },
@@ -144,6 +146,7 @@
     video: {
       title: 'The Video tab',
       steps: [
+        { id: 'v-search', mood: 'curious', target: '#eicSearch', ensure: 'video', title: 'Make a time-lapse', text: 'Search for any Earth Information Center data set and choose a result: I fetch its latest maps and play them as a time-lapse, one map and one note at a time.' },
         { id: 'v-video', mood: 'excited', target: '#videoBox', ensure: 'video', title: 'The video follows the music', text: 'The NASA video plays muted, in step with the notes. Click it to play or pause; ← and → step through it and show that exact moment.' },
         { id: 'v-timeline', mood: 'curious', target: '#dropZone', ensure: 'video', title: 'Two notes per second', text: 'Below the video is the music’s timeline. Each note stands for half a second of video, averaged so flickering pictures do not fake a rhythm.' },
         { id: 'v-mix', mood: 'happy', target: section('mixTitle'), ensure: 'video', title: 'Read through the colour bar', text: 'NASA videos are read through their colour bar: you hear the value shown (forest height or CO₂) and how much of the picture shows data. Motion starts muted; unmute it to hear the change.' },
@@ -156,7 +159,7 @@
   const TIPS = {
     data: 'New to the Data tab? I can show you how to pick a data set, squeeze long series and open your own CSV.',
     earth: 'Earth events play as one sweep across the map. Want me to show you how to read it?',
-    image: 'Pictures can sing too. Shall I show you the three ways to listen to one?',
+    image: 'Search above for any NASA Earth data, or pick a picture. Shall I show you how to listen to one?',
     video: 'The video follows the music. Want a 30-second tour of this tab?',
   };
 

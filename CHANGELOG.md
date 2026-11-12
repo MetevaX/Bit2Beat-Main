@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.8.0 — 12 November 2026
+- **The Earth Information Center comes first.** Tabs are now *Image · Video · Earth events · Data*, and the studio opens on the newest Earth Information Center map (the bundled GEDI picture when offline).
+- **One search for the whole catalogue.** A search box above Image, Video and Data replaces the three data-set menus: type what you want to hear in your own words ("methane from wetlands in the Amazon"). Keyword matches appear at once; then **Gemini 3.8 Flash** (thinking level high) picks the best data sets and finds the place, even one that is not in the list. Choose a result to hear it in the open tab: a map (Image), a time-lapse (Video) or one note per map (Data). The Gemini key stays on the server: a small Vercel function (`api/search.js`) reads it from the `GEMINI_API_KEY` setting. Without it, search still works by keyword.
+- **Earth events: earthquakes are a channel of the natural events.** *Natural events and earthquakes* plays NASA EONET events and USGS earthquakes in one sweep; earthquakes are the bass (bigger = louder, deeper = lower). The offline sample has both. Each feed alone is still in the menu.
+- **Pictures and the map without bands:** the Image and Earth events views now show just the picture at its own shape, like the video.
+- **Instruments stay in step.** The Sound card shows what the lead channel plays; choosing an instrument there makes every channel play it (with Undo), and choosing one for the lead channel changes the Sound card.
+- **Undo** after a mood, *Suggest* or *Space & tone* reset. **Space & tone** has its own **Reset**.
+- **Readings → Excel:** download the readings as an `.xlsx` workbook (Readings, Notes per channel, About), or as CSV.
+- **Score shows the channels that are on.** When channels take turns (Earth events), the preview puts them on one staff, so it no longer shows bars of rests; otherwise up to three staves. The full score has the same option.
+- **Follow pointer hides the player bar** (the pointer is the player); it comes back with any other scan.
+- **Open picture sits next to the Steps slider** in the Image tab.
+- **Black dark mode**, and the small amber bars before section titles are gone.
+- **Screen reader updates fixed:** they are on by default, read the step and its values (also when stepping with ← →), and are heard inside dialogs too (a live region outside an open dialog is silent).
+
 ## 2.7.2 — 11 November 2026
 - **Menus open in the same place every time.** Every menu now opens just below its button (above only when there is clearly more room there), fits the window and scrolls inside, instead of the browser's own list that could jump up or down. It also works inside dialogs and follows its button when the page scrolls.
 - **Search in menus.** Menus with six or more choices (sources, instruments, scales, keys, places, Earth Information Center data sets) start with a search box: type any words, in any order, accents ignored. Arrow keys, `Home`/`End`, `Enter` and `Esc` work as before; short menus jump to a choice by its first letter.

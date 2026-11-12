@@ -22,18 +22,42 @@
   }
 
   let toastTimer = null;
-  function toast(msg, ms = 3200) {
+  /** A short message; `action` = { label, run } adds a button (for example Undo). */
+  function toast(msg, ms = 3200, action = null) {
     const t = $('toast');
-    t.textContent = msg;
+    t.replaceChildren(document.createTextNode(msg));
+    if (action) {
+      const b = el('button', { type: 'button', class: 'toast-action' }, action.label);
+      b.onclick = () => {
+        t.hidden = true;
+        action.run();
+      };
+      t.append(' ', b);
+    }
     t.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => (t.hidden = true), ms);
+    toastTimer = setTimeout(() => (t.hidden = true), action ? Math.max(ms, 7000) : ms);
   }
-  /** Polite screen-reader announcement. */
+  /**
+   * Polite screen-reader announcement. Two live regions take turns (a repeated message is still
+   * read), and while a dialog is open the message goes into that dialog: everything outside a
+   * modal dialog is inert, so a live region there would stay silent.
+   */
+  let turn = 0;
   function announce(msg) {
-    const n = $('srLive');
+    if (!msg) return;
+    const dlg = document.querySelector('dialog[open]');
+    let n;
+    if (dlg) {
+      n = dlg.querySelector('.sr-live') || dlg.appendChild(el('div', { class: 'sr-only sr-live', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }));
+    } else {
+      turn = 1 - turn;
+      n = $(turn ? 'srLive' : 'srLive2') || $('srLive');
+      const other = $(turn ? 'srLive2' : 'srLive');
+      if (other) other.textContent = '';
+    }
     n.textContent = '';
-    setTimeout(() => (n.textContent = msg), 30);
+    setTimeout(() => (n.textContent = msg), 60);
   }
 
   function download(blob, name) {

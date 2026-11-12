@@ -249,6 +249,66 @@
     };
   }
 
+  // ---- Natural events and earthquakes together ---------------------------------------------
+  /** USGS feed that covers about the same days as an EONET period. */
+  const quakeFeedFor = (days) => (days <= 7 ? '4.5_week' : '4.5_month');
+
+  /**
+   * One sweep with every NASA EONET natural event and every USGS earthquake: earthquakes become
+   * one more channel (bass; bigger = louder, deeper = lower in 3D sound). Either part may be
+   * missing (for example when one service is down), then the other plays alone.
+   */
+  function combineEvents(ev, qk, title, origin) {
+    const items = [];
+    if (ev) ev.labels.forEach((_, i) => items.push({ s: ev, i, ...ev.points[i] }));
+    if (qk) qk.labels.forEach((_, i) => items.push({ s: qk, i, ...qk.points[i] }));
+    items.sort(westToEast);
+    const pick = (s, key) => items.map((it) => (it.s === s ? s[key]?.[it.i] ?? null : null));
+    const taken = new Set((ev?.channels || []).map((c) => c.name));
+    const channels = [
+      ...(ev?.channels || []).map((c) => ({ ...c, values: items.map((it) => (it.s === ev ? c.values[it.i] : null)), loudBy: items.map((it) => (it.s === ev ? c.loudBy?.[it.i] ?? null : null)) })),
+      ...(qk?.channels || []).map((c) => ({
+        ...c,
+        name: taken.has(c.name) ? `${c.name} (USGS)` : c.name,
+        instrument: 'bass',
+        sizeUnit: 'magnitude',
+        values: items.map((it) => (it.s === qk ? c.values[it.i] : null)),
+        loudBy: items.map((it) => (it.s === qk ? c.loudBy[it.i] : null)),
+      })),
+    ];
+    const note = [ev?.origin?.note, ev && qk ? '' : `${ev ? 'USGS earthquakes' : 'NASA EONET events'} were not reachable, so only ${ev ? 'natural events' : 'earthquakes'} play.`].filter(Boolean).join(' ');
+    return {
+      name: title,
+      kind: 'earth',
+      feed: 'events',
+      view: 'world',
+      origin: { ...origin, note },
+      labels: items.map((it) => it.s.labels[it.i]),
+      details: items.map((it) => it.s.details[it.i]),
+      times: items.map((it) => it.lon),
+      dates: items.map((it) => it.s.dates[it.i]),
+      points: items.map((it) => ({ lat: it.lat, lon: it.lon, ...(it.depth != null ? { depth: it.depth } : {}) })),
+      categories: items.map((it) => it.s.categories[it.i]),
+      sizes: pick(qk, 'sizes'),
+      // earthquakes sit lower the deeper they are; other events at mid height
+      positionZ: items.map((it) => (it.s === qk ? qk.positionZ[it.i] : 0.5)),
+      channels,
+    };
+  }
+
+  async function liveEvents(days = 30) {
+    const [ev, qk] = await Promise.allSettled([liveEonet(days), liveQuakes(quakeFeedFor(days))]);
+    if (ev.status === 'rejected' && qk.status === 'rejected') throw new Error(ev.reason?.message || 'Neither NASA EONET nor USGS answered.');
+    const e = ev.status === 'fulfilled' ? ev.value : null;
+    const q = qk.status === 'fulfilled' ? qk.value : null;
+    return combineEvents(e, q, `Natural events and earthquakes · past ${days} days`, { source: [e && 'NASA EONET v3', q && 'USGS Earthquake Hazards Program'].filter(Boolean).join(' + '), url: e ? 'https://eonet.gsfc.nasa.gov/' : 'https://earthquake.usgs.gov/', fetched: new Date().toISOString(), live: true });
+  }
+  function offlineEvents() {
+    const e = offlineEonet();
+    const q = offlineQuakes();
+    return combineEvents(e, q, 'Natural events and earthquakes', { source: `${e.origin.source} + ${q.origin.source}`, url: e.origin.url, fetched: e.origin.fetched, live: false });
+  }
+
   return {
     USGS_FEEDS,
     EONET_CATEGORIES,
@@ -258,7 +318,9 @@
     buildEonet,
     dailySource,
     eonetMagnitude,
-    live: { quakes: liveQuakes, eonet: liveEonet, power: livePower },
-    offline: { quakes: offlineQuakes, eonet: offlineEonet },
+    combineEvents,
+    quakeFeedFor,
+    live: { quakes: liveQuakes, eonet: liveEonet, events: liveEvents, power: livePower },
+    offline: { quakes: offlineQuakes, eonet: offlineEonet, events: offlineEvents },
   };
 });

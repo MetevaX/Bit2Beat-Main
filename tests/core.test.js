@@ -251,7 +251,8 @@ test('page integrity: unique ids, every $(id) exists, every script exists, no le
   for (const rel of js) {
     const code = fs.readFileSync(path.join(root, rel), 'utf8');
     for (const m of code.matchAll(/(?<!\$)\$\('([A-Za-z][\w-]*)'\)/g)) assert.ok(ids.includes(m[1]), `#${m[1]} used in ${rel} is missing from index.html`);
-    assert.ok(!/generativelanguage|gemini|api[_-]?key/i.test(code), `${rel} must not call a cloud AI or hold an API key`);
+    // AI search runs on the server (api/search.js); page code never calls it directly or holds a key
+    assert.ok(!/generativelanguage|api[_-]?key\s*[:=]|AIza[\w-]{20}|AQ\.[\w-]{20}/i.test(code), `${rel} must not call a cloud AI directly or hold an API key`);
     assert.ok(code.split('\n').length < 700, `${rel} should stay a focused module`);
   }
 });
@@ -621,4 +622,100 @@ test('menus: search matches every word (accents ignored) and the list opens belo
   assert.equal(place(at(700, 736), 300, view).up, true, 'near the bottom: opens above');
   assert.equal(place(at(700, 736), 40, view).up, false, 'a short list still fits below');
   assert.ok(place(at(100, 136), 300, view).maxHeight <= 380, 'never taller than the window allows');
+});
+
+test('Earth Information Center search: keywords, places, Gemini request and answer checks', () => {
+  const X = require('../src/js/core/eic-search.js');
+  const { PLACES } = require('../src/js/data/snapshots.js');
+  const list = [
+    { id: 'lpjeosim-wetlandch4-monthgrid-v2', title: 'Wetland Methane Emissions, LPJ-EOSIM Model', text: 'Methane emissions from natural wetlands.', from: '1990-01-01', to: '2024-12-01' },
+    { id: 'micasa-carbonflux-monthgrid-v1', title: 'MiCASA Land Carbon Flux', text: 'Net primary production and fire emissions.', from: '2001-01-01', to: '2024-12-01' },
+    { id: 'sedac-popdensity-yeargrid5yr-v4.11', title: 'Population Density', text: 'People per square kilometre.', from: '2000-01-01', to: '2020-01-01' },
+  ];
+  assert.equal(X.rank(list, 'methane from swamps')[0].id, 'lpjeosim-wetlandch4-monthgrid-v2', 'swamp → wetland, methane');
+  assert.equal(X.rank(list, 'where do people live')[0].id, 'sedac-popdensity-yeargrid5yr-v4.11');
+  assert.equal(X.rank(list, 'trees growing')[0].id, 'micasa-carbonflux-monthgrid-v1', 'trees → npp/production');
+  assert.deepEqual(X.rank(list, 'the of and'), [], 'no words, no results');
+  assert.equal(X.detectPlace('methane in the Amazon', PLACES).name, 'Manaus, Amazon rainforest');
+  assert.equal(X.detectPlace('global carbon', PLACES), 'world');
+  assert.equal(X.detectPlace('sahara desert dust', PLACES).name, 'Sahara, central', 'generic words like "desert" do not pick Death Valley');
+  assert.equal(X.detectPlace('carbon flux', PLACES), null);
+  const body = X.prompt('methane in the Amazon', 'image', list);
+  assert.equal(body.generationConfig.thinkingConfig.thinkingLevel, 'high');
+  assert.equal(body.generationConfig.responseMimeType, 'application/json');
+  assert.match(body.contents[0].parts[0].text, /newest map/);
+  assert.match(body.contents[0].parts[0].text, /Do not use Egypt/);
+  const ok = X.answer('{"picks":[{"id":"lpjeosim-wetlandch4-monthgrid-v2","why":"swamps"},{"id":"made-up","why":"x"},{"id":"lpjeosim-wetlandch4-monthgrid-v2","why":"dup"}],"place":{"world":false,"name":"Amazon","lat":-3.4,"lon":-62.2}}', list);
+  assert.deepEqual(ok.picks.map((p) => p.id), ['lpjeosim-wetlandch4-monthgrid-v2'], 'unknown and repeated ids are dropped');
+  assert.deepEqual(ok.place, { name: 'Amazon', lat: -3.4, lon: -62.2 });
+  assert.equal(X.answer({ picks: [], place: { world: false, name: 'Cairo', lat: 30, lon: 31 } }, list).place, 'world', 'never Egypt');
+  assert.equal(X.answer('not json', list).picks.length, 0);
+  assert.equal(X.textOf({ candidates: [{ content: { parts: [{ thought: true, text: 'thinking' }, { text: '{"a":1}' }] } }] }), '{"a":1}');
+});
+
+test('api/search: key only from the server environment, checked answers, clear errors', async () => {
+  const handler = require('../api/search.js');
+  const call = async (body, env) => {
+    const out = { status: 0, json: null, headers: {} };
+    const res = { setHeader: (k, v) => (out.headers[k] = v), status: (c) => ((out.status = c), res), json: (j) => ((out.json = j), res) };
+    const old = process.env.GEMINI_API_KEY;
+    if (env === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = env;
+    try {
+      await handler({ method: 'POST', headers: { 'x-forwarded-for': '1.2.3.' + Math.random() }, body }, res);
+    } finally {
+      if (old === undefined) delete process.env.GEMINI_API_KEY;
+      else process.env.GEMINI_API_KEY = old;
+    }
+    return out;
+  };
+  const collections = [{ id: 'micasa-carbonflux-monthgrid-v1', title: 'MiCASA Land Carbon Flux' }];
+  assert.equal((await call({ q: 'carbon', collections }, undefined)).status, 503, 'no key: says so');
+  const realFetch = global.fetch;
+  let sent = null;
+  global.fetch = async (url, init) => {
+    sent = { url, init };
+    return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"picks":[{"id":"micasa-carbonflux-monthgrid-v1","why":"carbon"}],"place":{"world":true}}' }] } }] }) };
+  };
+  try {
+    const r = await call({ q: 'carbon over the world', mode: 'video', collections }, 'test-key');
+    assert.equal(r.status, 200);
+    assert.deepEqual(r.json.picks, [{ id: 'micasa-carbonflux-monthgrid-v1', why: 'carbon' }]);
+    assert.equal(r.json.place, 'world');
+    assert.match(sent.url, /models\/gemini-3\.8-flash:generateContent$/);
+    assert.equal(sent.init.headers['x-goog-api-key'], 'test-key', 'the key goes in a header, never the URL');
+    assert.equal((await call({ q: '', collections }, 'test-key')).status, 400);
+  } finally {
+    global.fetch = realFetch;
+  }
+});
+
+test('readings as Excel: a real .xlsx (zip with workbook, sheets, styles)', () => {
+  const X = require('../src/js/core/xlsx.js');
+  assert.equal(X.crc32(new TextEncoder().encode('hello')).toString(16), '3610a686');
+  assert.deepEqual([X.col(0), X.col(25), X.col(26), X.col(701)], ['A', 'Z', 'AA', 'ZZ']);
+  const bytes = X.workbook([{ name: 'Readings', rows: [['Step', 'Value'], [1, 0.5], [2, 'a < b & c']] }, { name: 'Readings', rows: [['x']] }]);
+  assert.deepEqual([...bytes.slice(0, 4)], [0x50, 0x4b, 0x03, 0x04], 'zip signature');
+  const text = new TextDecoder().decode(bytes);
+  for (const part of ['[Content_Types].xml', 'xl/workbook.xml', 'xl/styles.xml', 'xl/worksheets/sheet1.xml', 'xl/worksheets/sheet2.xml']) assert.ok(text.includes(part), part);
+  assert.ok(text.includes('<v>0.5</v>'), 'numbers stay numbers');
+  assert.ok(text.includes('a &lt; b &amp; c'), 'text is escaped');
+  assert.ok(text.includes('name="Readings 2"'), 'sheet names stay unique');
+});
+
+test('Earth events: natural events and earthquakes in one west-to-east sweep', () => {
+  const s = feeds.offline.events();
+  const e = feeds.offline.eonet();
+  const q = feeds.offline.quakes();
+  assert.equal(s.labels.length, e.labels.length + q.labels.length, 'every event and every earthquake');
+  assert.equal(s.feed, 'events');
+  const quake = s.channels.find((c) => /Earthquakes/.test(c.name));
+  assert.ok(quake && quake.instrument === 'bass', 'earthquakes are one more channel, the bass');
+  assert.equal(quake.values.filter((v) => v != null).length, q.labels.length);
+  for (let i = 1; i < s.times.length; i++) assert.ok(s.times[i] >= s.times[i - 1], 'west to east');
+  s.labels.forEach((_, i) => assert.equal(s.channels.filter((c) => c.values[i] != null).length, 1, 'one channel per event'));
+  assert.equal(feeds.quakeFeedFor(7), '4.5_week');
+  assert.equal(feeds.quakeFeedFor(30), '4.5_month');
+  const only = feeds.combineEvents(e, null, 't', { source: 'x' });
+  assert.match(only.origin.note, /USGS earthquakes were not reachable/);
 });

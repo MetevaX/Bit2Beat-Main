@@ -23,9 +23,6 @@ main {
 }
 
 /* ---------- header ---------- */
-.topbar {
-  box-shadow: inset 0 -1px 0 rgba(232, 163, 61, 0.45);
-}
 .toolbar {
   margin-bottom: 14px;
 }
@@ -63,7 +60,7 @@ main {
 :root[data-theme='dark'] .card {
   box-shadow: 0 10px 28px -20px rgba(0, 0, 0, 0.7);
 }
-/* section labels: small capitals after a short amber rule */
+/* section labels: small capitals */
 .card-head h2:not(#sourceName),
 .disclosure > summary h2 {
   font-size: 0.74rem;
@@ -74,15 +71,6 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-.card-head h2:not(#sourceName)::before,
-.disclosure > summary h2::before {
-  content: '';
-  width: 14px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--amber);
-  flex: none;
 }
 .source-card {
   padding: 16px 18px;
@@ -101,11 +89,19 @@ main {
   padding: 15px 16px;
 }
 
-/* the world map keeps its shape and fills the width */
+/* pictures and the world map: just the picture, at its own shape (like the video), no bands */
+.canvas-wrap[data-view='image'],
+.canvas-wrap[data-view='world'] {
+  --maxh: max(240px, calc(100vh - 500px));
+  width: min(100%, calc(var(--maxh) * var(--ratio, 2)));
+  margin: 0 auto;
+  border: 0;
+  background: none;
+}
+.canvas-wrap[data-view='image'] #sourceCanvas,
 .canvas-wrap[data-view='world'] #sourceCanvas {
   height: auto;
-  aspect-ratio: 2.18;
-  max-height: max(260px, calc(100vh - 560px));
+  aspect-ratio: var(--ratio, 2);
 }
 
 /* ---------- now playing: navy instrument display ---------- */

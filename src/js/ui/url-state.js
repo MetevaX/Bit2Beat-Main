@@ -52,6 +52,11 @@
     if (has('steps')) out.image.steps = num(q.get('steps'), 16, 160);
     if (has('date') && /^\d{4}-\d\d-\d\d$/.test(q.get('date'))) out.image.date = q.get('date');
 
+    // Earth Information Center pick: "id~place~maps" (place = world | lat,lon | lat,lon,Name)
+    if (has('eic')) {
+      const [id, place, steps] = q.get('eic').split('~');
+      if (/^[\w.-]{1,120}$/.test(id || '')) out.eic = { id, place: (place || 'world').slice(0, 80), ...(num(steps, 1, 200) ? { steps: num(steps, 1, 200) | 0 } : {}) };
+    }
     if (has('place')) {
       const [lat, lon, year] = q.get('place').split(',').map(Number);
       if ([lat, lon, year].every(Number.isFinite)) out.power = { lat, lon, year };
@@ -69,7 +74,7 @@
     return out;
   }
 
-  const DEFAULT_CHOICE = { data: 'gistemp', earth: 'quakes', image: 'nasa:gedi', video: 'gedi' };
+  const DEFAULT_CHOICE = { data: 'gistemp', earth: 'events', image: 'eic', video: 'gedi' };
 
   /** Build the query string for the current state. */
   function query(app, page = 'studio') {
@@ -97,7 +102,7 @@
     put('room', Math.round(st.audio.room * 100), 22);
     if (st.mode === 'earth') {
       if (choice === 'quakes') put('quakes', st.earth.quakeFeed, '4.5_week');
-      if (choice === 'eonet') put('days', st.earth.eonetDays, 30);
+      if (choice === 'eonet' || choice === 'events') put('days', st.earth.eonetDays, 30);
     }
     if (st.mode === 'image') {
       put('look', st.image.analysis, 'light');
@@ -105,6 +110,8 @@
       put('steps', st.image.steps, 48);
       if (choice.startsWith('sat:') && st.image.date && st.image.date !== st.image.defaultDate) q.set('date', st.image.date);
     }
+    const pick = choice === 'eic' && { data: st.eic, image: st.eicImage, video: st.eicVideo }[st.mode];
+    if (pick?.id) q.set('eic', [pick.id, pick.place || 'world', pick.steps || ''].join('~').replace(/~$/, ''));
     if (st.mode === 'data' && choice === 'power' && st.power) q.set('place', `${st.power.lat},${st.power.lon},${st.power.year}`);
     // the mix only when it differs from what the source starts with
     const mix = st.mix.map((m) => `${Math.round(m.gain * 100)}.${m.mute ? 1 : 0}.${m.solo ? 1 : 0}.${m.instrument || 'inherit'}`).join('_');

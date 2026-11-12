@@ -3,7 +3,8 @@
  *   Data  – a data set, a place and how many maps: one note per map (the average around the place).
  *   Image – the newest map of a data set as a picture, read back through its own colour bar.
  *   Video – a time-lapse of the latest maps: one picture and one note per map.
- * All three share one live catalogue (core/eic.js). “Use another catalogue” points them at any
+ * Data sets are found with the search above the tabs (ui/search.js); this file holds the live
+ * catalogue (core/eic.js) and loads what was chosen. “Use another catalogue” points it at any
  * STAC + raster API (for example NASA VEDA).
  */
 (function (root) {
@@ -15,7 +16,7 @@
   /** fetch → JSON with a timeout; `init.body` objects are sent as JSON. */
   async function get(url, init = {}) {
     const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 30000);
+    const timer = setTimeout(() => ctl.abort(), init.timeout || 30000);
     try {
       const res = await fetch(url, {
         method: init.method || 'GET',
@@ -23,8 +24,9 @@
         headers: init.body ? { 'content-type': 'application/json' } : undefined,
         body: init.body ? JSON.stringify(init.body) : undefined,
       });
-      if (!res.ok) throw new Error(`the server answered ${res.status}`);
-      return await res.json();
+      const j = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(j?.error || `the server answered ${res.status}`);
+      return j;
     } catch (e) {
       throw new Error(e?.name === 'AbortError' ? 'the request timed out' : e?.message || 'network error');
     } finally {
@@ -32,60 +34,48 @@
     }
   }
 
+  /** 'world' | 'lat,lon' | 'lat,lon,Name' → a place for core/eic.js */
+  function placeOf(v) {
+    if (!v || v === E.WORLD) return E.WORLD;
+    const [lat, lon, ...rest] = String(v).split(',');
+    const la = +lat;
+    const lo = +lon;
+    if (!Number.isFinite(la) || !Number.isFinite(lo)) return E.WORLD;
+    const known = B.snapshots.PLACES.find((p) => p[1] === la && p[2] === lo)?.[0];
+    return { lat: la, lon: lo, name: known || rest.join(',').trim() || `${la}°, ${lo}°` };
+  }
+
   function init(app) {
     const S = app.state;
     let api = { ...E.ENDPOINTS, ...(storage.get('b2b-eic-api', null) || {}) };
     let list = [];
     let listing = null;
-    const SELECTS = ['eicDataset', 'eicImgDataset', 'eicVidDataset'];
-    const placeOf = (v) => {
-      if (v === E.WORLD) return E.WORLD;
-      const [lat, lon] = v.split(',').map(Number);
-      return { lat, lon, name: B.snapshots.PLACES.find((p) => p[1] === lat && p[2] === lon)?.[0] || `${lat}°, ${lon}°` };
-    };
     const opts = (extra = {}) => ({ get, stac: api.stac, raster: api.raster, name: api.name || 'STAC catalogue', site: api.site || api.stac, ...extra });
 
-    ['eicPlace', 'eicImgPlace', 'eicVidPlace'].forEach((id) => {
-      $(id).append(new Option('Whole world', E.WORLD));
-      B.snapshots.PLACES.forEach(([n, lat, lon]) => $(id).append(new Option(n, `${lat},${lon}`)));
-    });
     $('eicStac').value = api.stac;
     $('eicRaster').value = api.raster;
+    const title = () => ($('eicTitle').textContent = api.stac === E.ENDPOINTS.stac ? 'NASA Earth Information Center' : api.name);
 
-    function showInfo() {
-      const info = list.find((c) => c.id === $('eicDataset').value);
-      $('eicInfo').textContent = info ? `${info.from.slice(0, 4)}–${info.to.slice(0, 4)}${info.density ? ', ' + ({ day: 'daily', month: 'monthly', year: 'yearly' }[info.density] || info.density) + ' maps' : ''}. ${info.text.slice(0, 220)}${info.text.length > 220 ? '…' : ''}` : '';
-    }
-
-    /** Fill the three data-set menus from the catalogue (once; again after changing catalogue). */
+    /** The catalogue (loaded once; again after changing catalogue). */
     function fill() {
       if (listing) return listing;
-      SELECTS.forEach((id) => $(id).replaceChildren(new Option('Loading data sets…', '')));
-      ['eicBtn', 'eicImgBtn', 'eicVidBtn'].forEach((id) => ($(id).disabled = true));
       listing = E.listCollections(get, api.stac)
         .then((cols) => {
           list = cols;
-          const first = cols.find((c) => /micasa.*month/i.test(c.id))?.id || cols[0]?.id;
-          SELECTS.forEach((id, k) => {
-            $(id).replaceChildren(...(cols.length ? cols.map((c) => new Option(c.title, c.id)) : [new Option('No data sets found', '')]));
-            const keep = [S.eic?.id, S.eicImage?.id, S.eicVideo?.id][k];
-            $(id).value = keep && cols.some((c) => c.id === keep) ? keep : first || '';
-          });
-          ['eicBtn', 'eicImgBtn', 'eicVidBtn'].forEach((id) => ($(id).disabled = !cols.length));
-          showInfo();
+          root.dispatchEvent(new CustomEvent('b2b:catalogue', { detail: { count: cols.length } }));
+          return cols;
         })
         .catch((err) => {
           listing = null;
-          SELECTS.forEach((id) => $(id).replaceChildren(new Option('Needs internet: press the button to retry', '')));
-          ['eicBtn', 'eicImgBtn', 'eicVidBtn'].forEach((id) => ($(id).disabled = false));
-          $('eicInfo').textContent = `The catalogue is not reachable (${err.message}).`;
+          throw new Error(`the catalogue is not reachable (${err.message})`);
         });
       return listing;
     }
+    const defaultId = () => list.find((c) => /micasa.*month/i.test(c.id))?.id || list[0]?.id;
 
-    /** Run one load with the button disabled and progress in the status pill. */
-    async function busy(btn, label, fn) {
-      $(btn).disabled = true;
+    /** Run one load with progress in the status pill. */
+    async function busy(label, fn) {
+      $('searchBtn').disabled = true;
       app.busy(true, label);
       try {
         return await fn();
@@ -93,35 +83,43 @@
         toast(`Could not load that data set: ${err.message}`, 6500);
         return null;
       } finally {
-        $(btn).disabled = false;
+        $('searchBtn').disabled = false;
         app.busy(false);
       }
     }
-    const infoFor = async (id) => {
-      await fill();
-      return list.find((c) => c.id === id);
+    const infoFor = async (pick) => {
+      try {
+        await fill();
+      } catch (e) {
+        toast(`Earth Information Center: ${e.message}`, 6000);
+        return null;
+      }
+      const info = list.find((c) => c.id === pick.id) || list.find((c) => c.id === defaultId());
+      if (info) pick.id = info.id;
+      return info;
     };
 
-    /** Data tab. `pick` = { id, place ('world' or 'lat,lon'), steps }. */
+    /** Data tab. `pick` = { id, place ('world', 'lat,lon' or 'lat,lon,Name'), steps }. */
     async function load(pick) {
-      const info = await infoFor(pick.id);
-      if (!info) return;
-      const s = await busy('eicBtn', 'Asking the Earth Information Center…', () =>
-        E.load({ info, place: placeOf(pick.place), steps: pick.steps }, opts({ progress: (d, n) => app.busy(true, `Reading maps ${d} of ${n}…`) })),
+      const info = await infoFor(pick);
+      if (!info) return null;
+      const s = await busy('Asking the Earth Information Center…', () =>
+        E.load({ info, place: placeOf(pick.place), steps: pick.steps || 60 }, opts({ progress: (d, n) => app.busy(true, `Reading maps ${d} of ${n}…`) })),
       );
-      if (!s) return;
-      S.eic = pick;
+      if (!s) return null;
+      S.eic = { ...pick };
       S.choice.data = 'eic';
       app.setSource(s);
       app.fillSourceSelect();
       toast(`Loaded ${s.labels.length} time steps of ${info.title}.`);
+      return s;
     }
 
     /** Image tab: the newest map, read through its own colours. */
     async function loadImage(pick) {
-      const info = await infoFor(pick.id);
-      if (!info) return;
-      const res = await busy('eicImgBtn', 'Drawing the latest map…', async () => {
+      const info = await infoFor(pick);
+      if (!info) return null;
+      const res = await busy('Drawing the latest map…', async () => {
         const m = await E.latestMap({ info, place: placeOf(pick.place) }, opts());
         const canvas = await B.illustrations.loadToCanvas(m.url, 1200, 30000);
         return {
@@ -134,49 +132,34 @@
           },
         };
       });
-      if (!res) return;
-      S.eicImage = pick;
+      if (!res) return null;
+      S.eicImage = { ...pick };
       B.eicView.image = res;
       S.choice.image = 'eic';
       app.fillSourceSelect();
       app.useImage(res);
       toast(`Map of ${res.meta.name.split(' · ').pop()} loaded. Each band of the picture is a note.`);
+      return res;
     }
 
     /** Video tab: a time-lapse of the latest maps. */
     async function loadVideo(pick) {
-      const info = await infoFor(pick.id);
-      if (!info) return;
-      const s = await busy('eicVidBtn', 'Making the time-lapse…', () =>
-        E.timelapse({ info, place: placeOf(pick.place), steps: pick.steps }, opts({ progress: (d, n) => app.busy(true, `Reading maps ${d} of ${n}…`) })),
+      const info = await infoFor(pick);
+      if (!info) return null;
+      const s = await busy('Making the time-lapse…', () =>
+        E.timelapse({ info, place: placeOf(pick.place), steps: pick.steps || 24 }, opts({ progress: (d, n) => app.busy(true, `Reading maps ${d} of ${n}…`) })),
       );
-      if (!s) return;
-      S.eicVideo = pick;
+      if (!s) return null;
+      S.eicVideo = { ...pick };
       B.eicView.video = s;
       S.choice.video = 'eic';
       app.setSource(s);
       app.fillSourceSelect();
       toast(`Time-lapse ready: ${s.labels.length} maps, one note each. Press Play: the maps follow the music.`, 5000);
+      return s;
     }
 
-    Object.assign(B.eicView, { load, loadImage, loadVideo });
-    $('eicDataset').onchange = showInfo;
-    SELECTS.forEach((id) => $(id).addEventListener('focus', fill));
-    $('eicForm').onsubmit = (e) => {
-      e.preventDefault();
-      if (!list.length) return fill();
-      load({ id: $('eicDataset').value, place: $('eicPlace').value, steps: +$('eicSteps').value });
-    };
-    $('eicImgForm').onsubmit = (e) => {
-      e.preventDefault();
-      if (!list.length) return fill();
-      loadImage({ id: $('eicImgDataset').value, place: $('eicImgPlace').value });
-    };
-    $('eicVidForm').onsubmit = (e) => {
-      e.preventDefault();
-      if (!list.length) return fill();
-      loadVideo({ id: $('eicVidDataset').value, place: $('eicVidPlace').value, steps: +$('eicVidSteps').value });
-    };
+    Object.assign(B.eicView, { load, loadImage, loadVideo, fill, catalogue: () => list, api: () => api });
     $('eicUse').onclick = () => {
       const stac = $('eicStac').value.trim();
       const raster = $('eicRaster').value.trim();
@@ -184,22 +167,20 @@
       const own = stac === E.ENDPOINTS.stac;
       api = own ? { ...E.ENDPOINTS } : { stac, raster, name: new URL(stac).hostname, site: stac };
       storage.set('b2b-eic-api', own ? null : api);
-      $('eicTitle').textContent = own ? 'NASA Earth Information Center' : `Catalogue: ${api.name}`;
+      title();
       listing = null;
       list = [];
-      fill();
+      fill()
+        .then((cols) => toast(`${cols.length} data sets in ${api.name}. Search them above.`))
+        .catch((e) => toast(e.message, 6000));
     };
     $('eicReset').onclick = () => {
       $('eicStac').value = E.ENDPOINTS.stac;
       $('eicRaster').value = E.ENDPOINTS.raster;
       $('eicUse').click();
     };
-    if (api.stac !== E.ENDPOINTS.stac) $('eicTitle').textContent = `Catalogue: ${api.name}`;
-    // fill the menus once a tab that uses them is open (not before: it needs the network)
-    const want = () => ['data', 'image', 'video'].includes(S.mode) && fill();
-    want();
-    root.addEventListener('b2b:source', want);
+    title();
   }
 
-  B.eicView = { init, get };
+  B.eicView = { init, get, placeOf };
 })(typeof self !== 'undefined' ? self : this);

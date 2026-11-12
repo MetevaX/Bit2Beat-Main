@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   const B = window.Bit2Beat || {};
-  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView', 'eic', 'eicView'];
+  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView', 'eic', 'eicView', 'eicSearch', 'search', 'options', 'xlsx'];
   const missing = need.filter((k) => !B[k]);
   if (missing.length) {
     document.body.insertAdjacentHTML('afterbegin', `<p role="alert" style="padding:16px;background:#fbe9d0;color:#14213d">Bit2Beat could not load: ${missing.join(', ')}. Open the single-file build in dist/ or serve the folder.</p>`);
@@ -20,13 +20,13 @@
   if (saved.v !== 3 && saved.settings) delete saved.settings.spacing; // events now sweep west → east
   const fromUrl = B.urlState.read();
   const state = {
-    mode: 'data',
+    mode: 'image', // the Earth Information Center comes first
     choice: { ...B.urlState.DEFAULT_CHOICE },
     settings: { ...B.plan.DEFAULTS, ...(saved.settings || {}) },
     audio: { volume: 0.7, muted: false, eq: { low: 0, mid: 0, high: 0 }, output: 'stereo', room: 0.22, loop: false, ...(saved.audio || {}) },
     image: { analysis: 'light', scan: 'line', steps: 48, date: '' },
     earth: { quakeFeed: '4.5_week', eonetDays: 30 },
-    prefs: { dark: false, contrast: false, textSize: 100, reduceMotion: matchMedia('(prefers-reduced-motion: reduce)').matches, bigTargets: false, mono: false, captions: true, announce: false, pet: true, ...storage.get('b2b-prefs', {}) },
+    prefs: { dark: false, contrast: false, textSize: 100, reduceMotion: matchMedia('(prefers-reduced-motion: reduce)').matches, bigTargets: false, mono: false, captions: true, announce: true, pet: true, ...storage.get('b2b-prefs', {}), ...(storage.get('b2b-prefs', {}).sr ? {} : { announce: true, sr: 1 }) },
     mix: [],
     mixDefault: '',
     position: 0,
@@ -41,14 +41,15 @@
   if (fromUrl.mode) state.mode = fromUrl.mode;
   if (fromUrl.choice) {
     const valid = {
-      data: [...B.presets.DATA_MENU.flatMap(([, items]) => items.map((it) => it[0])), 'power'],
-      earth: B.sources.EARTH_MENU.map((it) => it[0]),
-      video: B.sources.VIDEO_MENU.map((it) => it[0]),
-      image: B.sources.IMAGE_MENU.flatMap(([, items]) => items.map((it) => it[0])),
+      data: [...B.presets.DATA_MENU.flatMap(([, items]) => items.map((it) => it[0])), 'power', 'eic'],
+      earth: [...B.sources.EARTH_MENU.map((it) => it[0]), 'sample:eonet', 'sample:quakes'],
+      video: [...B.sources.VIDEO_MENU.map((it) => it[0]), 'eic'],
+      image: [...B.sources.IMAGE_MENU.flatMap(([, items]) => items.map((it) => it[0])), 'eic'],
     };
     if (valid[state.mode].includes(fromUrl.choice)) state.choice[state.mode] = fromUrl.choice;
   }
   if (fromUrl.power) state.power = fromUrl.power;
+  if (fromUrl.eic) state[{ data: 'eic', image: 'eicImage', video: 'eicVideo' }[state.mode] || 'eic'] = fromUrl.eic;
   let pending = { mix: fromUrl.mix, position: fromUrl.position };
   let src = null;
   let plan = null;
@@ -173,7 +174,7 @@
     if ($('scoreDialog').open) B.scoreView.paper(plan, i, true);
     if (fromPlayback && state.prefs.announce && Date.now() - lastAnnounce > 4000) {
       lastAnnounce = Date.now();
-      announce($('caption').textContent);
+      announce(`${plan.labels[i] ?? 'Step ' + (i + 1)}: ${$('caption').textContent}`);
     }
   }
 
@@ -191,6 +192,7 @@
     else player.position = state.position;
     onPosition(false);
     if (audition && !player.playing) player.auditionStep(state.position).catch(() => {});
+    if (audition) announce(`${B.panels.stepSummary(app, state.position)}. ${$('caption').textContent}`);
   }
 
   // ------------------------------------------------------------------ transport
@@ -232,6 +234,10 @@
   function initMix() {
     state.mix = src.channels.map((c, j) => ({ gain: j === 0 ? 0.8 : 0.6, mute: !!c.mute, solo: false, instrument: c.instrument || 'inherit' }));
     if (src.channels.length > 1 && state.mix.every((m) => m.mute)) state.mix[0].mute = false;
+    // the Sound card shows what the lead channel plays (they stay in step, see panels/mixer)
+    const lead = state.mix.find((m) => !m.mute);
+    if (lead && lead.instrument !== 'inherit' && B.audio.instruments[lead.instrument]) [state.settings.instrument, lead.instrument] = [lead.instrument, 'inherit'];
+    app.syncControls?.();
     state.mixDefault = state.mix.map((m) => `${Math.round(m.gain * 100)}.${m.mute ? 1 : 0}.${m.solo ? 1 : 0}.${m.instrument || 'inherit'}`).join('_');
   }
 
@@ -297,8 +303,8 @@
       if (state.mode === 'data') {
         if (id === 'upload' && uploads.data) return setSource(uploads.data);
         if (B.presets.DATA[id]) return setSource(B.presets.DATA[id]());
-        if (id === 'power' && state.power) return loadPower(state.power);
-        if (id === 'eic' && state.eic) return B.eicView.load(state.eic);
+        if (id === 'power' && state.power) return options.loadPower(state.power);
+        if (id === 'eic') return B.eicView.load(state.eic || {}).then((s) => s || app.choose('data', 'gistemp'));
         state.choice.data = 'gistemp';
         fillSourceSelect();
         return setSource(B.presets.DATA.gistemp());
@@ -306,19 +312,18 @@
       if (state.mode === 'video') {
         if (id === 'custom') return;
         if (id === 'upload' && uploads.video) return setSource(uploads.video);
-        if (id === 'eic') return B.eicView.video ? setSource(B.eicView.video) : B.eicView.loadVideo(state.eicVideo || {});
+        if (id === 'eic') return B.eicView.video ? setSource(B.eicView.video) : B.eicView.loadVideo(state.eicVideo || {}).then((s) => s || app.choose('video', 'gedi'));
         return setSource(B.sources.videoPreset(id));
       }
       if (state.mode === 'earth') {
         if (id.startsWith('sample:')) return setSource(B.sources.earthSample(id));
-        const arg = id === 'quakes' ? state.earth.quakeFeed : id === 'eonet' ? state.earth.eonetDays : undefined;
-        setSource(B.sources.earthOffline(id, arg));
+        setSource(B.sources.earthOffline(id, earthArg(id)));
         return fetchLatest(true);
       }
       // image
       let res;
       if (id === 'upload' && uploads.image) res = uploads.image;
-      else if (id === 'eic') return B.eicView.image ? app.useImage(B.eicView.image) : B.eicView.loadImage(state.eicImage || {});
+      else if (id === 'eic') return B.eicView.image ? app.useImage(B.eicView.image) : B.eicView.loadImage(state.eicImage || {}).then((r) => r || app.choose('image', 'nasa:gedi'));
       else {
         setBusy(true, 'Loading picture…');
         res = await B.sources.imageCanvas(id, state.image.date);
@@ -356,11 +361,12 @@
     }
   }
 
+  const earthArg = (id) => (id === 'quakes' ? state.earth.quakeFeed : id === 'eonet' || id === 'events' ? state.earth.eonetDays : undefined);
   /** Try the live feed for the current Earth source (quietly when `auto`). */
   async function fetchLatest(auto = false) {
     if (state.mode !== 'earth' || state.choice.earth.startsWith('sample:')) return;
     const id = state.choice.earth;
-    const arg = id === 'quakes' ? state.earth.quakeFeed : id === 'eonet' ? state.earth.eonetDays : undefined;
+    const arg = earthArg(id);
     const token = loadToken;
     setBusy(true, 'Getting the latest data…');
     try {
@@ -400,6 +406,7 @@
     fillSourceSelect();
     syncEarthOptions();
     syncImageOptions();
+    window.dispatchEvent(new CustomEvent('b2b:mode', { detail: { mode } }));
     loadChoice();
   }
 
@@ -407,7 +414,7 @@
     const id = state.choice.earth;
     $('fetchBtn').hidden = id.startsWith('sample:');
     $('quakeFeedField').hidden = id !== 'quakes';
-    $('eonetDaysField').hidden = id !== 'eonet';
+    $('eonetDaysField').hidden = id !== 'eonet' && id !== 'events';
   }
   function syncImageOptions() {
     $('satDateField').hidden = !state.choice.image.startsWith('sat:') || state.choice.image === 'sat:lights';
@@ -527,111 +534,8 @@
     openFile(e.dataTransfer.files[0]);
   });
 
-  // data options
-  $('lengthSelect').value = String(state.settings.length || 0);
-  $('lengthSelect').onchange = (e) => {
-    state.settings.length = +e.target.value;
-    persist();
-    rebuild({ keepPosition: false });
-  };
-  // NASA POWER form: daily data for one of 18 places around the world, any year since 1981
-  B.snapshots.PLACES.forEach(([n, lat, lon]) => $('powerPlace').append(new Option(n, `${lat},${lon}`)));
-  for (let y = new Date().getUTCFullYear() - 1; y >= 1981; y--) $('powerYear').append(new Option(String(y), String(y)));
-  if (state.power) {
-    $('powerPlace').value = `${state.power.lat},${state.power.lon}`;
-    $('powerYear').value = String(state.power.year);
-  }
-  async function loadPower({ lat, lon, year }) {
-    const place = B.snapshots.PLACES.find((p) => p[1] === lat && p[2] === lon)?.[0] || `${lat}°, ${lon}°`;
-    $('powerBtn').disabled = true;
-    setBusy(true, 'Asking NASA POWER…');
-    try {
-      const s = await B.feeds.live.power(lat, lon, year, place);
-      state.power = { lat, lon, year };
-      state.choice.data = 'power';
-      setSource(s);
-      fillSourceSelect();
-      toast(`Loaded ${s.labels.length} days from NASA POWER.`);
-    } catch (err) {
-      toast(`NASA POWER is not reachable (${err.message}). The saved Arctic data still works offline.`, 6000);
-      if (!src) {
-        state.choice.data = 'arcticDaily';
-        fillSourceSelect();
-        setSource(B.presets.DATA.arcticDaily());
-      }
-    } finally {
-      $('powerBtn').disabled = false;
-      setBusy(false);
-    }
-  }
-  $('powerForm').onsubmit = (e) => {
-    e.preventDefault();
-    const [lat, lon] = $('powerPlace').value.split(',').map(Number);
-    loadPower({ lat, lon, year: +$('powerYear').value });
-  };
-
-  // earth options
-  Object.entries(B.feeds.USGS_FEEDS).forEach(([v, t]) => $('quakeFeed').append(new Option(t, v)));
-  if (!B.feeds.USGS_FEEDS[state.earth.quakeFeed]) state.earth.quakeFeed = '4.5_week';
-  $('quakeFeed').value = state.earth.quakeFeed;
-  $('eonetDays').value = String(state.earth.eonetDays);
-  $('quakeFeed').onchange = (e) => {
-    state.earth.quakeFeed = e.target.value;
-    fetchLatest(false);
-  };
-  $('eonetDays').onchange = (e) => {
-    state.earth.eonetDays = +e.target.value;
-    fetchLatest(false);
-  };
-  $$('#spacingGroup button').forEach((b) => {
-    pressOne($('spacingGroup'), $('spacingGroup').querySelector(`[data-spacing="${state.settings.spacing}"]`) || b);
-    b.onclick = () => {
-      pressOne($('spacingGroup'), b);
-      state.settings.spacing = b.dataset.spacing;
-      persist();
-      rebuild();
-    };
-  });
-  $('fetchBtn').onclick = () => fetchLatest(false);
-
-  // image options (restore pressed buttons from the address bar)
-  pressOne($('analysisGroup'), $('analysisGroup').querySelector(`[data-analysis="${state.image.analysis}"]`));
-  pressOne($('scanGroup'), $('scanGroup').querySelector(`[data-scan="${state.image.scan}"]`));
-  $('stepsRange').value = state.image.steps;
-  $('stepsOut').textContent = state.image.steps;
-  $$('#analysisGroup button').forEach((b) => {
-    b.onclick = () => {
-      pressOne($('analysisGroup'), b);
-      state.image.analysis = b.dataset.analysis;
-      syncImageOptions();
-      analyseImage();
-    };
-  });
-  $$('#scanGroup button').forEach((b) => {
-    b.onclick = () => {
-      pressOne($('scanGroup'), b);
-      state.image.scan = b.dataset.scan;
-      state.pointer = null;
-      if (b.dataset.scan === 'pointer') toast('Move the pointer over the picture to hear it. Play scans from left to right.', 4000);
-      analyseImage();
-    };
-  });
-  $('stepsRange').oninput = (e) => ($('stepsOut').textContent = e.target.value);
-  $('stepsRange').onchange = (e) => {
-    state.image.steps = +e.target.value;
-    analyseImage();
-  };
-  const today = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
-  state.image.defaultDate = today;
-  if (!state.image.date || state.image.date > today) state.image.date = today;
-  $('satDate').value = state.image.date;
-  $('satDate').max = today;
-  $('satDate').min = '2012-01-20';
-  $('satDate').onchange = (e) => {
-    if (!e.target.value) return;
-    state.image.date = e.target.value;
-    loadChoice();
-  };
+  // options under the picture (ui/options.js)
+  const options = B.options.init(app, { analyseImage, fetchLatest, syncImageOptions, loadChoice });
 
   // transport
   $('playBtn').onclick = togglePlay;
@@ -685,10 +589,11 @@
   // start
   if (state.prefs.dark == null) state.prefs.dark = matchMedia('(prefers-color-scheme: dark)').matches;
   applyPrefs();
+  B.eicView.init(app);
+  B.search.init(app);
   setMode(state.mode);
   B.storyView.init(app);
   B.aboutView.init(app);
-  B.eicView.init(app);
   if (fromUrl.page && fromUrl.page !== 'studio') showPage(fromUrl.page, { focus: false });
   B.tour.init(app, fromUrl);
   B.draw.spectrum($('spectrumCanvas'), null, false);

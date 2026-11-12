@@ -109,6 +109,16 @@ Each chapter shows:
 | **Guide** (top bar) | Bitty’s guide menu (`G`). |
 | **Player bar** | Restart, Play/Pause, Repeat, position, volume, **Record**, **Readings** table and **Export**. |
 
+## Searching the Earth Information Center
+
+Above the Image, Video and Data tabs is one search for the whole NASA Earth Information Center catalogue. Type what you want to hear in your own words, for example *methane from wetlands in the Amazon* or *where do people live in India*, and press **Search** (with nothing typed, it lists every data set).
+
+1. Keyword matches appear at once.
+2. Gemini then picks the best data sets and the place you named (its latitude and longitude, even if it is not one of the 18 places). The **Area** menu shows the place it found.
+3. Choose a result to hear it in the tab that is open: **Image** draws its newest map, **Video** makes a time-lapse of the latest 24, 48 or 96 maps, **Data** plays one note per map (24, 60 or 120). Changing the area or the number of maps replays it.
+
+AI search needs the online version (bit2beat.vercel.app). In the single file or offline, search works by keyword. **Use another catalogue** searches any other STAC catalogue, such as NASA VEDA.
+
 ## Data tab
 
 Pick a series from the menu:
@@ -122,17 +132,16 @@ Options:
 
 - **Points to play** – long series can be averaged to 240, 120, 60 or 30 steps (each step is the mean of its bucket; labels become ranges).
 - **NASA POWER daily data** – pick one of 18 places around the world and a year since 1981, then **Load** (online).
-- **NASA Earth Information Center** – pick any data set of earth.gov's catalogue, the whole world or a place, and how many maps (24, 60 or 120), then **Load** (online). Each note is one map: its average over the place, with the highest value as a second channel. **Use another catalogue** reads any other STAC catalogue with a raster API, such as NASA VEDA.
-
-The Image tab can load the newest map of any of these data sets (*NASA Earth Information Center map*), and the Video tab can turn the latest 24–96 maps into a time-lapse that follows the music (*NASA Earth Information Center time-lapse*).
+- **NASA Earth Information Center** – use the search above the tabs. Each note is one map: its average over the area, with the highest value as a second channel.
 - **Open CSV** (or drop a file on the chart) – comma, semicolon or tab separated; up to six numeric columns; a year/date/name column becomes the labels; a unit in brackets (`Temp (°C)`) is detected.
 
 ## Earth events tab
 
 ![Earthquakes](screenshots/earthquakes.png)
 
-- **Earthquakes (USGS)** – past day, week or month; magnitude 2.5+, 4.5+ or significant.
-- **Natural events (NASA EONET)** – wildfires, storms, floods, sea and lake ice and more from the past 7, 30 or 60 days. Each kind of event has its own channel and instrument.
+- **Natural events and earthquakes** (default) – NASA EONET wildfires, storms, floods, sea and lake ice and more, and USGS earthquakes (magnitude 4.5+), from the past 7, 30 or 60 days, in one sweep. Each kind of event has its own channel and instrument; earthquakes are the bass.
+- **Offline sample** of both, which always works.
+- **Natural events only** and **Earthquakes only** (past day, week or month; magnitude 2.5+, 4.5+ or significant).
 
 Events are played **from west to east**, as one sweep across the map, like reading it left to right:
 
@@ -149,14 +158,15 @@ Events are played **from west to east**, as one sweep across the map, like readi
 
 ## Image tab
 
+- **NASA Earth Information Center**: search above the tabs; the newest map of the data set is drawn in its own colours over the real spread of the data in the area.
 - **Live NASA satellite views** (NASA GIBS): whole Earth today, Earth at night, Amazon, Himalaya, Greenland ice sheet, western Sahara. Choose the **Date** for daily views.
 - **Works offline**: a world relief map and two generated illustrations (clearly labelled as not satellite data).
-- **Open picture** – any PNG, JPG or WebP.
+- **Open picture** (next to the Steps slider) – any PNG, JPG or WebP.
 
 Options:
 
 - **Light** – three voices: brightness (CIE L\*), detail (how much brightness varies) and the height of bright areas. **Colour** – red, green and blue. **Colour key** (NASA EIC stills) – the data value read through the picture's colour bar, and how much of each band shows data. Empty background is silent.
-- **Left to right**, **Top to bottom** (a line moves down the picture, row by row; with height speakers the sound comes down too), **Around the centre** (like a radar sweep) or **Follow pointer** (hear what is under your mouse or finger).
+- **Left to right**, **Top to bottom** (a line moves down the picture, row by row; with height speakers the sound comes down too), **Around the centre** (like a radar sweep) or **Follow pointer** (hear what is under your mouse or finger; the player bar steps aside until you choose another scan).
 - **Steps** – how many bands the picture is cut into (16–160).
 
 ## Video tab

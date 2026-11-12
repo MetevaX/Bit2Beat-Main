@@ -1,0 +1,233 @@
+/* Bit2Beat · Earth Information Center search, tools added in 2.8 and the black dark theme. */
+
+/* ---------- search ---------- */
+.eic-search {
+  margin: 0 0 var(--gap);
+  padding: 14px 16px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.search-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+.search-label .i {
+  width: 18px;
+  height: 18px;
+  color: var(--amber-ink);
+}
+.search-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.search-row input[type='search'] {
+  flex: 1 1 320px;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 14px;
+  font-size: 1rem;
+  border-radius: 10px;
+  color: var(--text);
+}
+.search-row input[type='search']:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: var(--focus);
+}
+.search-row .field {
+  flex: 0 1 200px;
+  min-width: 0;
+}
+.search-row .btn {
+  min-height: 42px;
+  padding: 0 20px;
+}
+.search-status {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.eic-search.is-thinking .search-status::after {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-left: 8px;
+  border: 2px solid var(--amber);
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: -1px;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.search-results {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+.search-results:empty {
+  display: none;
+}
+.result {
+  position: relative;
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+  padding: 10px 70px 10px 12px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+}
+.result b {
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+.result small {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.result-go {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--amber-ink);
+}
+.result:hover,
+.result:focus-visible {
+  border-color: var(--amber);
+}
+.result[aria-current='true'] {
+  border-color: var(--amber);
+  background: var(--surface-2);
+}
+.result[aria-current='true'] .result-go::before {
+  content: 'Playing · ';
+}
+.eic-search .eic-more {
+  margin-top: 8px;
+  font-size: 0.82rem;
+}
+.eic-search .eic-more summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.eic-more-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+.eic-more-row .field {
+  flex: 1 1 240px;
+}
+
+/* the Open button beside the Steps slider (Image tab) */
+#opts-image #uploadBtn {
+  align-self: end;
+}
+
+/* ---------- Follow pointer: the pointer is the player, so the player bar steps aside ---------- */
+body.pointer-mode .transport {
+  display: none;
+}
+body.pointer-mode main {
+  padding-bottom: 24px;
+}
+
+/* ---------- small tools ---------- */
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.toast[hidden] {
+  display: none;
+}
+.toast-action {
+  flex: none;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  font-weight: 700;
+}
+.toast-action:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+.disclosure-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.disclosure-tools .card-note {
+  margin: 0;
+}
+.table-tools {
+  align-items: center;
+  margin-top: 10px;
+}
+.table-tools .dlg-note {
+  margin: 0 auto 0 0;
+}
+
+/* ---------- light clean-up: a calmer, tighter page ---------- */
+.card-head {
+  margin-bottom: 8px;
+}
+.source-options {
+  row-gap: 10px;
+}
+
+/* ---------- black dark theme ---------- */
+:root[data-theme='dark'] .topbar {
+  background: #000;
+}
+:root[data-theme='dark'] .card.now {
+  background: #0c0c0e;
+  border-color: var(--line);
+}
+:root[data-theme='dark'] .transport {
+  background: rgba(10, 10, 12, 0.72);
+}
+:root[data-theme='dark'] .toast,
+:root[data-theme='dark'] .hover-tip {
+  background: rgba(18, 18, 20, 0.86);
+}
+:root[data-theme='dark'] .eic-search {
+  background: var(--surface);
+}
+@media (max-width: 760px) {
+  .search-row .field {
+    flex: 1 1 140px;
+  }
+  .search-row .btn {
+    flex: 1 1 100%;
+  }
+}

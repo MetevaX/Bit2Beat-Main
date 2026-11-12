@@ -8,11 +8,13 @@
   const B = root.Bit2Beat;
   const { storage } = B.dom;
 
+  // natural events and earthquakes play together (earthquakes are one more channel); the
+  // offline sample of both always works. Each one alone stays available.
   const EARTH_MENU = [
-    ['sample:eonet', 'NASA natural events · offline sample'],
-    ['sample:quakes', 'USGS earthquakes · offline sample'],
-    ['quakes', 'Earthquakes (USGS)'],
-    ['eonet', 'Natural events (NASA EONET)'],
+    ['events', 'Natural events and earthquakes (EONET + USGS)'],
+    ['sample:events', 'Natural events and earthquakes · offline sample'],
+    ['eonet', 'Natural events only (NASA EONET)'],
+    ['quakes', 'Earthquakes only (USGS)'],
   ];
   const VIDEO_MENU = [['gedi', 'NASA EIC · GEDI forest height'], ['co2', 'NASA EIC · Global carbon dioxide']];
   function earthSample(id) {

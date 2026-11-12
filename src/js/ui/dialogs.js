@@ -22,6 +22,25 @@
     return rows.map((r) => r.map(cell).join(',')).join('\r\n');
   }
 
+  /** The readings as an Excel workbook: one row per step, then every note per channel. */
+  function planXlsx(plan) {
+    const readings = [['Step', 'Label', ...plan.channels.map((c) => c.name + (c.unit ? ` (${c.unit})` : '')), 'Notes', 'Start (s)', 'Detail']];
+    for (let i = 0; i < plan.count; i++) {
+      const notes = plan.steps[i].filter((n) => n.active).map((n) => music.noteName(n.midi) + (n.cue ? '*' : ''));
+      readings.push([i + 1, String(plan.labels[i] ?? ''), ...plan.channels.map((c) => (Number.isFinite(c.raw[i]) ? c.raw[i] : '')), notes.join(' ') || 'rest', +plan.times[i].toFixed(3), plan.details?.[i] || '']);
+    }
+    const notes = planCsv(plan)
+      .split('\r\n')
+      .map((line) => [...line.matchAll(/"((?:[^"]|"")*)"/g)].map((m) => m[1].replace(/""/g, '"').replace(/^'(?=[=+@-])/, '')))
+      .map((r, k) => (k ? r.map((v, c) => ([0, 3, 6, 7, 8, 9, 10].includes(c) && v !== '' && Number.isFinite(+v) ? +v : v)) : r));
+    const about = [['Bit2Beat readings'], ['Source', plan.source.name], ['From', plan.source.origin?.source || ''], ['Link', plan.source.origin?.url || ''], ['Tempo', `${plan.settings.tempo} BPM, one step = one eighth note`], ['Made', new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC']];
+    return B.xlsx.workbook([
+      { name: 'Readings', rows: readings },
+      { name: 'Notes per channel', rows: notes },
+      { name: 'About', rows: about },
+    ]);
+  }
+
   // ------------------------------------------------------------------ readings table
   function openTable(app) {
     const p = app.plan;
@@ -152,6 +171,11 @@
 
     // table
     $('tableBtn').onclick = () => openTable(app);
+    $('tableXlsx').onclick = () => {
+      download(new Blob([planXlsx(app.plan)], { type: B.xlsx.MIME }), slug(app.src.name) + '-readings.xlsx');
+      toast('Readings saved as an Excel workbook (Readings, Notes per channel, About).');
+    };
+    $('tableCsv').onclick = () => download(new Blob(['\ufeff' + planCsv(app.plan)], { type: 'text/csv;charset=utf-8' }), slug(app.src.name) + '-notes.csv');
 
     // score
     $('fullScoreBtn').onclick = () => B.scoreView.open(app.plan, app.state.position);
@@ -195,7 +219,7 @@
       app.applyPrefs();
     };
     $('accessReset').onclick = () => {
-      Object.assign(prefs, { dark: false, contrast: false, textSize: 100, reduceMotion: false, bigTargets: false, mono: false, captions: true, announce: false, pet: true });
+      Object.assign(prefs, { dark: false, contrast: false, textSize: 100, reduceMotion: false, bigTargets: false, mono: false, captions: true, announce: true, pet: true });
       $$('[data-pref]').forEach((c) => (c.checked = !!prefs[c.dataset.pref]));
       $('textSize').value = 100;
       $('textSizeOut').textContent = '100%';
@@ -211,5 +235,5 @@
     $('helpBtn').onclick = () => $('helpDialog').showModal();
   }
 
-  B.dialogs = { init, openTable, planCsv };
+  B.dialogs = { init, openTable, planCsv, planXlsx };
 })(typeof self !== 'undefined' ? self : this);

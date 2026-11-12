@@ -15,7 +15,27 @@
 
   const flatsFor = (plan) => !!B.music.SCALES[plan.settings.scale]?.flats || [1, 3, 6, 8, 10].includes(plan.settings.key);
 
+  /** True when the channels that are on take turns (each event is one channel, like Earth events):
+   *  one staff with all of them then reads better than one staff of rests per channel. */
+  function takesTurns(plan, list) {
+    if (list.length < 2) return false;
+    let any = 0;
+    let both = 0;
+    for (let i = 0; i < plan.count; i++) {
+      const n = list.reduce((k, v) => k + (v.c.midi[i] != null ? 1 : 0), 0);
+      if (n) any++;
+      if (n > 1) both++;
+    }
+    return any > 0 && both / any < 0.1;
+  }
+  /** All channels that are on, on one staff: at each step the note of the channel that sounds. */
+  function merged(plan, list) {
+    const midi = Array.from({ length: plan.count }, (_, i) => list.find((v) => v.c.midi[i] != null)?.c.midi[i] ?? null);
+    return [{ c: { name: list.map((v) => v.c.name).join(' · '), midi }, j: -1 }];
+  }
+
   function voices(plan, which = 'active') {
+    if (which === 'merged') return merged(plan, voices(plan, 'active'));
     let list = plan.channels.map((c, j) => ({ c, j }));
     if (which === 'active') list = list.filter((v) => v.c.active);
     else if (which !== 'all') list = list.filter((v) => String(v.j) === which);
@@ -56,7 +76,11 @@
       return;
     }
     const start = Math.floor(pos / PREVIEW) * PREVIEW;
-    const vs = voices(plan).slice(0, 1);
+    // the channels that are on: one staff when they take turns, else up to three staves with notes here
+    const on = voices(plan);
+    const turns = takesTurns(plan, on);
+    const here = on.filter((v) => v.c.midi.slice(start, start + PREVIEW).some((m) => m != null));
+    const vs = turns ? merged(plan, on) : (here.length ? here : on).slice(0, 3);
     const key = JSON.stringify([start, plan.settings.scale, plan.settings.key, plan.settings.range, plan.settings.tempo, vs.map((v) => [v.j, v.c.midi.slice(start, start + PREVIEW)])]);
     if (key !== previewKey) {
       previewKey = key;
@@ -66,20 +90,21 @@
         flats: flatsFor(plan),
         barsPerLine: 2,
         showTempo: false,
-        voices: vs.map((v) => ({ name: '', midis: v.c.midi.slice(start, start + PREVIEW) })),
+        voices: vs.map((v) => ({ name: vs.length > 1 ? v.c.name.slice(0, 12) : '', midis: v.c.midi.slice(start, start + PREVIEW) })),
       });
       render(el, abc, { staffwidth: Math.max(280, el.clientWidth - 24), paddingtop: 0, paddingbottom: 0, paddingleft: 0, paddingright: 0, scale: 1 });
       tag(el, start, PREVIEW);
-      $('scoreLabel').textContent = `Bars ${start / 8 + 1}–${Math.min(start / 8 + 2, Math.ceil(plan.count / 8))} of ${Math.ceil(plan.count / 8)} · ${vs[0].c.name} · each step is an eighth note · Full score shows every channel`;
+      const who = turns ? `${on.length} channels on one staff` : vs.map((v) => v.c.name).join(', ');
+      $('scoreLabel').textContent = `Bars ${start / 8 + 1}–${Math.min(start / 8 + 2, Math.ceil(plan.count / 8))} of ${Math.ceil(plan.count / 8)} · ${who} · each step is an eighth note`;
     }
     highlight(el, pos);
   }
 
   function fillVoiceSelect(plan) {
     const sel = $('scoreVoices');
-    const prev = sel.value || 'active';
-    sel.replaceChildren(new Option('Channels that are on', 'active'), new Option('All channels', 'all'), ...plan.channels.map((c, j) => new Option(c.name, String(j))));
-    sel.value = [...sel.options].some((o) => o.value === prev) ? prev : 'active';
+    const prev = sel.value || (takesTurns(plan, voices(plan)) ? 'merged' : 'active');
+    sel.replaceChildren(new Option('Channels that are on', 'active'), new Option('Channels that are on, on one staff', 'merged'), new Option('All channels', 'all'), ...plan.channels.map((c, j) => new Option(c.name, String(j))));
+    sel.value = [...sel.options].some((o) => o.value === prev) ? prev : takesTurns(plan, voices(plan)) ? 'merged' : 'active';
   }
 
   function paper(plan, pos, follow = true) {

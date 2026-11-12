@@ -4,19 +4,18 @@ Bit2Beat plays any list of numbers over time. There are four ways to bring new d
 
 ## 1. Any data set of the NASA Earth Information Center (no code)
 
-The [Earth Information Center](https://earth.gov/) shares its data sets through an open API (no key, no sign-in). In the **Data** tab, under *NASA Earth Information Center*:
+The [Earth Information Center](https://earth.gov/) shares its data sets through an open API (no key, no sign-in). Use the search above the Image, Video and Data tabs:
 
-1. open the data-set menu: it lists every data set of the live catalogue that changes over time (about 30 today, more as the centre adds them);
-2. choose **Whole world** or one of 18 places (the average inside a 2° box around it);
-3. choose how many maps: the latest 24, 60 or 120;
-4. press **Load**. Each note is one map. The first channel is the average, the second (muted) the highest value. Data sets with several layers per date (for example GEOS CO₂, CH₄ and CO) get one channel per layer.
+1. type a subject and a place in your own words, or nothing to list every data set of the live catalogue that changes over time (about 30 today, more as the centre adds them);
+2. Gemini picks the best data sets and the place; the **Area** menu can also be set by hand (the whole world or a place);
+3. in Data and Video, choose how many maps: the latest 24, 60 or 120 (Data) or 24, 48 or 96 (Video);
+4. choose a result. **Data**: each note is one map; the first channel is the average, the second (muted) the highest value; data sets with several layers per date (for example GEOS CO₂, CH₄ and CO) get one channel per layer. **Image**: the newest map, for the whole world or a 32° × 20° window around the place, drawn in the data set's own colours; *Colour key* reads the values back out of the picture. **Video**: one picture and one note per map.
 
-When the centre publishes a new data set, it appears in the menu by itself.
+When the centre publishes a new data set, search finds it by itself.
 
-The same catalogue is in the other tabs:
+### AI search (Gemini) on your own server
 
-- **Image** → *NASA Earth Information Center map*: the newest map of a data set, for the whole world or a 32° × 20° window around a place, drawn in the data set's own colours. *Colour key* reads the values back out of the picture.
-- **Video** → *NASA Earth Information Center time-lapse*: the latest 24, 48 or 96 maps, one picture and one note each. Each note is the average of the area on screen.
+Search ranks results with Gemini 3.8 Flash through `api/search.js`, a Vercel serverless function. The API key is never in the page or in Git: in Vercel open the project → **Settings → Environment Variables**, add `GEMINI_API_KEY` with your key (Production and Preview), save, then redeploy. Without the variable, search still works by keyword and says AI search is not available.
 
 ## 2. Another catalogue (no code)
 

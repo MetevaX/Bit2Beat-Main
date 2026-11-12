@@ -37,8 +37,10 @@ Bit2Beat is a static web app: plain HTML, CSS and JavaScript with no framework a
 | `music.js` | Scales, keys, `midi(v, scale, range, key)`, normalisation, note names, EQ presets |
 | `stats.js` | Trend (least squares), sudden jumps (leave-one-out local line + modified z-score), resampling, plain-language summaries, *Suggest* |
 | `plan.js` | Builds the plan: scaling (shared per unit, log, invert), pitch, loudness (`loudBy`), timing (even or source `times`), 3D positions, drone |
-| `feeds.js` | USGS and NASA EONET (events sorted west → east), NASA POWER daily data; live fetch + offline builders share one code path |
+| `feeds.js` | USGS and NASA EONET (events sorted west → east), both together (`combineEvents`: earthquakes as one more channel), NASA POWER daily data; live fetch + offline builders share one code path |
 | `eic.js` | NASA Earth Information Center (or any STAC + titiler) API: playable data sets, latest maps per date and layer, area statistics, the source; `get` is injected so it is tested offline |
+| `eic-search.js` | Catalogue search: offline keyword ranking (everyday words → catalogue words), place detection, the Gemini request (`prompt`) and the check of its answer (`answer`: only real ids, never Egypt); shared by the page, `api/search.js` and the tests |
+| `xlsx.js` | A small Excel writer (stored zip + SpreadsheetML) for the readings |
 | `geo.js` | Equirectangular projection, 1° land mask, swapped-coordinate repair, distances |
 | `image.js` | sRGB → CIE L\* and CIELAB, background detection, colour keys (read data through a colour bar), band statistics, line and radar scans, pointer probe |
 | `story.js` | Bitty’s eight chapters (scene, narration, *Listen for*) and the facts worked out from the source being heard |
@@ -75,6 +77,8 @@ Bit2Beat is a static web app: plain HTML, CSS and JavaScript with no framework a
 | `url-state.js` | Reads and writes the address bar (see below) |
 | `video-view.js` | Keeps the muted video in step with the music (playback rate, drift correction, exact frame when paused) |
 | `keys.js` | Keyboard shortcuts |
+| `search.js` | The Earth Information Center search above Image, Video and Data: keyword results at once, then Gemini via `/api/search`; a result plays in the open tab |
+| `options.js` | Options under the picture per tab (points, NASA POWER, period, scan, steps); Follow pointer hides the player; Open sits next to Steps in Image |
 | `combo.js` | Every menu: a button and a list that opens below it (above only when there is more room), with search for menus of six or more choices; the hidden `<select>` stays the source of truth |
 | `pages.js` | Studio, Story and About pages (one visible at a time) |
 | `story-view.js` | The Story page: chapters, sparklines, Listen / Play the whole story, narration, progress and badge |
@@ -135,3 +139,7 @@ Unknown or invalid values are ignored, so old links still open.
 `scripts/prepare-nasa-media.js` (needs ffmpeg) decodes every frame of the bundled EIC videos and regenerates `src/js/data/nasa-media.js` with the same pure code (`core/video.js`, `core/image.js`) the browser uses for uploads.
 
 `scripts/serve.js` is the development server behind `npm start`; it supports HTTP Range requests so videos can be seeked.
+
+## Server: `api/search.js`
+
+The only server code: a Vercel serverless function (`POST /api/search`). It receives the question, the tab and the catalogue the page already loaded, asks Gemini 3.8 Flash (`thinkingLevel: high`, JSON answer with a schema) and returns only ids that exist in the catalogue plus the place. The key comes from the `GEMINI_API_KEY` environment variable; a small per-instance limit (12 searches a minute per address) guards against abuse.

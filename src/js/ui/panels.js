@@ -16,6 +16,9 @@
     $('sourceName').textContent = s.name;
     $('trackName').textContent = s.name;
     $('dropZone').dataset.view = s.view;
+    // pictures and maps are shown at their own shape (no bands around them)
+    const ratio = s.view === 'image' && s.canvas ? s.canvas.width / s.canvas.height : s.view === 'world' ? B.draw.WORLD_ASPECT : null;
+    if (ratio) $('dropZone').style.setProperty('--ratio', ratio.toFixed(4));
     const o = s.origin || {};
     const parsed = /^\d{4}-\d\d-\d\dT[\d:.]+Z?$/.test(o.fetched || '') ? new Date(o.fetched) : null;
     const when = parsed && Number.isFinite(parsed.getTime()) ? parsed.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : o.fetched || '';
@@ -88,14 +91,14 @@
       out.push(`Most active: ${top.map(([r, n]) => `${r} (${n})`).join(', ')}.`);
       out.push('Further north plays higher, bigger quakes play louder, deeper ones sit lower in 3D sound.');
     } else {
-      out.push(`${s.labels.length} natural events from ${span}, played west to east.`);
+      out.push(`${s.labels.length} ${s.feed === 'events' ? 'natural events and earthquakes' : 'natural events'} from ${span}, played west to east.`);
       out.push(s.channels.map((c) => `${c.name}: ${c.values.filter((v) => v != null).length}`).join(' · ') + '.');
       s.channels.forEach((c) => {
         const sizes = (c.loudBy || []).map((v) => (Number.isFinite(v) ? v : -Infinity));
         const i = sizes.indexOf(Math.max(...sizes));
         if (c.sizeUnit && i >= 0 && sizes[i] > -Infinity) out.push(`Largest ${c.name.toLowerCase()}: ${s.details[i]}.`);
       });
-      out.push('Each kind of event has its own instrument. Further north plays higher; bigger events play louder.');
+      out.push(`Each kind of event has its own instrument${s.feed === 'events' ? ' (earthquakes are the bass)' : ''}. Further north plays higher; bigger events play louder.`);
     }
     if (p.settings.spacing === 'time') out.push('Map distance is on: gaps in the sound follow the real gaps between events on the map.');
     return out;
@@ -177,7 +180,43 @@
       app.persist();
       if (rebuild) app.rebuild();
     };
-    $('instrument').onchange = (e) => set('instrument', e.target.value);
+    /** Everything a mood or Suggest changes, so one click can undo it. */
+    const snapshot = () => ({ S: { ...S }, room: A.room, eq: { ...A.eq }, mix: app.state.mix.map((m) => m.instrument), note: $('autoTuneNote').textContent, noteHidden: $('autoTuneNote').hidden });
+    const restore = (snap, what) => {
+      Object.assign(S, snap.S);
+      A.room = snap.room;
+      A.eq = { ...snap.eq };
+      if (snap.mix.length === app.state.mix.length) app.state.mix.forEach((m, j) => (m.instrument = snap.mix[j]));
+      $$('#eqPresets button').forEach((b) => b.setAttribute('aria-pressed', String(JSON.stringify(music.EQ_PRESETS[b.dataset.eq]) === JSON.stringify(A.eq))));
+      $('autoTuneNote').textContent = snap.note;
+      $('autoTuneNote').hidden = snap.noteHidden;
+      sync();
+      app.player.refreshRouting();
+      app.player.applyMix();
+      app.persist();
+      app.rebuild();
+      announce(`${what} undone.`);
+    };
+    const offerUndo = (snap, msg, what) => toast(msg, 7000, { label: 'Undo', run: () => restore(snap, what) });
+    app.undoable = (fn, msg, what) => {
+      const snap = snapshot();
+      fn();
+      offerUndo(snap, msg, what);
+    };
+
+    // the Sound instrument and the channels stay in step: choosing an instrument here makes every
+    // channel play it; choosing one for the first channel (see mixer.js) changes it here too
+    $('instrument').onchange = (e) => {
+      const name = B.audio.instruments[e.target.value]?.name || e.target.value;
+      const own = app.state.mix.some((m) => m.instrument && m.instrument !== 'inherit');
+      const apply = () => {
+        app.state.mix.forEach((m) => (m.instrument = 'inherit'));
+        set('instrument', e.target.value);
+      };
+      if (own) app.undoable(apply, `Every channel now plays ${name}.`, 'Instrument change');
+      else apply();
+      announce(`Every channel now plays ${name}.`);
+    };
     $('scale').onchange = (e) => set('scale', e.target.value);
     $('key').onchange = (e) => set('key', +e.target.value);
     $('range').onchange = (e) => set('range', +e.target.value);
@@ -190,6 +229,7 @@
     $('autoTuneBtn').onclick = () => {
       const p = app.plan;
       if (!p) return;
+      const snap = snapshot();
       const norms = p.channels.filter((c) => c.active).map((c) => c.loudNorm);
       const t = stats.autoTune(norms.length ? norms : [p.channels[0].loudNorm]);
       Object.assign(S, { scale: t.scale, tempo: t.tempo, instrument: t.instrument });
@@ -201,11 +241,13 @@
       app.persist();
       app.rebuild();
       announce(t.reason);
+      offerUndo(snap, `Suggested: ${music.SCALES[t.scale]?.name || t.scale}, ${t.tempo} BPM, ${B.audio.instruments[t.instrument]?.name || t.instrument}.`, 'Suggest');
     };
     // moods: one click sets the whole sound (always pentatonic); any change by hand leaves the mood
     $$('#moods button').forEach((b) => {
       b.onclick = () => {
         const m = music.MOODS[b.dataset.mood];
+        const snap = snapshot();
         Object.assign(S, { scale: m.scale, key: m.key, range: m.range, tempo: m.tempo, instrument: m.instrument });
         app.state.mix.forEach((x) => (x.instrument = 'inherit'));
         A.room = m.room;
@@ -220,6 +262,7 @@
         app.persist();
         app.rebuild();
         announce(note);
+        offerUndo(snap, `Mood: ${m.name}.`, `${m.name} mood`);
       };
     });
     // space & tone
@@ -244,6 +287,21 @@
       app.player.applyMix();
       app.persist();
     };
+    $('spaceReset').onclick = () =>
+      app.undoable(
+        () => {
+          Object.assign(A, { output: 'stereo', room: 0.22, eq: { low: 0, mid: 0, high: 0 } });
+          S.path = 'auto';
+          pressOne($('eqPresets'), $('eqPresets').querySelector('[data-eq="flat"]'));
+          sync();
+          app.player.refreshRouting();
+          app.player.applyMix();
+          app.persist();
+          app.rebuild();
+        },
+        'Space & tone reset: stereo, automatic movement, 22% room, flat equaliser.',
+        'Reset',
+      );
     $('eqLow').oninput = eqInput('low');
     $('eqMid').oninput = eqInput('mid');
     $('eqHigh').oninput = eqInput('high');

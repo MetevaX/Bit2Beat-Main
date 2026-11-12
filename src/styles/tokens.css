@@ -28,16 +28,19 @@
 }
 
 :root[data-theme='dark'] {
-  --bg: #0e1729;
-  --surface: #14213d;
-  --surface-2: #1b2a4a;
-  --line: #2a3a5e;
-  --grid: #213152;
+  /* true black: the page is black, cards are a step above it, no navy tint */
+  --navy: #000000;
+  --navy-2: #121214;
+  --bg: #000000;
+  --surface: #0c0c0e;
+  --surface-2: #18181b;
+  --line: #2a2a2f;
+  --grid: #1b1b1f;
   --text: #f6f1e7;
-  --muted: #aab3c5;
+  --muted: #a5a5ad;
   --amber-ink: #f0b85e;
-  --sea: #172644;
-  --land: #2a3858;
+  --sea: #101013;
+  --land: #26262b;
   --river: #7fa6d6;
   color-scheme: dark;
 }
@@ -48,6 +51,6 @@
   --grid: #d6ccb6;
 }
 :root.contrast[data-theme='dark'] {
-  --line: #6d7fa6;
+  --line: #6a6a72;
   --muted: #dfe4ee;
 }

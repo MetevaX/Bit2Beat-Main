@@ -11,13 +11,22 @@
     const box = $('channels');
     const p = app.plan;
     box.replaceChildren();
+    const lead = Math.max(0, p.channels.findIndex((c) => c.active));
     p.channels.forEach((c, j) => {
       const m = app.state.mix[j];
       const range = c.max > c.min ? `${stats.fmtNum(c.min, c.unit)} – ${stats.fmtNum(c.max, c.unit)}` : 'one note per event';
-      const inst = el('select', { 'aria-label': `${c.name} instrument` }, new Option('Main instrument', 'inherit'), ...Object.entries(B.audio.instruments).map(([k, v]) => new Option(v.name, k)));
+      const main = B.audio.instruments[app.state.settings.instrument]?.name || 'main';
+      const inst = el('select', { 'aria-label': `${c.name} instrument` }, new Option(`${main} (Sound)`, 'inherit'), ...Object.entries(B.audio.instruments).map(([k, v]) => new Option(v.name, k)));
       inst.value = m.instrument || 'inherit';
+      // the lead channel and the Sound card share one instrument: change one, the other follows
       inst.onchange = () => {
-        m.instrument = inst.value;
+        if (j === lead && inst.value !== 'inherit') {
+          app.state.settings.instrument = inst.value;
+          m.instrument = 'inherit';
+          app.syncControls();
+          app.persist();
+          B.dom.announce(`${c.name} and the Sound card now use ${B.audio.instruments[inst.value].name}.`);
+        } else m.instrument = inst.value;
         app.rebuild();
       };
       const level = el('input', { type: 'range', min: 0, max: 100, value: Math.round(m.gain * 100), 'aria-label': `${c.name} level` });

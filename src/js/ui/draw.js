@@ -171,7 +171,7 @@
   }
 
   function drawImage(g, w, h, src, plan, pos, t, ui) {
-    g.fillStyle = '#0f1a30';
+    g.fillStyle = t.bg;
     g.fillRect(0, 0, w, h);
     const R = fitRect(src.canvas.width, src.canvas.height, w, h);
     g.drawImage(src.canvas, R.x, R.y, R.w, R.h);
@@ -506,5 +506,5 @@
   }
   const spectrumBusy = () => busy;
 
-  B.draw = { source, pitchRoll, stage, spectrum, spectrumBusy, colorFor, chColor, CATEGORY_COLORS, plotBox, fitRect, projectWorld };
+  B.draw = { source, pitchRoll, stage, spectrum, spectrumBusy, colorFor, chColor, CATEGORY_COLORS, plotBox, fitRect, projectWorld, WORLD_ASPECT };
 })(typeof self !== 'undefined' ? self : this);

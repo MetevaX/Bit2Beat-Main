@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="src/styles/story.css">
 <link rel="stylesheet" href="src/styles/about.css">
 <link rel="stylesheet" href="src/styles/combo.css">
+<link rel="stylesheet" href="src/styles/search.css">
 </head>
 <body>
 <a class="skip" href="#studio">Skip to the studio</a>
@@ -34,6 +35,7 @@
   <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M4.5 15v3.5a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5V15"/></symbol>
   <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4"/></symbol>
   <symbol id="i-table" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 10h16M4 14.5h16M10 5v14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5m0 0-4 6m4-6 4 6"/></symbol>
 </svg>
@@ -57,15 +59,38 @@
   <h1 class="sr-only">Bit2Beat studio</h1>
   <div class="toolbar">
     <div class="modes" role="tablist" aria-label="What to listen to">
-      <button role="tab" id="tab-data" data-mode="data" aria-selected="true" aria-controls="sourceCard">Data</button>
-      <button role="tab" id="tab-earth" data-mode="earth" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Earth events</button>
-      <button role="tab" id="tab-image" data-mode="image" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Image</button>
+      <button role="tab" id="tab-image" data-mode="image" aria-selected="true" aria-controls="sourceCard">Image</button>
       <button role="tab" id="tab-video" data-mode="video" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Video</button>
+      <button role="tab" id="tab-earth" data-mode="earth" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Earth events</button>
+      <button role="tab" id="tab-data" data-mode="data" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Data</button>
     </div>
     <label class="source-pick"><span class="sr-only">Source</span><select id="sourceSelect" aria-label="Choose what to listen to"></select></label>
     <button type="button" class="btn" id="uploadBtn"><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Open CSV</span></button>
     <input type="file" id="fileInput" hidden>
   </div>
+
+  <section class="eic-search" id="eicSearch" aria-labelledby="searchLabel">
+    <form id="searchForm" role="search" class="search-form">
+      <label for="searchInput" id="searchLabel" class="search-label"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Search <span id="eicTitle">NASA Earth Information Center</span></label>
+      <div class="search-row">
+        <input type="search" id="searchInput" maxlength="200" autocomplete="off" spellcheck="false" placeholder="What do you want to hear? e.g. methane from wetlands in the Amazon" aria-describedby="searchStatus">
+        <label class="field search-place"><span class="sr-only">Area</span><select id="searchPlace" aria-label="Area"></select></label>
+        <label class="field" id="searchStepsField"><span class="sr-only">Maps</span><select id="searchSteps" aria-label="How many maps"></select></label>
+        <button type="submit" class="btn btn-primary" id="searchBtn">Search</button>
+      </div>
+    </form>
+    <p class="search-status" id="searchStatus" role="status">Type in your own words. Gemini finds the data sets; press Search with nothing typed to see them all.</p>
+    <ul class="search-results" id="searchResults" aria-label="Search results"></ul>
+    <details class="eic-more">
+      <summary>Use another catalogue</summary>
+      <p class="card-note">Any STAC catalogue with a raster statistics API works, for example NASA VEDA: <code>https://openveda.cloud/api/stac</code> and <code>https://openveda.cloud/api/raster</code>.</p>
+      <div class="eic-more-row">
+        <label class="field">STAC API<input type="url" id="eicStac" spellcheck="false" autocomplete="off"></label>
+        <label class="field">Raster API<input type="url" id="eicRaster" spellcheck="false" autocomplete="off"></label>
+        <div class="eic-actions"><button type="button" class="btn" id="eicUse">Use this catalogue</button><button type="button" class="btn btn-quiet" id="eicReset">Back to earth.gov</button></div>
+      </div>
+    </details>
+  </section>
 
   <div class="studio-grid">
     <div class="col-main">
@@ -89,7 +114,7 @@
           <div class="drop-hint" id="dropHint" hidden>Drop a CSV, image or video</div>
         </div>
 
-        <div class="source-options" id="opts-data">
+        <div class="source-options" id="opts-data" hidden>
           <label class="field">Points to play
             <select id="lengthSelect">
               <option value="0">Every point</option>
@@ -105,32 +130,10 @@
             <label class="field"><span class="sr-only">Year</span><select id="powerYear" aria-label="Year"></select></label>
             <button type="submit" class="btn" id="powerBtn">Load</button>
           </form>
-          <form class="eic-form" id="eicForm">
-            <span class="power-title" id="eicTitle">NASA Earth Information Center</span>
-            <label class="field eic-dataset"><span class="sr-only">Data set</span><select id="eicDataset" aria-label="Earth Information Center data set"><option value="">Data sets load when you open this menu</option></select></label>
-            <label class="field"><span class="sr-only">Place</span><select id="eicPlace" aria-label="Place (a 2° box around it)"></select></label>
-            <label class="field"><span class="sr-only">Time steps</span><select id="eicSteps" aria-label="How many time steps"><option value="24">Latest 24 maps</option><option value="60" selected>Latest 60 maps</option><option value="120">Latest 120 maps</option></select></label>
-            <button type="submit" class="btn" id="eicBtn">Load</button>
-            <p class="card-note eic-info" id="eicInfo"></p>
-            <details class="eic-more">
-              <summary>Use another catalogue</summary>
-              <p class="card-note">Any STAC catalogue with a raster statistics API works, for example NASA VEDA: <code>https://openveda.cloud/api/stac</code> and <code>https://openveda.cloud/api/raster</code>.</p>
-              <label class="field">STAC API<input type="url" id="eicStac" spellcheck="false" autocomplete="off"></label>
-              <label class="field">Raster API<input type="url" id="eicRaster" spellcheck="false" autocomplete="off"></label>
-              <div class="eic-actions"><button type="button" class="btn" id="eicUse">Use this catalogue</button><button type="button" class="btn btn-quiet" id="eicReset">Back to earth.gov</button></div>
-            </details>
-          </form>
         </div>
 
         <div class="source-options" id="opts-video" hidden>
           <p class="card-note" id="videoNote">Two frames per second. NASA presets are read through their own colour bar; your videos (MP4 or WebM) play brightness, colour and motion. The picture follows the music.</p>
-          <form class="eic-form" id="eicVidForm">
-            <span class="power-title">NASA Earth Information Center time-lapse</span>
-            <label class="field eic-dataset"><span class="sr-only">Data set</span><select id="eicVidDataset" aria-label="Earth Information Center data set for the time-lapse"><option value="">Data sets load when you open this menu</option></select></label>
-            <label class="field"><span class="sr-only">Area</span><select id="eicVidPlace" aria-label="Area of the time-lapse"></select></label>
-            <label class="field"><span class="sr-only">Maps</span><select id="eicVidSteps" aria-label="How many maps"><option value="24" selected>Latest 24 maps</option><option value="48">Latest 48 maps</option><option value="96">Latest 96 maps</option></select></label>
-            <button type="submit" class="btn" id="eicVidBtn">Make time-lapse</button>
-          </form>
         </div>
 
         <div class="source-options" id="opts-earth" hidden>
@@ -151,7 +154,7 @@
           <button type="button" class="btn" id="fetchBtn"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Get latest</button>
         </div>
 
-        <div class="source-options" id="opts-image" hidden>
+        <div class="source-options" id="opts-image">
           <div class="seg" role="group" aria-label="What to measure" id="analysisGroup">
             <button type="button" data-analysis="light" aria-pressed="true">Light</button>
             <button type="button" data-analysis="color" aria-pressed="false">Colour</button>
@@ -167,12 +170,6 @@
             <input type="range" id="stepsRange" min="16" max="160" step="8" value="48">
           </label>
           <label class="field" id="satDateField" hidden>Date <input type="date" id="satDate"></label>
-          <form class="eic-form" id="eicImgForm">
-            <span class="power-title">NASA Earth Information Center map</span>
-            <label class="field eic-dataset"><span class="sr-only">Data set</span><select id="eicImgDataset" aria-label="Earth Information Center data set for the picture"><option value="">Data sets load when you open this menu</option></select></label>
-            <label class="field"><span class="sr-only">Area</span><select id="eicImgPlace" aria-label="Area of the map"></select></label>
-            <button type="submit" class="btn" id="eicImgBtn">Load latest map</button>
-          </form>
         </div>
       </section>
 
@@ -275,6 +272,7 @@
 
       <details class="card disclosure">
         <summary><h2>Space &amp; tone</h2></summary>
+        <div class="disclosure-tools"><p class="card-note">Where the sound sits around you, the room and the tone.</p><button type="button" class="btn btn-quiet" id="spaceReset" title="Stereo, automatic movement, 22% room, flat equaliser">Reset</button></div>
         <div class="form-grid">
           <label class="field">Output
             <select id="output">
@@ -420,7 +418,8 @@
   </span>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-<div class="sr-only" id="srLive" aria-live="polite"></div>
+<div class="sr-only" id="srLive" role="status" aria-live="polite" aria-atomic="true"></div>
+<div class="sr-only" id="srLive2" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <dialog id="exportDialog" aria-labelledby="exportTitle">
   <div class="dlg-head"><h2 id="exportTitle">Export</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
@@ -439,7 +438,10 @@
   <div class="dlg-head"><h2 id="tableTitle">Readings and notes</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
   <p class="dlg-note" id="tableNote"></p>
   <div class="table-wrap"><table><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
-  <p class="dlg-note">Select a row to hear that step.</p>
+  <div class="btn-row table-tools"><p class="dlg-note">Select a row to hear that step.</p>
+    <button type="button" class="btn btn-primary" id="tableXlsx"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Excel (.xlsx)</button>
+    <button type="button" class="btn" id="tableCsv">CSV</button>
+  </div>
 </dialog>
 
 <dialog id="scoreDialog" class="dlg-wide" aria-labelledby="scoreDlgTitle">
@@ -513,6 +515,8 @@
 <script src="src/js/core/score.js"></script>
 <script src="src/js/core/feeds.js"></script>
 <script src="src/js/core/eic.js"></script>
+<script src="src/js/core/eic-search.js"></script>
+<script src="src/js/core/xlsx.js"></script>
 <script src="src/js/core/plan.js"></script>
 <script src="src/js/core/story.js"></script>
 <script src="src/js/core/spotlight.js"></script>
@@ -544,6 +548,8 @@
 <script src="src/js/ui/story-view.js"></script>
 <script src="src/js/ui/about-view.js"></script>
 <script src="src/js/ui/eic-view.js"></script>
+<script src="src/js/ui/search.js"></script>
+<script src="src/js/ui/options.js"></script>
 <script src="src/js/ui/tour.js"></script>
 <script src="src/js/app.js"></script>
 <script src="src/js/ui/combo.js"></script>
