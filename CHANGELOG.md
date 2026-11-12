@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.9.0 — 12 November 2026
+- **Search: keywords first, AI when you want it.** Results now appear as you type, from the catalogue (no AI needed). **AI mode** (a switch, *Gemini*) sends your question in your own words to Gemini; it is remembered. **×** / `Esc` clears the search, and **Try:** ideas run a search in one click.
+- **Boundaries for the AI.** Gemini only searches the Earth Information Center: questions that are not about Earth data get “only Earth data”, the question is treated as data (never as instructions), answers keep only real catalogue ids, Egypt is never a place, questions are cleaned and cut to 200 characters, only this site may call the server (other origins are refused) and each address has a limit per minute.
+- **View original source opens the Earth Information Center** (earth.gov) for the NASA pictures and videos.
+- **Radar** (was *Around the centre*) now covers the whole picture whatever its shape (the beam reaches the corners). **Click or tap the picture** to jump there.
+- **Follow pointer plays only the data**: the data channel only, and only where the picture shows data (“No data here” elsewhere). Fixed: with *Colour key*, the value under the pointer was not read.
+- **Fewer, clearer instruments:** Piano, Electric piano, Guitar, Marimba, Flute and **Violin** (with vibrato); Organ, Bass and Synth are gone.
+- **Drums (Beta):** a kick, snare and hi-hat beat with the steps, stronger when the data is high; also in exported audio.
+- **Video: Motion plays by default.**
+- **Output and export: stereo or binaural only** (surround removed from the studio).
+- **Earth events menu:** natural events and earthquakes together, or the offline sample.
+- **Reload** next to the menu loads the current source again.
+- **Clearer help:** what *Light*, *Colour* and *Colour key* measure, and what the *Highest value* channel is, are explained on the buttons and channels.
+- **Errors:** an unexpected error or a service that does not answer now gives a short message (and Reload), and going offline or online is announced.
+- About: George's bio rewritten in his own voice. Story: the “Open my own CSV” button is gone.
+
 ## 2.8.1 — 12 November 2026
 - **AI search keeps working when Gemini is busy.** If Gemini 3.8 Flash answers "high demand", the server asks again, then lets Gemini 3.6 Flash (or 3.5 Flash) answer; the search line says which model picked. A real error (such as a wrong key) is shown at once.
 

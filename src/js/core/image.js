@@ -191,12 +191,13 @@
     if (path === 'radar') {
       const cx = (w - 1) / 2;
       const cy = (h - 1) / 2;
-      const R = Math.min(w, h) / 2;
+      // the sweep reaches the corners, so a wide or tall picture is covered completely
+      const R = Math.hypot(w, h) / 2;
       const a0 = (i / n) * 2 * Math.PI;
       const a1 = ((i + 1) / n) * 2 * Math.PI;
       return (fn) => {
-        const rays = 6;
-        const samples = Math.max(24, Math.round(R));
+        const rays = Math.max(6, Math.min(64, Math.ceil(((a1 - a0) * R) / 2)));
+        const samples = Math.max(24, Math.min(600, Math.round(R)));
         for (let k = 0; k < rays; k++) {
           const a = a0 + ((k + 0.5) / rays) * (a1 - a0);
           const dx = Math.sin(a);
@@ -282,8 +283,9 @@
     const cx = Math.round(nx * (w - 1));
     const cy = Math.round(ny * (h - 1));
     if (analysis === 'key' && key) {
-      const k = key.valueOf ? key : (key._prepared ||= makeKey(key));
-      const ks = keyStats(px, w, h, (fn) => eachInRect(w, Math.max(0, cx - r), Math.min(w, cx + r + 1), Math.max(0, cy - r), Math.min(h, cy + r + 1), 900, fn), k, background(px, w, h));
+      // every object has a valueOf: only a prepared key has its own (a raw colour-bar definition is prepared once)
+      const k = Object.prototype.hasOwnProperty.call(key, 'valueOf') ? key : (key._prepared ||= makeKey(key));
+      const ks = keyStats(px, w, h, (fn) => eachInRect(w, Math.max(0, cx - r), Math.min(w, cx + r + 1), Math.max(0, cy - r), Math.min(h, cy + r + 1), 900, fn), k, key.noBackground ? null : background(px, w, h));
       return ks ? [ks.value, ks.cover] : null;
     }
     const s = bandStats(

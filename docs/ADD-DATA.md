@@ -15,7 +15,7 @@ When the centre publishes a new data set, search finds it by itself.
 
 ### AI search (Gemini) on your own server
 
-Search ranks results with Gemini 3.8 Flash through `api/search.js`, a Vercel serverless function. The API key is never in the page or in Git: in Vercel open the project → **Settings → Environment Variables**, add `GEMINI_API_KEY` with your key (Production and Preview), save, then redeploy. Without the variable, search still works by keyword and says AI search is not available.
+In **AI mode** search ranks results with Gemini 3.8 Flash through `api/search.js`, a Vercel serverless function. The API key is never in the page or in Git: in Vercel open the project → **Settings → Environment Variables**, add `GEMINI_API_KEY` with your key (Production and Preview), save, then redeploy. Without the variable, search still works by keyword and says AI search is not available.
 
 ## 2. Another catalogue (no code)
 

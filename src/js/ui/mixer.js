@@ -14,6 +14,7 @@
     const lead = Math.max(0, p.channels.findIndex((c) => c.active));
     p.channels.forEach((c, j) => {
       const m = app.state.mix[j];
+      if (m.instrument && m.instrument !== 'inherit' && !B.audio.instruments[m.instrument]) m.instrument = 'inherit'; // removed instruments
       const range = c.max > c.min ? `${stats.fmtNum(c.min, c.unit)} – ${stats.fmtNum(c.max, c.unit)}` : 'one note per event';
       const main = B.audio.instruments[app.state.settings.instrument]?.name || 'main';
       const inst = el('select', { 'aria-label': `${c.name} instrument` }, new Option(`${main} (Sound)`, 'inherit'), ...Object.entries(B.audio.instruments).map(([k, v]) => new Option(v.name, k)));

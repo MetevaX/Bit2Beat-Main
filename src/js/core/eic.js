@@ -197,7 +197,7 @@
     });
     layerIds.forEach((l, i) => {
       const nameOf = l || 'Highest';
-      channels.push({ name: `${l ? nameOf + ', highest' : 'Highest value'}`, unit, values: series[l].max, instrument: 'marimba', mute: true, hint: 'Highest value in the same area.' });
+      channels.push({ name: `${l ? nameOf + ', highest' : 'Highest value'}`, unit, values: series[l].max, instrument: 'marimba', mute: true, hint: 'The peak: the highest value anywhere in the area on each map (the first channel is the average). Muted at first; press M to hear it.' });
     });
     return {
       name: `${info.title} · ${where}`,
@@ -354,7 +354,7 @@
       range,
       channels: [
         { name: `${title}, average`, unit, values: stats.map((s) => s.mean), instrument: 'soft', hint: `Average of the map over the ${reg.name === 'whole world' ? 'whole world' : 'area shown around ' + reg.name}.` },
-        { name: 'Highest value', unit, values: stats.map((s) => s.max), instrument: 'marimba', mute: true, hint: 'Highest value in the area shown.' },
+        { name: 'Highest value', unit, values: stats.map((s) => s.max), instrument: 'marimba', mute: true, hint: 'The peak: the highest value anywhere in the area shown on each map (the first channel is the average). Muted at first; press M to hear it.' },
       ],
       origin: {
         source: `${name} · ${info.provider || 'NASA'}`,

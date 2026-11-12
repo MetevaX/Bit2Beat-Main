@@ -56,40 +56,16 @@
       tail: 0.2,
       sustain: true,
     },
-    organ: {
-      name: 'Organ',
-      family: 'Keys',
-      hint: 'Steady notes with rich harmonics',
-      partials: [1, 0.5, 0.32, 0.22, 0.08, 0.06],
-      attack: 0.025,
-      tail: 0.15,
-      sustain: true,
-    },
+    // key kept as 'strings' so saved links and sessions still work; it sounds and is named as a violin
     strings: {
-      name: 'Strings',
+      name: 'Violin',
       family: 'Strings',
-      hint: 'A slow attack and a full, sustained tone',
-      partials: [1, 0.45, 0.3, 0.2, 0.16, 0.1],
-      attack: 0.14,
-      tail: 0.4,
+      hint: 'A bowed tone that swells in, with a gentle vibrato',
+      partials: [1, 0.62, 0.42, 0.3, 0.22, 0.15, 0.1, 0.06],
+      attack: 0.09,
+      tail: 0.35,
       sustain: true,
-    },
-    bass: {
-      name: 'Bass',
-      family: 'Bass',
-      hint: 'A rounded tone with fewer upper harmonics',
-      partials: [1, 0.25, 0.09],
-      attack: 0.012,
-      tail: 0.4,
-    },
-    warm: {
-      name: 'Synth',
-      family: 'Electronic',
-      hint: 'A smooth electronic tone',
-      partials: [1, 0.03, 0.24, 0.02, 0.1],
-      attack: 0.045,
-      tail: 0.45,
-      sustain: true,
+      vibrato: { rate: 5.6, depth: 9, delay: 0.12 },
     },
   };
 
@@ -317,7 +293,24 @@
       osc.type = 'sine';
       osc.frequency.value = frequency;
       if (kind === 'electric' && index === 2) osc.detune.value = 7;
-      if (kind === 'strings') osc.detune.value = index % 2 ? 4 : -4;
+      if (model.vibrato && ctx.createOscillator) {
+        // a slow pitch wobble after the bow settles (cents), the same on every partial
+        const lfo = ctx.createOscillator();
+        const depth = ctx.createGain();
+        lfo.frequency.value = model.vibrato.rate;
+        depth.gain.setValueAtTime(0, safeTime);
+        depth.gain.linearRampToValueAtTime(model.vibrato.depth, safeTime + model.vibrato.delay + 0.15);
+        lfo.connect(depth);
+        depth.connect(osc.detune);
+        lfo.start(safeTime);
+        lfo.stop(safeTime + total + 0.02);
+        lfo.onended = () => {
+          try {
+            lfo.disconnect();
+            depth.disconnect();
+          } catch {}
+        };
+      }
       const harmonicWeight = index > 0 ? Math.pow(sharpness, 0.7) : 1;
       part.gain.value = (level * harmonicWeight) / sum;
       osc.connect(part);
@@ -400,6 +393,75 @@
     });
   }
 
+  /** One second of white noise per context (fixed seed, so exports are identical every time). */
+  const noiseCache = new WeakMap();
+  function noise(ctx) {
+    if (noiseCache.has(ctx)) return noiseCache.get(ctx);
+    const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    let seed = 987654321;
+    for (let i = 0; i < d.length; i++) d[i] = ((seed = (seed * 16807) % 2147483647) / 2147483647) * 2 - 1;
+    noiseCache.set(ctx, buf);
+    return buf;
+  }
+  function hit(ctx, out, t, len, level, build, activeNodes) {
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0.0001, t);
+    env.gain.linearRampToValueAtTime(level, t + 0.002);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    env.connect(out);
+    const src = build(env);
+    src.start(t);
+    src.stop(t + len + 0.02);
+    if (activeNodes) activeNodes.add(src);
+    src.onended = () => {
+      if (activeNodes) activeNodes.delete(src);
+      try {
+        src.disconnect();
+        env.disconnect();
+      } catch {}
+    };
+  }
+  /**
+   * Drums (Beta): a simple rock beat on the steps, eight steps (eighth notes) to a bar.
+   * Kick on beats 1 and 3, snare on 2 and 4, hi-hat on every eighth. `energy` (0–1, the lead
+   * channel's value at this step) makes the kick and hi-hat louder when the data is high.
+   */
+  function drumStep(ctx, out, i, t, energy = 0.5, activeNodes = null) {
+    const pos = i % 8;
+    const e = 0.45 + 0.55 * Math.max(0, Math.min(1, energy));
+    if (pos === 0 || pos === 4)
+      hit(ctx, out, t, 0.32, 0.55 * e, (env) => {
+        const o = ctx.createOscillator();
+        o.frequency.setValueAtTime(140, t);
+        o.frequency.exponentialRampToValueAtTime(42, t + 0.14);
+        o.connect(env);
+        return o;
+      }, activeNodes);
+    if (pos === 2 || pos === 6)
+      hit(ctx, out, t, 0.18, 0.22, (env) => {
+        const n = ctx.createBufferSource();
+        n.buffer = noise(ctx);
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass';
+        f.frequency.value = 1800;
+        f.Q.value = 0.7;
+        n.connect(f);
+        f.connect(env);
+        return n;
+      }, activeNodes);
+    hit(ctx, out, t, pos % 2 ? 0.035 : 0.05, (pos % 2 ? 0.035 : 0.06) * e, (env) => {
+      const n = ctx.createBufferSource();
+      n.buffer = noise(ctx);
+      const f = ctx.createBiquadFilter();
+      f.type = 'highpass';
+      f.frequency.value = 7000;
+      n.connect(f);
+      f.connect(env);
+      return n;
+    }, activeNodes);
+  }
+
   /**
    * Schedule every active note of plan step `i` at context time `t` through `renderer`.
    * Shared by live playback and offline export so both sound identical.
@@ -415,6 +477,12 @@
       voice(ctx, bus.input, n.midi, t, plan.noteLen, n.gain, ch.instrument, activeNodes, { value: n.value });
       if (n.cue) cue(ctx, bus.input, t + 0.004, n.gain, activeNodes);
     }
+    if (plan.settings?.drums) {
+      const lead = notes.find((n) => n.active && n.midi != null);
+      const bus = renderer.bus('drums');
+      bus.setPosition({ x: 0, y: 1, z: 0.2 }, t);
+      drumStep(ctx, bus.input, i, t, lead ? lead.value : 0.3, activeNodes);
+    }
   }
 
   function peakLimit(chans, ceiling) {
@@ -429,6 +497,7 @@
 
   return {
     instruments,
+    drumStep,
     impulseResponse,
     createEqChain,
     createRenderer,

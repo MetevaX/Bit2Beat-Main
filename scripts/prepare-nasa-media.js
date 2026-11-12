@@ -19,12 +19,12 @@ const H = 90;
 const descriptions = {
   gedi: {
     name: 'GEDI forest height',
-    credit: 'NASA Scientific Visualization Studio · Kel Elkins',
+    credit: 'NASA Earth Information Center · visualization by NASA SVS (Kel Elkins)',
     note: 'Forest-height visualization using GEDI lidar observations from April 2019–April 2020; taller forest is drawn higher and greener.',
   },
   co2: {
     name: 'Global carbon dioxide',
-    credit: 'NASA Scientific Visualization Studio · AJ Christensen; science: Lesley Ott',
+    credit: 'NASA Earth Information Center · visualization by NASA SVS (AJ Christensen; science: Lesley Ott)',
     note: 'DYAMOND / GEOS model visualization of atmospheric CO₂ during January–March 2020; higher concentrations are drawn in brighter colours.',
   },
 };
@@ -66,7 +66,7 @@ for (const item of manifest) {
       channels,
       origin: {
         source: desc.credit,
-        url: item.page,
+        url: item.eic || item.page, // “View original source” opens the Earth Information Center
         live: false,
         fetched: '',
         note: `${desc.note} ${times.length} samples, two per second, each the average of every frame in its half second; values are read from the visualisation's own colour bar.`,

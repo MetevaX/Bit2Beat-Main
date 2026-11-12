@@ -89,7 +89,7 @@
           title: 'Earth is busy',
           text: 'Now open Earth events. Natural events and earthquakes play as one sweep from west to east: further north sounds higher, bigger sounds louder.',
           action: { type: 'mode', value: 'earth', show: 'Take me there' },
-          done: 'See the map? Each dot is a real event: wildfires, storms, floods, ice and earthquakes (the bass), played from west to east.',
+          done: 'See the map? Each dot is a real event: wildfires, storms, floods, ice and earthquakes (electric piano), played from west to east.',
         },
         { id: 'export', mood: 'happy', target: '#exportBtn', title: 'Take it home', text: 'Export makes WAV files (stereo, binaural or surround), the notes as CSV and the score. The address bar remembers everything, so a refresh or a shared link opens this exact view.' },
         { id: 'guide', mood: 'happy', target: '#guideBtn', title: 'I’m always here', text: 'Press Guide (or G) whenever you want me to explain a tab. My card under the score also gives a tip when you open a tab for the first time.' },
@@ -124,7 +124,7 @@
     earth: {
       title: 'Earth events',
       steps: [
-        { id: 'e-source', mood: 'curious', target: '.source-pick', ensure: 'earth', title: 'Natural events and earthquakes', text: 'NASA EONET natural events (wildfires, storms, floods, ice) and USGS earthquakes play together; earthquakes are one more channel, the bass. The offline sample always works, even without internet.' },
+        { id: 'e-source', mood: 'curious', target: '.source-pick', ensure: 'earth', title: 'Natural events and earthquakes', text: 'NASA EONET natural events (wildfires, storms, floods, ice) and USGS earthquakes play together; earthquakes are one more channel (electric piano). The offline sample always works, even without internet.' },
         { id: 'e-map', mood: 'excited', target: '#dropZone', ensure: 'earth', title: 'Read the map like a page', text: 'Each dot is one event. When you press Play, the amber line sweeps from west to east: further north is a higher note, bigger is louder and a bigger dot. Hover a dot to read it; click it to hear it.' },
         { id: 'e-options', mood: 'happy', target: '#opts-earth', ensure: 'earth', title: 'Rhythm of the sweep', text: 'Choose the period. Even steps plays one event per note; Map distance keeps the real gaps along the sweep, so busy places sound busy and empty oceans go quiet.' },
         { id: 'e-live', mood: 'curious', target: '#fetchBtn', ensure: 'earth', title: 'Live, saved or bundled', text: 'Get latest asks USGS or NASA for the newest events. The label on the card always says whether you hear Live data, a Saved copy or the Bundled snapshot.' },
@@ -138,7 +138,7 @@
         { id: 'i-search', mood: 'excited', target: '#eicSearch', ensure: 'image', title: 'Search the Earth Information Center', text: 'Type a subject and a place in your own words. Choose a result and I draw its newest map, coloured over the real spread of the data, and play it.' },
         { id: 'i-source', mood: 'curious', target: '.source-pick', ensure: 'image', title: 'Or pick a picture', text: 'NASA pictures that work offline, live NASA satellite views (choose a date), an offline world map, or Open picture (next to Steps) for your own.' },
         { id: 'i-look', mood: 'happy', target: '#analysisGroup', ensure: 'image', title: 'What to hear', text: 'Light plays brightness, detail and where the bright areas are. Colour plays red, green and blue. Colour key (NASA pictures) reads the real value through the picture’s own colour bar.' },
-        { id: 'i-scan', mood: 'excited', target: '#scanGroup', ensure: 'image', title: 'How to scan', text: 'Left to right, top to bottom, around the centre like a radar, or Follow pointer: move your mouse or finger over the picture and hear what is under it.' },
+        { id: 'i-scan', mood: 'excited', target: '#scanGroup', ensure: 'image', title: 'How to scan', text: 'Left to right, top to bottom, Radar (a beam turns around the centre and reaches every corner), or Follow pointer: move your mouse or finger over the picture and hear the data under it. Click the picture to jump there.' },
         { id: 'i-steps', mood: 'curious', target: '#opts-image .field-range', ensure: 'image', title: 'Steps', text: 'How many bands the picture is cut into, from 16 to 160. More steps means more detail and a longer melody. Empty background around a globe stays silent.' },
       ],
     },

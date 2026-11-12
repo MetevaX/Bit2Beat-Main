@@ -101,7 +101,7 @@ Each chapter shows:
 | **Sound** | Instrument, scale, key, range and tempo. **Suggest** picks them from the shape of the data. |
 | **Channels** | One row per data series: volume, instrument, **M**ute, **S**olo and **⇅** (flip pitch direction). |
 | **Listening aids** | Shared pitch scale, ticks on sudden jumps, reference tone. |
-| **Space & tone** | Output (stereo, binaural, 5.1, 7.1, 7.1.4), movement, room and equaliser. |
+| **Space & tone** | Output (stereo or binaural for headphones), movement, room and equaliser, and **Reset**. |
 | **Melody** | Every note over time; the amber line is the playhead. |
 | **What the data says** | Trend, highs and lows, sudden jumps, in plain sentences. **Read aloud** speaks them; press again to stop. |
 | **Score** | Live sheet music of the lead channel; **Full score** shows every channel; **PNG** downloads it. |
@@ -111,13 +111,14 @@ Each chapter shows:
 
 ## Searching the Earth Information Center
 
-Above the Image, Video and Data tabs is one search for the whole NASA Earth Information Center catalogue. Type what you want to hear in your own words, for example *methane from wetlands in the Amazon* or *where do people live in India*, and press **Search** (with nothing typed, it lists every data set).
+Above the Image, Video and Data tabs is one search for the whole NASA Earth Information Center catalogue.
 
-1. Keyword matches appear at once.
-2. Gemini then picks the best data sets and the place you named (its latitude and longitude, even if it is not one of the 18 places). The **Area** menu shows the place it found.
-3. Choose a result to hear it in the tab that is open: **Image** draws its newest map, **Video** makes a time-lapse of the latest 24, 48 or 96 maps, **Data** plays one note per map (24, 60 or 120). Changing the area or the number of maps replays it.
+- **Keyword search** (the default): type a subject such as *carbon dioxide*, *methane* or *fire*; results appear as you type. Everyday words work too (*swamp* finds wetlands, *trees* finds forest growth). The **Try:** ideas under the box run a search in one click; **All data sets** lists everything. **×** (or `Esc`) clears the search.
+- **AI mode** (switch at the top right, *Gemini*): write what you want to hear in your own words, for example *methane from wetlands in the Amazon*, and press **Ask Gemini**. Gemini picks the best data sets and finds the place (its latitude and longitude, even if it is not one of the 18 places); the **Area** menu shows it. It only searches for Earth data: other questions get a polite “only Earth data” answer.
 
-AI search needs the online version (bit2beat.vercel.app). In the single file or offline, search works by keyword. **Use another catalogue** searches any other STAC catalogue, such as NASA VEDA.
+Choose a result to hear it in the tab that is open: **Image** draws its newest map, **Video** makes a time-lapse of the latest 24, 48 or 96 maps, **Data** plays one note per map (24, 60 or 120). Changing the area or the number of maps replays it. **Reload** (next to the menu) loads the current source again with the newest data.
+
+AI mode needs the online version (bit2beat.vercel.app); keyword search also works in the single file. **Use another catalogue** searches any other STAC catalogue, such as NASA VEDA.
 
 ## Data tab
 
@@ -139,7 +140,7 @@ Options:
 
 ![Earthquakes](screenshots/earthquakes.png)
 
-- **Natural events and earthquakes** (default) – NASA EONET wildfires, storms, floods, sea and lake ice and more, and USGS earthquakes (magnitude 4.5+), from the past 7, 30 or 60 days, in one sweep. Each kind of event has its own channel and instrument; earthquakes are the bass.
+- **Natural events and earthquakes** (default) – NASA EONET wildfires, storms, floods, sea and lake ice and more, and USGS earthquakes (magnitude 4.5+), from the past 7, 30 or 60 days, in one sweep. Each kind of event has its own channel and instrument; earthquakes are the electric piano.
 - **Offline sample** of both, which always works.
 - **Natural events only** and **Earthquakes only** (past day, week or month; magnitude 2.5+, 4.5+ or significant).
 
@@ -166,7 +167,7 @@ Events are played **from west to east**, as one sweep across the map, like readi
 Options:
 
 - **Light** – three voices: brightness (CIE L\*), detail (how much brightness varies) and the height of bright areas. **Colour** – red, green and blue. **Colour key** (NASA EIC stills) – the data value read through the picture's colour bar, and how much of each band shows data. Empty background is silent.
-- **Left to right**, **Top to bottom** (a line moves down the picture, row by row; with height speakers the sound comes down too), **Around the centre** (like a radar sweep) or **Follow pointer** (hear what is under your mouse or finger; the player bar steps aside until you choose another scan).
+- **Left to right**, **Top to bottom** (a line moves down the picture, row by row; with binaural headphones the sound comes down too), **Radar** (a beam turns around the centre and reaches every corner of the picture, whatever its shape) or **Follow pointer** (hear the data under your mouse or finger: only the data value, and only where the picture shows data; the player bar steps aside until you choose another scan). Click the picture to jump to that place.
 - **Steps** – how many bands the picture is cut into (16–160).
 
 ## Video tab
@@ -184,11 +185,11 @@ Press **Play**: the muted video follows the music. Click the picture to play or 
 - **Scale**: Pentatonic (default, never sounds wrong), Major, Natural minor, Dorian, Harmonic minor, Blues, Hijaz (maqam) and Chromatic (every semitone, most precise).
 - **Range**: 1, 2 or 3 octaves from C3 (plus the key).
 - **Tempo**: 50–200 BPM; one data step is one eighth note.
-- **Instruments**: Piano, Electric piano, Guitar, Marimba, Flute, Organ, Strings, Bass, Synth. Each channel can have its own.
+- **Instruments**: Piano, Electric piano, Guitar, Marimba, Flute, Violin. Each channel can have its own; the Sound card and the first channel stay in step. **Drums (Beta)** add a beat (kick, snare, hi-hat) that gets stronger when the data is high.
 - **Same pitch scale for same units** keeps max, mean and min temperature at their real distance apart.
 - **Tick on sudden jumps** adds a quiet click on readings that jump away from their neighbours.
 - **Reference tone** plays a soft drone at the data’s baseline (GISTEMP’s 1951–1980 average) or its mean, so you hear above vs. below.
-- **Output**: stereo, binaural (headphones, with height cues), 5.1, 7.1 or 7.1.4. If your device has fewer speakers, surround is simulated over headphones.
+- **Output**: stereo, or binaural (headphones, with 3D height cues).
 
 ## Reading what you hear
 
@@ -201,7 +202,7 @@ Press **Play**: the muted video follows the music. Click the picture to play or 
 - **The address bar remembers everything.** Page (Studio or Story), tab, source, sound settings, channel mix, image options and play position are kept in the link. Refresh and you are back where you were; send the link and others open the same view. (An uploaded file cannot travel in a link.)
 - **Sessions** saves named setups in this browser.
 - **Record** captures what you hear live (browser codec).
-- **Export** renders exact files from the same notes: stereo WAV, binaural WAV, 5.1 / 7.1 / 7.1.4 WAV, an ADM BWF object master, the notes as CSV, and the score as ABC or PNG. Audio is normalised to −1 dBFS.
+- **Export** renders exact files from the same notes: stereo WAV or binaural WAV (with the drums when they are on), the notes as CSV, and the score as ABC or PNG. **Readings** downloads every value as an Excel workbook or CSV. Audio is normalised to −1 dBFS.
 
 ## Keyboard shortcuts
 
@@ -224,5 +225,4 @@ Press **Play**: the muted video follows the music. Click the picture to play or 
 | No sound | Press Play once (browsers only start audio after a click); check the volume and that a channel is not muted. |
 | “Live data unavailable” | You are offline or the feed is down; Bit2Beat keeps playing the saved copy. |
 | Satellite view is black or missing | That date has no imagery yet; pick an earlier date or an offline picture. |
-| Surround export sounds like stereo | Your device has two outputs; the file itself still has all channels. Open it in a DAW or surround player. |
 | Page looks unchanged after an update | Hard-refresh (`Ctrl`/`Cmd` + `Shift` + `R`). |

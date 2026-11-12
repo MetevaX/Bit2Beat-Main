@@ -118,7 +118,7 @@
    * stays pentatonic, so any data sounds consonant: sad is minor pentatonic, happy and excited major.
    */
   const MOODS = Object.freeze({
-    sad: { name: 'Sad', scale: 'pentmin', key: 9, range: 24, tempo: 66, instrument: 'strings', room: 0.45, eq: 'warm', hint: 'minor pentatonic in A, slow strings in a big warm room' },
+    sad: { name: 'Sad', scale: 'pentmin', key: 9, range: 24, tempo: 66, instrument: 'strings', room: 0.45, eq: 'warm', hint: 'minor pentatonic in A, slow violin in a big warm room' },
     happy: { name: 'Happy', scale: 'pent', key: 0, range: 24, tempo: 112, instrument: 'marimba', room: 0.2, eq: 'bright', hint: 'major pentatonic in C, marimba at a walking pace' },
     excited: { name: 'Excited', scale: 'pent', key: 7, range: 36, tempo: 160, instrument: 'electric', room: 0.12, eq: 'bright', hint: 'major pentatonic in G over three octaves, fast electric piano' },
   });

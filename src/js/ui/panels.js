@@ -98,7 +98,7 @@
         const i = sizes.indexOf(Math.max(...sizes));
         if (c.sizeUnit && i >= 0 && sizes[i] > -Infinity) out.push(`Largest ${c.name.toLowerCase()}: ${s.details[i]}.`);
       });
-      out.push(`Each kind of event has its own instrument${s.feed === 'events' ? ' (earthquakes are the bass)' : ''}. Further north plays higher; bigger events play louder.`);
+      out.push(`Each kind of event has its own instrument${s.feed === 'events' ? ' (earthquakes are the electric piano)' : ''}. Further north plays higher; bigger events play louder.`);
     }
     if (p.settings.spacing === 'time') out.push('Map distance is on: gaps in the sound follow the real gaps between events on the map.');
     return out;
@@ -161,6 +161,7 @@
       showMood();
       $('sharedScale').checked = S.sharedScale;
       $('cues').checked = S.cues;
+      $('drums').checked = !!S.drums;
       $('drone').value = S.drone;
       $('path').value = S.path;
       $('output').value = A.output;
@@ -224,6 +225,10 @@
     $('tempo').onchange = (e) => set('tempo', +e.target.value);
     $('sharedScale').onchange = (e) => set('sharedScale', e.target.checked);
     $('cues').onchange = (e) => set('cues', e.target.checked);
+    $('drums').onchange = (e) => {
+      set('drums', e.target.checked);
+      announce(e.target.checked ? 'Drums on.' : 'Drums off.');
+    };
     $('drone').onchange = (e) => set('drone', e.target.value);
     $('path').onchange = (e) => set('path', e.target.value);
     $('autoTuneBtn').onclick = () => {

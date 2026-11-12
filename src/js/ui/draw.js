@@ -198,7 +198,10 @@
     } else if (ui.scan === 'radar' && n) {
       const cx = R.x + R.w / 2;
       const cy = R.y + R.h / 2;
-      const rad = Math.min(R.w, R.h) / 2;
+      const rad = Math.hypot(R.w, R.h) / 2; // to the corners, like the scan
+      g.beginPath();
+      g.rect(R.x, R.y, R.w, R.h);
+      g.clip();
       const a0 = (pos / n) * Math.PI * 2 - Math.PI / 2;
       const a1 = ((pos + 1) / n) * Math.PI * 2 - Math.PI / 2;
       g.fillStyle = 'rgba(232,163,61,0.28)';

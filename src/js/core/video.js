@@ -111,7 +111,7 @@
    * changes small in pitch: a range narrower than this never stretches over every octave.
    */
   function channels(key = null) {
-    const motion = { name: 'Motion', unit: 'ΔL*', minSpan: 3, instrument: 'marimba', mute: true, hint: 'How fast the picture changes at that moment (mean lightness change over 1/12 s).' };
+    const motion = { name: 'Motion', unit: 'ΔL*', minSpan: 3, instrument: 'marimba', hint: 'How fast the picture changes at that moment (mean lightness change over 1/12 s).' };
     if (key)
       return [
         { name: key.name, unit: key.unit, minSpan: (key.max - key.min) / 4, instrument: 'soft', hint: `Mean ${/^[A-Z][a-z]/.test(key.name) ? key.name.toLowerCase() : key.name} shown on screen, read from the visualisation's colour bar (${key.min}–${key.max} ${key.unit}).` },

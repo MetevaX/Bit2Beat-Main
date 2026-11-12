@@ -1,6 +1,6 @@
 # Bit2Beat
 
-**Listen to Earth data.** Bit2Beat turns NASA climate records, live natural events, your own spreadsheets, pictures and videos into music you can hear, follow as a score, and export as stereo, binaural, surround or ADM BWF audio.
+**Listen to Earth data.** Bit2Beat turns NASA climate records, live natural events, your own spreadsheets, pictures and videos into music you can hear, follow as a score, and export as stereo or binaural audio, with an optional drum beat (Beta).
 
 Built for the NASA Space Apps Challenge 2026, *The Earth Information Jukebox*, by Team Bit2Beat (see [Team](#team)).
 
@@ -29,8 +29,8 @@ One **search** above the Image, Video and Data tabs finds any data set of the NA
 | --- | --- | --- |
 | **Data** | NASA GISTEMP global temperature 1880–2025 · NASA POWER Arctic (Svalbard) yearly 1981–2024 and daily 2025 · NASA POWER daily data for 18 places around the world and any year since 1981 (online) · **every time-series data set of the NASA Earth Information Center (earth.gov) data API**, for the whole world or a place (online) · NASA GISTEMP CSV sample · your CSV · four practice shapes | CSV: comma, semicolon or tab, quoted cells, decimal commas, up to 6 numeric columns; a year/date/name column becomes the labels, `Temp (°C)` gives the unit. |
 | **Video** | Bundled NASA Earth Information Center videos: GEDI forest height and global CO₂ · **a time-lapse of the latest 24–96 maps of any Earth Information Center data set** (online) · your own MP4/WebM, up to 200 MB | Two samples per second, each averaged over its half second. NASA presets are **read through their own colour bar**: forest height in metres and land in view, CO₂ in ppm and the area above ~420 ppm. Your videos play brightness, colour and motion of the picture, with empty background left out. The muted video follows the music: Play starts both. |
-| **Earth events** | NASA EONET natural events (wildfires, storms, floods, sea ice…) and USGS earthquakes together, earthquakes as one more channel (the bass) · each feed alone | Played as one sweep across the map from west to east: further north = higher note, bigger = louder. An offline sample of both always works. Live sources update when online; if unavailable they use the last live copy saved in the browser, then a real snapshot bundled with the app. The header always says which one you hear. |
-| **Image** | Bundled NASA EIC GEDI forest-height and global CO₂ stills · **the newest map of any Earth Information Center data set**, read through its own colour bar (online) · NASA GIBS satellite views (whole Earth today, Earth at night, Amazon, Himalaya, Greenland, Sahara) · bundled world map · two generated illustrations · your picture | Measure **Light** (CIE L* brightness, detail, height of bright areas), **Colour** (R, G, B) or, for NASA presets, **Colour key** (data values read through the colour bar). Empty background around a globe is silent. Scan left to right, top to bottom, around the centre, or follow the pointer. |
+| **Earth events** | NASA EONET natural events (wildfires, storms, floods, sea ice…) and USGS earthquakes together, earthquakes as one more channel (electric piano) · offline sample | Played as one sweep across the map from west to east: further north = higher note, bigger = louder. An offline sample of both always works. Live sources update when online; if unavailable they use the last live copy saved in the browser, then a real snapshot bundled with the app. The header always says which one you hear. |
+| **Image** | Bundled NASA EIC GEDI forest-height and global CO₂ stills · **the newest map of any Earth Information Center data set**, read through its own colour bar (online) · NASA GIBS satellite views (whole Earth today, Earth at night, Amazon, Himalaya, Greenland, Sahara) · bundled world map · two generated illustrations · your picture | Measure **Light** (CIE L* brightness, detail, height of bright areas), **Colour** (R, G, B) or, for NASA presets, **Colour key** (data values read through the colour bar). Empty background around a globe is silent. Scan left to right, top to bottom, Radar, or follow the pointer. |
 
 ## How numbers become sound
 
@@ -38,7 +38,7 @@ One **search** above the Image, Video and Data tabs finds any data set of the NA
 2. **Pitch.** The scaled value picks a note from the chosen key and scale over 1–3 octaves from C3: `index = round(v × (n − 1))` in the list of scale notes. This is monotonic and gives every scale degree the same share of the data range, so equal steps in the data sound like equal steps in the melody. Frequency is equal-tempered, A4 = 440 Hz.
 3. **Time.** One step is an eighth note at the chosen tempo. Long series can be averaged into 240/120/60/30 steps (bucket means). Earth events are played west to east; with **Map distance** the gaps follow the real distance between events along the sweep.
 4. **Loudness and direction.** For events, latitude sets the pitch (north = higher) and size (magnitude, area, wind) sets loudness and dot size. Any channel’s pitch direction can be flipped.
-5. **Space.** Every channel is an audio object in a room (x left–right, y back–front, z height). Data moves left to right (or circles you); events sit where they happened on Earth; depth or value sets height. The same positions feed live binaural (HRTF) audio, 5.1/7.1/7.1.4 speaker panning (constant power, LFE kept clear) and the ADM BWF metadata.
+5. **Space.** Every channel is an audio object in a room (x left–right, y back–front, z height). Data moves left to right (or circles you); events sit where they happened on Earth; depth or value sets height. The same positions feed live binaural (HRTF) audio. (The engine can also pan to 5.1/7.1/7.1.4 speakers and write ADM BWF; the studio keeps to stereo and binaural.)
 
 ### Listening aids
 
@@ -50,9 +50,8 @@ One **search** above the Image, Video and Data tabs finds any data set of the NA
 
 ## Export
 
-Stereo WAV (16-bit), binaural WAV, 5.1 / 7.1 / 7.1.4 WAV (24-bit, WAVE_FORMAT_EXTENSIBLE with the correct channel masks), an **ADM BWF** object master (48 kHz / 24-bit, ITU-R BS.2076-2 `axml` + BS.2088 `chna`, one track per channel with its 3D path), the notes as CSV (every step, value, note, Hz, start time, x/y/z) and the score as ABC or PNG. Files are rendered offline from the same plan you hear and normalised to −1 dBFS peak.
+Stereo WAV (16-bit) or binaural WAV, the readings as an **Excel workbook** or CSV, the notes as CSV (every step, value, note, Hz, start time, x/y/z) and the score as ABC or PNG. Files are rendered offline from the same plan you hear and normalised to −1 dBFS peak.
 
-Bit2Beat is not affiliated with Dolby Laboratories; the ADM file is an interchange master for Atmos-capable tools, not an encoded Atmos stream.
 
 ## Code layout
 

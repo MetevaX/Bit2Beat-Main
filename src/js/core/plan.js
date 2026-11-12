@@ -33,6 +33,7 @@
     width: 1,
     drone: 'off', // 'off' | 'baseline' | 'mean'
     cues: true, // short tick on sudden jumps
+    drums: false, // Beta: a kick / snare / hi-hat beat on the steps (audio/engine.js drumStep)
   };
 
   /** Eighth-note step length in seconds at `tempo` quarter-notes per minute. */

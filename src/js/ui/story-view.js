@@ -91,11 +91,6 @@
 
     $('finaleText').textContent = FINALE.text;
     $('finaleStudio').onclick = () => app.showPage('studio');
-    $('finaleCsv').onclick = () => {
-      app.showPage('studio');
-      if (st.mode !== 'data') $('tab-data').click();
-      $('uploadBtn').click();
-    };
     $('finaleTour').onclick = () => B.tour.hub();
     $('finaleDog').innerHTML = B.bittyArt.dog('joy');
 

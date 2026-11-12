@@ -65,21 +65,29 @@
       <button role="tab" id="tab-data" data-mode="data" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Data</button>
     </div>
     <label class="source-pick"><span class="sr-only">Source</span><select id="sourceSelect" aria-label="Choose what to listen to"></select></label>
+    <button type="button" class="btn btn-quiet" id="reloadBtn" title="Load this source again (the newest data when online)"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Reload</button>
     <button type="button" class="btn" id="uploadBtn"><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Open CSV</span></button>
     <input type="file" id="fileInput" hidden>
   </div>
 
   <section class="eic-search" id="eicSearch" aria-labelledby="searchLabel">
     <form id="searchForm" role="search" class="search-form">
-      <label for="searchInput" id="searchLabel" class="search-label"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Search <span id="eicTitle">NASA Earth Information Center</span></label>
+      <div class="search-head">
+        <label for="searchInput" id="searchLabel" class="search-label"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Search <span id="eicTitle">NASA Earth Information Center</span></label>
+        <button type="button" class="ai-toggle" id="aiMode" aria-pressed="false" title="Gemini reads your question and picks the data sets and the place">AI mode <span class="beta">Gemini</span></button>
+      </div>
       <div class="search-row">
-        <input type="search" id="searchInput" maxlength="200" autocomplete="off" spellcheck="false" placeholder="What do you want to hear? e.g. methane from wetlands in the Amazon" aria-describedby="searchStatus">
+        <div class="search-box">
+          <input type="search" id="searchInput" maxlength="200" autocomplete="off" spellcheck="false" placeholder="Type a subject, e.g. carbon dioxide, methane, fire" aria-describedby="searchStatus">
+          <button type="button" class="search-clear" id="searchClear" aria-label="Clear the search" hidden><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button>
+        </div>
         <label class="field search-place"><span class="sr-only">Area</span><select id="searchPlace" aria-label="Area"></select></label>
         <label class="field" id="searchStepsField"><span class="sr-only">Maps</span><select id="searchSteps" aria-label="How many maps"></select></label>
         <button type="submit" class="btn btn-primary" id="searchBtn">Search</button>
       </div>
     </form>
-    <p class="search-status" id="searchStatus" role="status">Type in your own words. Gemini finds the data sets; press Search with nothing typed to see them all.</p>
+    <div class="search-suggest" id="searchSuggest" aria-label="Ideas to search"></div>
+    <p class="search-status" id="searchStatus" role="status">Results appear as you type. Turn on AI mode to ask in your own words.</p>
     <ul class="search-results" id="searchResults" aria-label="Search results"></ul>
     <details class="eic-more">
       <summary>Use another catalogue</summary>
@@ -156,14 +164,14 @@
 
         <div class="source-options" id="opts-image">
           <div class="seg" role="group" aria-label="What to measure" id="analysisGroup">
-            <button type="button" data-analysis="light" aria-pressed="true">Light</button>
-            <button type="button" data-analysis="color" aria-pressed="false">Colour</button>
-            <button type="button" data-analysis="key" aria-pressed="false" id="keyBtn" hidden title="Read the data back out of the picture through its own colour bar">Colour key</button>
+            <button type="button" data-analysis="light" aria-pressed="true" title="How the picture looks: brightness, detail and where the bright parts are">Light</button>
+            <button type="button" data-analysis="color" aria-pressed="false" title="How the picture looks: its red, green and blue">Colour</button>
+            <button type="button" data-analysis="key" aria-pressed="false" id="keyBtn" hidden title="What the picture means: each colour is turned back into the real value (ppm, metres…) through the map's own colour bar">Colour key</button>
           </div>
           <div class="seg" role="group" aria-label="How to scan" id="scanGroup">
             <button type="button" data-scan="line" aria-pressed="true">Left to right</button>
             <button type="button" data-scan="down" aria-pressed="false">Top to bottom</button>
-            <button type="button" data-scan="radar" aria-pressed="false">Around the centre</button>
+            <button type="button" data-scan="radar" aria-pressed="false" title="A beam turns around the centre like a radar, covering the whole picture">Radar</button>
             <button type="button" data-scan="pointer" aria-pressed="false">Follow pointer</button>
           </div>
           <label class="field field-range">Steps <output id="stepsOut">48</output>
@@ -249,6 +257,7 @@
           <input type="range" id="tempo" min="50" max="200" step="1" value="96">
         </label>
         <p class="card-note" id="durationNote"></p>
+        <label class="check drums-toggle"><input type="checkbox" id="drums"><span><b>Drums <span class="beta">Beta</span></b><small>A beat with the steps: kick, snare and hi-hat, stronger when the data is high. Also in exports.</small></span></label>
       </section>
 
       <section class="card" aria-labelledby="mixTitle">
@@ -277,10 +286,7 @@
           <label class="field">Output
             <select id="output">
               <option value="stereo">Stereo</option>
-              <option value="binaural">Binaural (headphones)</option>
-              <option value="5.1">5.1 surround</option>
-              <option value="7.1">7.1 surround</option>
-              <option value="7.1.4">7.1.4 with height</option>
+              <option value="binaural">Binaural (headphones, 3D)</option>
             </select>
           </label>
           <label class="field">Movement
@@ -338,7 +344,6 @@
       <p id="finaleText"></p>
       <div class="btn-row">
         <button type="button" class="btn btn-primary" id="finaleStudio">Open the studio</button>
-        <button type="button" class="btn" id="finaleCsv">Open my own CSV</button>
         <button type="button" class="btn" id="finaleTour">Let Bitty guide me</button>
       </div>
     </div>
@@ -364,7 +369,7 @@
     </div>
     <h2 class="team-title">The team</h2>
     <div class="team">
-      <article class="member"><img src="assets/team/george-hany.jpg" alt="George Hany" width="96" height="96"><div><h3>George Hany <span class="role">Team leader</span></h3><p>George Hany is a 2nd-year Electrical Engineering student at Assiut University. He has a strong passion for AI &amp; Computer Vision and their real-world applications. George was always eager to learn new skills and since a short period of time, he has developed a strong passion for music! He chose to learn violin during summer and his passion drove him from zero-experience to the best member prize in the 1-month violin course he enrolled in! Then he wanted to combine his new skill with technology and that’s why he chose to work on the Earth Information Jukebox challenge.</p></div></article>
+      <article class="member"><img src="assets/team/george-hany.jpg" alt="George Hany" width="96" height="96"><div><h3>George Hany <span class="role">Team leader</span></h3><p>I’m George, a 2nd-year Electrical Engineering student at Assiut University. I love AI and computer vision and how they solve real problems. This summer I started learning the violin, and I fell in love with music. I wanted to bring music and technology together, so I chose the Earth Information Jukebox challenge.</p></div></article>
       <article class="member"><img src="assets/team/mina-helal.jpg" alt="Mina Helal" width="96" height="96"><div><h3>Mina Helal <span class="role">Data Analyst</span></h3><p>I’m Mina Helal—an Electrical Engineering undergrad who loves the thrill of building things from scratch, figuring out exactly how things work. I’m here to bridge theory with hands-on challenge and see what we can create.</p></div></article>
       <article class="member"><img src="assets/team/steven-joseph.jpg" alt="Steven Joseph" width="96" height="96"><div><h3>Steven Joseph <span class="role">Integration lead</span></h3><p>Hi, I am Steven, 20 years old. I am a science enthusiast and love playing violin and eating burger, and in this team I am leader of the integration.</p></div></article>
       <article class="member"><img src="assets/team/mostafa-ragab.jpg" alt="Mostafa Ragab" width="96" height="96"><div><h3>Mostafa Ragab <span class="role">UI Specialist &amp; Engine</span></h3><p>I’m Mostafa Ragab, an EE student as well, 20 years. I don’t have a specific passion that is taking my mind, but I’m always learning. Not far long ago, I was stunned by Quantum Physics, and I have always been dedicated to master Pure Math and advanced complex analysis to help me understand it, but like a flame it never stays at the same level of light and heat. 3 years ago, I discovered that I have a hidden passion to music, either creating, listening or playing. I never actually had the chance to play it due to the poor resources we had, but I always was listening, analyzing what I hear, like this part is indeed from this instrument. I love peaceful beautiful music, because it’s always attached to good memories of mine. Happy to be in the competition!</p></div></article>
@@ -473,7 +478,7 @@
 <dialog id="helpDialog" aria-labelledby="helpTitle">
   <div class="dlg-head"><h2 id="helpTitle">How to use Bit2Beat</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
   <ol class="help-steps">
-    <li><b>Pick something to hear.</b> Data has NASA climate series and your own CSV files. Video has offline NASA EIC presets and turns uploaded videos into brightness, detail and frame-change melodies. Earth events has live earthquakes and natural events, played across the map from west to east. Image turns a picture or a satellite view into sound.</li>
+    <li><b>Find something to hear.</b> Search NASA’s Earth Information Center above the tabs (turn on AI mode to ask in your own words), or pick from the menu. Image turns a map or picture into sound, Video follows a NASA animation or time-lapse, Earth events plays natural events and earthquakes across the map, Data plays climate series and your own CSV.</li>
     <li><b>Press Play.</b> Higher values play higher. The Melody panel and the score show the same notes.</li>
     <li><b>Shape the sound.</b> Pick a mood (sad, happy or excited), change instrument, scale and tempo, mute or solo channels, or press Suggest.</li>
     <li><b>Export.</b> Download audio, the notes as CSV or the score.</li>

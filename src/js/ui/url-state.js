@@ -38,10 +38,11 @@
     if (has('gap')) S.spacing = oneOf(q.get('gap'), ['even', 'time']);
     if (has('ref')) S.drone = oneOf(q.get('ref'), ['off', 'baseline', 'mean']);
     if (has('tick')) S.cues = q.get('tick') === '1';
+    if (has('drums')) S.drums = q.get('drums') === '1';
     if (has('shared')) S.sharedScale = q.get('shared') === '1';
     if (has('move')) S.path = oneOf(q.get('move'), ['auto', 'sweep', 'fall', 'orbit', 'fixed']);
 
-    if (has('out')) out.audio.output = oneOf(q.get('out'), ['stereo', 'binaural', '5.1', '7.1', '7.1.4']);
+    if (has('out')) out.audio.output = oneOf(q.get('out'), ['stereo', 'binaural']);
     if (has('room')) out.audio.room = num(q.get('room'), 0, 100) / 100;
 
     if (has('quakes')) out.earth.quakeFeed = q.get('quakes');
@@ -96,6 +97,7 @@
     if (st.mode === 'earth') put('gap', S.spacing, 'even');
     put('ref', S.drone, D.drone);
     if (S.cues !== D.cues) q.set('tick', S.cues ? '1' : '0');
+    if (S.drums) q.set('drums', '1');
     if (S.sharedScale !== D.sharedScale) q.set('shared', S.sharedScale ? '1' : '0');
     put('move', S.path, D.path);
     put('out', st.audio.output, 'stereo');

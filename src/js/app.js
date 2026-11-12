@@ -42,13 +42,15 @@
   if (fromUrl.choice) {
     const valid = {
       data: [...B.presets.DATA_MENU.flatMap(([, items]) => items.map((it) => it[0])), 'power', 'eic'],
-      earth: [...B.sources.EARTH_MENU.map((it) => it[0]), 'sample:eonet', 'sample:quakes'],
+      earth: [...B.sources.EARTH_MENU.map((it) => it[0]), 'eonet', 'quakes', 'sample:eonet', 'sample:quakes'],
       video: [...B.sources.VIDEO_MENU.map((it) => it[0]), 'eic'],
       image: [...B.sources.IMAGE_MENU.flatMap(([, items]) => items.map((it) => it[0])), 'eic'],
     };
     if (valid[state.mode].includes(fromUrl.choice)) state.choice[state.mode] = fromUrl.choice;
   }
   if (fromUrl.power) state.power = fromUrl.power;
+  if (!['stereo', 'binaural'].includes(state.audio.output)) state.audio.output = 'stereo'; // surround was removed in 2.9
+  if (!B.audio.instruments[state.settings.instrument]) state.settings.instrument = 'soft'; // organ, bass and synth were removed
   if (fromUrl.eic) state[{ data: 'eic', image: 'eicImage', video: 'eicVideo' }[state.mode] || 'eic'] = fromUrl.eic;
   let pending = { mix: fromUrl.mix, position: fromUrl.position };
   let src = null;
@@ -521,6 +523,13 @@
     loadChoice();
   };
   $('uploadBtn').onclick = () => $('fileInput').click();
+  // Reload: fetch the current source again (live feeds and the Earth Information Center get their newest data)
+  $('reloadBtn').onclick = () => {
+    toast('Reloading…', 1500);
+    if (state.mode === 'earth' && !state.choice.earth.startsWith('sample:')) return fetchLatest(false);
+    if (state.choice[state.mode] === 'eic') B.eicView[state.mode === 'video' ? 'video' : 'image'] = null;
+    loadChoice();
+  };
   $('fileInput').onchange = (e) => openFile(e.target.files[0]);
   const dz = $('dropZone');
   dz.addEventListener('dragover', (e) => {

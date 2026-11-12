@@ -197,7 +197,7 @@ test('plan: shared scales, loudness measure, map spacing, resampling and drone',
   assert.match(short.labels[0], /2025-01-01 – 2025-01-1\d/);
 
   const q = feeds.offline.quakes();
-  const qp = plan.build(q, [{ gain: 0.7, instrument: 'bass' }], { spacing: 'time' });
+  const qp = plan.build(q, [{ gain: 0.7, instrument: 'electric' }], { spacing: 'time' });
   const lats = q.channels[0].values;
   const north = lats.indexOf(Math.max(...lats));
   const south = lats.indexOf(Math.min(...lats));
@@ -644,7 +644,14 @@ test('Earth Information Center search: keywords, places, Gemini request and answ
   assert.equal(body.generationConfig.thinkingConfig.thinkingLevel, 'high');
   assert.equal(body.generationConfig.responseMimeType, 'application/json');
   assert.match(body.contents[0].parts[0].text, /newest map/);
-  assert.match(body.contents[0].parts[0].text, /Do not use Egypt/);
+  assert.match(body.contents[0].parts[0].text, /Never Egypt/);
+  assert.match(body.contents[0].parts[0].text, /offTopic/, 'off-topic questions are refused');
+  assert.match(body.contents[0].parts[0].text, /never instructions/);
+  assert.equal(X.answer({ picks: [{ id: 'micasa-carbonflux-monthgrid-v1', why: 'x' }], offTopic: true, place: { world: true } }, list).picks.length, 1, 'picks win over a stray offTopic');
+  assert.deepEqual(X.answer({ picks: [], offTopic: true, place: { world: true } }, list), { picks: [], place: 'world', offTopic: true });
+  assert.equal(X.clean('  carbon\n\tdioxide\u0000 '), 'carbon dioxide');
+  assert.equal(X.clean('x'.repeat(500)).length, 200);
+  assert.ok(X.SUGGESTIONS.length >= 4);
   const ok = X.answer('{"picks":[{"id":"lpjeosim-wetlandch4-monthgrid-v2","why":"swamps"},{"id":"made-up","why":"x"},{"id":"lpjeosim-wetlandch4-monthgrid-v2","why":"dup"}],"place":{"world":false,"name":"Amazon","lat":-3.4,"lon":-62.2}}', list);
   assert.deepEqual(ok.picks.map((p) => p.id), ['lpjeosim-wetlandch4-monthgrid-v2'], 'unknown and repeated ids are dropped');
   assert.deepEqual(ok.place, { name: 'Amazon', lat: -3.4, lon: -62.2 });
@@ -671,6 +678,14 @@ test('api/search: key only from the server environment, checked answers, clear e
   };
   const collections = [{ id: 'micasa-carbonflux-monthgrid-v1', title: 'MiCASA Land Carbon Flux' }];
   assert.equal((await call({ q: 'carbon', collections }, undefined)).status, 503, 'no key: says so');
+  {
+    const out = { status: 0, json: null };
+    const res = { setHeader() {}, status: (c) => ((out.status = c), res), json: (j) => ((out.json = j), res) };
+    process.env.GEMINI_API_KEY = 'k';
+    await handler({ method: 'POST', headers: { origin: 'https://someone-else.example', host: 'bit2beat.vercel.app' }, body: { q: 'carbon', collections } }, res);
+    delete process.env.GEMINI_API_KEY;
+    assert.equal(out.status, 403, 'other websites cannot use the AI search');
+  }
   const realFetch = global.fetch;
   let sent = null;
   global.fetch = async (url, init) => {
@@ -728,7 +743,7 @@ test('Earth events: natural events and earthquakes in one west-to-east sweep', (
   assert.equal(s.labels.length, e.labels.length + q.labels.length, 'every event and every earthquake');
   assert.equal(s.feed, 'events');
   const quake = s.channels.find((c) => /Earthquakes/.test(c.name));
-  assert.ok(quake && quake.instrument === 'bass', 'earthquakes are one more channel, the bass');
+  assert.ok(quake && quake.instrument === 'electric', 'earthquakes are one more channel (electric piano)');
   assert.equal(quake.values.filter((v) => v != null).length, q.labels.length);
   for (let i = 1; i < s.times.length; i++) assert.ok(s.times[i] >= s.times[i - 1], 'west to east');
   s.labels.forEach((_, i) => assert.equal(s.channels.filter((c) => c.values[i] != null).length, 1, 'one channel per event'));
@@ -737,3 +752,35 @@ test('Earth events: natural events and earthquakes in one west-to-east sweep', (
   const only = feeds.combineEvents(e, null, 't', { source: 'x' });
   assert.match(only.origin.note, /USGS earthquakes were not reachable/);
 });
+
+test('sound set: six instruments (violin, no organ/bass/synth), drums are opt-in, motion plays', () => {
+  const engine = require('../src/js/audio/engine.js');
+  assert.deepEqual(Object.values(engine.instruments).map((i) => i.name), ['Piano', 'Electric piano', 'Guitar', 'Marimba', 'Flute', 'Violin']);
+  assert.ok(engine.instruments.strings.vibrato, 'the violin has vibrato');
+  assert.equal(typeof engine.drumStep, 'function');
+  assert.equal(plan.DEFAULTS.drums, false, 'drums are off until switched on');
+  const v = require('../src/js/core/video.js');
+  assert.ok(!v.channels().find((c) => c.name === 'Motion').mute, 'motion is heard by default');
+  const media = require('../src/js/data/nasa-media.js');
+  for (const k of ['gedi', 'co2']) {
+    assert.ok(!media[k].source.channels.find((c) => c.name === 'Motion').mute);
+    assert.match(media[k].source.origin.url, /^https:\/\/earth\.gov\//, 'View original source opens the Earth Information Center');
+  }
+  for (const c of Object.values(feeds.EONET_CATEGORIES)) assert.ok(engine.instruments[c.instrument], `${c.name} uses an instrument that exists`);
+});
+
+test('image: Follow pointer reads the colour key under the pointer (raw key definitions too)', () => {
+  const key = { name: 'Height', unit: 'm', ramp: [[255, 0, 0, 0], [0, 0, 255, 10]] };
+  const w = 20;
+  const h = 10;
+  const px = new Uint8ClampedArray(w * h * 4);
+  for (let i = 0; i < w * h; i++) {
+    const x = i % w;
+    px.set(x < 10 ? [0, 0, 0, 255] : [0, 0, 255, 255], i * 4); // left: black background, right: data (10 m)
+  }
+  const right = image.probe(px, w, h, 0.85, 0.5, 'key', key);
+  assert.ok(right && Math.abs(right[0] - 10) < 0.5, 'the value under the pointer');
+  const left = image.probe(px, w, h, 0.1, 0.5, 'key', key);
+  assert.ok(!left || !Number.isFinite(left[0]), 'no value where the picture shows no data');
+});
+

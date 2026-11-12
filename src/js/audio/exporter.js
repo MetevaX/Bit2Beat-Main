@@ -36,7 +36,7 @@
     if (!active.length) throw new Error('Turn on at least one channel before exporting.');
     const total = plan.duration + 0.8;
     if (total > 600) throw new Error('This piece is longer than 10 minutes. Use a faster tempo or fewer points.');
-    const keys = format === 'adm' ? [...active, ...(plan.drone ? ['drone'] : [])] : null;
+    const keys = format === 'adm' ? [...active, ...(plan.drone ? ['drone'] : []), ...(plan.settings?.drums ? ['drums'] : [])] : null;
     const layout = spatial.OUTPUTS[format]?.layout || null;
     const mono = mix.mono && (format === 'stereo' || format === 'binaural');
     const nch = keys ? keys.length : layout ? layout.speakers.length : mono ? 1 : 2;
@@ -81,7 +81,7 @@
         tracks: chans,
         sampleRate: RATE,
         title: plan.source.name,
-        objects: keys.map((k) => ({ name: k === 'drone' ? 'Reference tone' : plan.channels[k].name, blocks: r.blocks[k] || [] })),
+        objects: keys.map((k) => ({ name: k === 'drone' ? 'Reference tone' : k === 'drums' ? 'Drums' : plan.channels[k].name, blocks: r.blocks[k] || [] })),
       });
     } else {
       bytes = wav.encodeWav({ channels: chans, sampleRate: RATE, bitDepth: spec.bits, channelMask: layout ? spatial.channelMask(layout) : undefined });

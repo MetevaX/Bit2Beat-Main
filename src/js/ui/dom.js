@@ -120,5 +120,24 @@
   /** Read a CSS custom property from :root. */
   const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
+  // ---------------------------------------------------------------- errors and connection
+  // Nothing should fail silently: an unexpected error becomes a short, plain message (at most one
+  // every few seconds) and the details go to the console for us. Going offline or online is said too.
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    let lastError = 0;
+    const friendly = (err) => {
+      const msg = String(err?.message || err || '');
+      if (!msg || /ResizeObserver|Script error|AbortError|The play\(\) request was interrupted/i.test(msg)) return;
+      console.error('[Bit2Beat]', err);
+      if (Date.now() - lastError < 6000 || !$('toast')) return;
+      lastError = Date.now();
+      toast(/fetch|network|timed out|reach/i.test(msg) ? 'A data service did not answer. Check your connection, or press Reload.' : 'Something went wrong there. Try again, or press Reload; your settings are kept.', 6000);
+    };
+    window.addEventListener('error', (e) => friendly(e.error || e.message));
+    window.addEventListener('unhandledrejection', (e) => friendly(e.reason));
+    window.addEventListener('offline', () => toast('You are offline. Saved data, the offline samples and the bundled NASA pictures still work.', 6000));
+    window.addEventListener('online', () => toast('Back online. Press Reload for the newest data.', 4000));
+  }
+
   (root.Bit2Beat = root.Bit2Beat || {}).dom = { $, $$, el, escapeHTML, toast, announce, download, slug, storage, pressOne, fitCanvas, cssVar };
 })(typeof self !== 'undefined' ? self : this);

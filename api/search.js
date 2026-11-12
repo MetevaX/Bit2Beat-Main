@@ -27,6 +27,15 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Use POST.' });
   const key = process.env.GEMINI_API_KEY;
   if (!key) return res.status(503).json({ error: 'AI search is not set up yet (GEMINI_API_KEY is missing on the server).' });
+  // only this site may use it: a call from another web page (with another Origin) is refused
+  const origin = req.headers.origin;
+  if (origin) {
+    let host = '';
+    try {
+      host = new URL(origin).host;
+    } catch {}
+    if (host !== req.headers.host) return res.status(403).json({ error: 'AI search works only on the Bit2Beat site.' });
+  }
   const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim();
   if (tooMany(ip)) return res.status(429).json({ error: 'Too many searches. Please wait a minute.' });
 
@@ -38,7 +47,7 @@ module.exports = async function handler(req, res) {
       body = {};
     }
   }
-  const q = String(body?.q || '').trim().slice(0, S.MAX_QUERY);
+  const q = S.clean(body?.q);
   const mode = ['data', 'image', 'video'].includes(body?.mode) ? body.mode : 'data';
   const list = (Array.isArray(body?.collections) ? body.collections : [])
     .filter((c) => c && typeof c.id === 'string')

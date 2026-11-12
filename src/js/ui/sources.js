@@ -9,12 +9,10 @@
   const { storage } = B.dom;
 
   // natural events and earthquakes play together (earthquakes are one more channel); the
-  // offline sample of both always works. Each one alone stays available.
+  // offline sample of both always works. (Each feed alone, 'eonet' and 'quakes', is still used by the story.)
   const EARTH_MENU = [
-    ['events', 'Natural events and earthquakes (EONET + USGS)'],
+    ['events', 'Natural events and earthquakes (NASA EONET + USGS)'],
     ['sample:events', 'Natural events and earthquakes · offline sample'],
-    ['eonet', 'Natural events only (NASA EONET)'],
-    ['quakes', 'Earthquakes only (USGS)'],
   ];
   const VIDEO_MENU = [['gedi', 'NASA EIC · GEDI forest height'], ['co2', 'NASA EIC · Global carbon dioxide']];
   function earthSample(id) {
@@ -262,7 +260,11 @@
       if (uploads.video) add(sel, ['upload', 'Your video: ' + uploads.video.name]);
       if (state.choice.video === 'custom') add(sel, ['custom', src?.name || 'Saved video analysis']);
       if (state.choice.video === 'eic') add(sel, ['eic', B.eicView?.video?.name || 'NASA Earth Information Center time-lapse']);
-    } else if (state.mode === 'earth') B.sources.EARTH_MENU.forEach((it) => add(sel, it));
+    } else if (state.mode === 'earth') {
+      B.sources.EARTH_MENU.forEach((it) => add(sel, it));
+      // a story chapter can play one feed alone: show it while it plays
+      if (!B.sources.EARTH_MENU.some((it) => it[0] === state.choice.earth)) add(sel, [state.choice.earth, src?.kind === 'earth' ? src.name : 'Earth events']);
+    }
     else {
       B.sources.IMAGE_MENU.forEach(([label, items]) => {
         const og = document.createElement('optgroup');

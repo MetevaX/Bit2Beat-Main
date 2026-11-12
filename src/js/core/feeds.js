@@ -117,11 +117,11 @@
     severeStorms: { name: 'Storms', instrument: 'strings', land: false, unit: 'kt' },
     floods: { name: 'Floods', instrument: 'marimba', land: true, unit: '' },
     seaLakeIce: { name: 'Sea & lake ice', instrument: 'flute', land: false, unit: 'NM²', log: true },
-    volcanoes: { name: 'Volcanoes', instrument: 'organ', land: true, unit: '' },
-    earthquakes: { name: 'Earthquakes', instrument: 'bass', land: false, unit: '' },
+    volcanoes: { name: 'Volcanoes', instrument: 'electric', land: true, unit: '' },
+    earthquakes: { name: 'Earthquakes', instrument: 'marimba', land: false, unit: '' },
     landslides: { name: 'Landslides', instrument: 'marimba', land: true, unit: '' },
-    drought: { name: 'Drought', instrument: 'warm', land: true, unit: '' },
-    dustHaze: { name: 'Dust & haze', instrument: 'warm', land: false, unit: '' },
+    drought: { name: 'Drought', instrument: 'flute', land: true, unit: '' },
+    dustHaze: { name: 'Dust & haze', instrument: 'electric', land: false, unit: '' },
     snow: { name: 'Snow', instrument: 'flute', land: true, unit: '' },
     tempExtremes: { name: 'Temperature extremes', instrument: 'electric', land: true, unit: '' },
     waterColor: { name: 'Water colour', instrument: 'flute', land: false, unit: '' },
@@ -255,7 +255,7 @@
 
   /**
    * One sweep with every NASA EONET natural event and every USGS earthquake: earthquakes become
-   * one more channel (bass; bigger = louder, deeper = lower in 3D sound). Either part may be
+   * one more channel (electric piano; bigger = louder, deeper = lower in 3D sound). Either part may be
    * missing (for example when one service is down), then the other plays alone.
    */
   function combineEvents(ev, qk, title, origin) {
@@ -270,7 +270,7 @@
       ...(qk?.channels || []).map((c) => ({
         ...c,
         name: taken.has(c.name) ? `${c.name} (USGS)` : c.name,
-        instrument: 'bass',
+        instrument: 'electric',
         sizeUnit: 'magnitude',
         values: items.map((it) => (it.s === qk ? c.values[it.i] : null)),
         loudBy: items.map((it) => (it.s === qk ? c.loudBy[it.i] : null)),
