@@ -35,7 +35,7 @@ Bit2Beat is a static web app: plain HTML, CSS and JavaScript with no framework a
 | File | Responsibility |
 | --- | --- |
 | `music.js` | Scales, keys, `midi(v, scale, range, key)`, normalisation, note names, EQ presets |
-| `stats.js` | Trend (least squares), sudden jumps (leave-one-out local line + modified z-score), resampling, plain-language summaries, *Suggest* |
+| `stats.js` | Trend (least squares), sudden jumps (leave-one-out local line + modified z-score), resampling, plain-language summaries, *Smart Tuning* |
 | `plan.js` | Builds the plan: scaling (shared per unit, log, invert), pitch, loudness (`loudBy`), timing (even or source `times`), 3D positions, drone |
 | `feeds.js` | USGS and NASA EONET (events sorted west → east), both together (`combineEvents`: earthquakes as one more channel), NASA POWER daily data; live fetch + offline builders share one code path |
 | `eic.js` | NASA Earth Information Center (or any STAC + titiler) API: playable data sets, latest maps per date and layer, area statistics, the source; `get` is injected so it is tested offline |

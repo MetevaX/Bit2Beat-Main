@@ -45,10 +45,13 @@
       const timer = setTimeout(() => reject(new Error('The image took too long to load.')), timeoutMs);
       img.onload = () => {
         clearTimeout(timer);
-        const k = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+        // an SVG without a size has no natural size: draw it at 1200 × 800
+        const nw = img.naturalWidth || 1200;
+        const nh = img.naturalHeight || 800;
+        const k = Math.min(1, maxDim / Math.max(nw, nh));
         const c = document.createElement('canvas');
-        c.width = Math.max(1, Math.round(img.naturalWidth * k));
-        c.height = Math.max(1, Math.round(img.naturalHeight * k));
+        c.width = Math.max(1, Math.round(nw * k));
+        c.height = Math.max(1, Math.round(nh * k));
         const g = c.getContext('2d', { willReadFrequently: true });
         g.drawImage(img, 0, 0, c.width, c.height);
         try {

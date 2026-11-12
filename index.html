@@ -65,10 +65,10 @@
       <button role="tab" id="tab-earth" data-mode="earth" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Earth events</button>
       <button role="tab" id="tab-data" data-mode="data" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Data</button>
     </div>
+    <button type="button" class="btn upload-btn" id="uploadBtn" title="Open any file: data (CSV, TSV, TXT, JSON, GeoJSON, Excel, OpenDocument), a picture (PNG, JPG, WebP, GIF, SVG…) or a video (MP4, WebM, MOV, MKV…). Bit2Beat opens the right tab by itself."><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Upload</span></button>
+    <input type="file" id="fileInput" hidden accept=".csv,.tsv,.tab,.txt,.dat,.prn,.json,.geojson,.xlsx,.xlsm,.ods,.png,.jpg,.jpeg,.jfif,.webp,.gif,.bmp,.avif,.svg,.ico,.tif,.tiff,.heic,.heif,.mp4,.m4v,.webm,.mov,.qt,.ogv,.ogg,.mkv,.3gp,.3g2,.mpeg,.mpg,.avi,.wmv,.flv,.ts,.m2ts,image/*,video/*,text/csv,application/json">
     <label class="source-pick"><span class="sr-only">Source</span><select id="sourceSelect" aria-label="Choose what to listen to"></select></label>
     <button type="button" class="btn btn-quiet" id="reloadBtn" title="Load this source again (the newest data when online)"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Reload</button>
-    <button type="button" class="btn" id="uploadBtn"><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Open CSV</span></button>
-    <input type="file" id="fileInput" hidden>
   </div>
 
   <section class="eic-search" id="eicSearch" aria-labelledby="searchLabel">
@@ -90,6 +90,7 @@
     </form>
     <div class="search-suggest" id="searchSuggest" aria-label="Ideas to search"></div>
     <p class="search-status" id="searchStatus" role="status">Results and suggestions appear as you type. Turn on Gemini to ask in your own words.</p>
+    <div class="results-bar" id="resultsBar" hidden><span id="resultsCount"></span><button type="button" class="btn btn-quiet btn-small" id="clearResults"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg>Clear results</button></div>
     <ul class="search-results" id="searchResults" aria-label="Search results"></ul>
     <details class="eic-more">
       <summary>Use another catalogue</summary>
@@ -121,7 +122,7 @@
         <div class="canvas-wrap" id="dropZone">
           <canvas id="sourceCanvas" width="1200" height="560" role="img" aria-label="Source preview"></canvas>
           <div class="hover-tip" id="hoverTip" hidden></div>
-          <div class="drop-hint" id="dropHint" hidden>Drop a CSV, image or video</div>
+          <div class="drop-hint" id="dropHint" hidden>Drop any data file, picture or video</div>
         </div>
 
         <div class="source-options" id="opts-data" hidden>
@@ -238,7 +239,7 @@
       <section class="card" aria-labelledby="soundTitle">
         <div class="card-head">
           <h2 id="soundTitle">Sound</h2>
-          <button type="button" class="btn btn-quiet" id="autoTuneBtn" title="Choose scale, tempo and instrument from the shape of the data">Suggest</button>
+          <button type="button" class="btn btn-quiet" id="autoTuneBtn" title="Smart Tuning: choose scale, tempo and instrument from the shape of the data">Smart Tuning</button>
         </div>
         <div class="mood-row">
           <span class="mood-label" id="moodLabel">Mood</span>
@@ -482,7 +483,7 @@
   <ol class="help-steps">
     <li><b>Find something to hear.</b> Search NASA’s Earth Information Center above the tabs (turn on AI mode to ask in your own words), or pick from the menu. Image turns a map or picture into sound, Video follows a NASA animation or time-lapse, Earth events plays natural events and earthquakes across the map, Data plays climate series and your own CSV.</li>
     <li><b>Press Play.</b> Higher values play higher. The Melody panel and the score show the same notes.</li>
-    <li><b>Shape the sound.</b> Pick a mood (sad, happy or excited), change instrument, scale and tempo, mute or solo channels, or press Suggest.</li>
+    <li><b>Shape the sound.</b> Pick a mood (sad, happy or excited), change instrument, scale and tempo, mute or solo channels, or press Smart Tuning.</li>
     <li><b>Export.</b> Download audio, the notes as CSV or the score.</li>
   </ol>
   <div class="btn-row help-bitty"><button type="button" class="btn btn-primary" id="helpTour">Let Bitty guide me</button><button type="button" class="btn" id="helpStory">Listen to Bitty’s story</button></div>
@@ -524,6 +525,7 @@
 <script src="src/js/core/eic.js"></script>
 <script src="src/js/core/eic-search.js"></script>
 <script src="src/js/core/xlsx.js"></script>
+<script src="src/js/core/tables.js"></script>
 <script src="src/js/core/plan.js"></script>
 <script src="src/js/core/story.js"></script>
 <script src="src/js/core/spotlight.js"></script>

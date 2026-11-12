@@ -784,3 +784,50 @@ test('image: Follow pointer reads the colour key under the pointer (raw key defi
   assert.ok(!left || !Number.isFinite(left[0]), 'no value where the picture shows no data');
 });
 
+
+test('smart upload: file kinds, JSON, GeoJSON, Excel and OpenDocument tables become CSV', async () => {
+  const T = require('../src/js/core/tables.js');
+  const X = require('../src/js/core/xlsx.js');
+  const csv = require('../src/js/core/csv.js');
+  assert.deepEqual(['a.CSV', 'b.xlsx', 'c.JPEG', 'd.svg', 'e.MOV', 'f.mkv', 'g.mp3', 'h.xls', 'i'].map((n) => T.kindOf(n)), ['data', 'data', 'image', 'image', 'video', 'video', 'audio', 'unknown', 'unknown']);
+  assert.equal(T.kindOf('photo', 'image/png'), 'image');
+  assert.match(T.refusal('old.xls'), /Save it as CSV or Excel/);
+  assert.match(T.refusal('song.mp3'), /sound file/);
+  const read = (text, bytes) => ({ text: async () => text, bytes: async () => bytes });
+  const noInflate = async () => {
+    throw new Error('not needed: stored zip');
+  };
+  // JSON shapes
+  assert.equal(csv.parseCSV(await T.toCsvText('a.json', read('[1,2,3,4,5]'))).cols[0].values.join(), '1,2,3,4,5');
+  const objs = csv.parseCSV(await T.toCsvText('b.json', read(JSON.stringify([{ year: 2000, temp: 0.4 }, { year: 2001, temp: 0.5 }, { year: 2002, temp: 0.6 }]))));
+  assert.deepEqual([objs.labels, objs.cols.map((c) => c.name)], [['2000', '2001', '2002'], ['temp']]);
+  const cols = csv.parseCSV(await T.toCsvText('c.json', read(JSON.stringify({ data: { year: [1, 2, 3], co2: [400, 401, 402] } }))));
+  assert.deepEqual(cols.cols.map((c) => c.name), ['co2']);
+  const geo = T.jsonRows({ type: 'FeatureCollection', features: [{ properties: { mag: 5.1 }, geometry: { type: 'Point', coordinates: [10, 20] } }] });
+  assert.deepEqual(geo, [['mag', 'longitude', 'latitude'], [5.1, 10, 20]]);
+  await assert.rejects(T.toCsvText('d.json', read('{nope')), /not valid JSON/);
+  // Excel: a workbook written by Bit2Beat's own writer reads back
+  const book = X.workbook([{ name: 'Data', rows: [['Year', 'Temp (°C)', 'Note'], [1880, -0.16, 'a, b'], [1881, -0.08, 'x']] }]);
+  const back = csv.parseCSV(await T.toCsvText('w.xlsx', read('', book), noInflate));
+  assert.deepEqual([back.labels, back.cols[0].name, back.cols[0].unit, back.cols[0].values], [['1880', '1881'], 'Temp', '°C', [-0.16, -0.08]]);
+  // OpenDocument: content.xml with repeated cells
+  const content = '<office:document-content><table:table table:name="S"><table:table-row><table:table-cell office:value-type="string"><text:p>Day</text:p></table:table-cell><table:table-cell office:value-type="string"><text:p>Rain</text:p></table:table-cell></table:table-row><table:table-row><table:table-cell office:value="1"><text:p>1</text:p></table:table-cell><table:table-cell office:value="2.5"><text:p>2.5</text:p></table:table-cell></table:table-row><table:table-row table:number-rows-repeated="2"><table:table-cell office:value="2"/><table:table-cell office:value="0"/></table:table-row></table:table></office:document-content>';
+  const ods = X.zip([{ name: 'content.xml', data: new TextEncoder().encode(content) }]);
+  assert.deepEqual(await T.odsRows(ods, noInflate), [['Day', 'Rain'], ['1', '2.5'], ['2', '0'], ['2', '0']]);
+});
+
+test('Earth events: a slow EONET never leaves earthquakes alone', async () => {
+  const real = global.fetch;
+  global.fetch = async (url) => {
+    if (/eonet/.test(url)) throw new Error('timed out');
+    return { ok: true, json: async () => ({ features: [{ properties: { time: Date.parse('2026-11-01T00:00:00Z'), mag: 5.2, place: 'Somewhere' }, geometry: { coordinates: [120, 10, 30] } }] }) };
+  };
+  try {
+    const s = await feeds.live.events(30);
+    assert.ok(s.partial);
+    assert.ok(s.channels.length > 1, 'natural events come from the saved copy');
+    assert.match(s.origin.note, /natural events service did not answer/);
+  } finally {
+    global.fetch = real;
+  }
+});

@@ -98,7 +98,8 @@ Each chapter shows:
 | **Menus** | Open just below their button. Menus with six or more choices have a search box: type any words to narrow the list, `↑`/`↓` and `Enter` to choose, `Esc` to close. |
 | **Source card** | The chart, map or picture you are hearing, its source line (where the numbers come from and when), and options for that tab. Hover to read a value; click to hear that step. |
 | **Now playing** (navy panel) | The current step, its note and frequency, the reading behind it and live sound bars. |
-| **Sound** | Instrument, scale, key, range and tempo. **Suggest** picks them from the shape of the data. |
+| **Sound** | Instrument, scale, key, range and tempo. **Smart Tuning** picks them from the shape of the data. |
+| **Upload** (next to the tabs) | One button for every file: data, picture or video. Bit2Beat looks at the file and opens the right tab. |
 | **Channels** | One row per data series: volume, instrument, **M**ute, **S**olo and **⇅** (flip pitch direction). |
 | **Listening aids** | Shared pitch scale, ticks on sudden jumps, reference tone. |
 | **Space & tone** | Output (stereo or binaural for headphones), movement, room and equaliser, and **Reset**. |
@@ -113,7 +114,7 @@ Each chapter shows:
 
 Above the Image, Video and Data tabs is one search for the whole NASA Earth Information Center catalogue.
 
-- **Keyword search** (the default): type a subject such as *carbon dioxide*, *methane* or *fire*; results appear as you type. Everyday words work too (*swamp* finds wetlands, *trees* finds forest growth). While you type, **suggestions** open under the box (search ideas, and data sets marked *Play* that start at once; `↑` `↓` `Enter` pick one). The **Try:** ideas under the box run a search in one click; **All data sets** lists everything. **Clear** (or `Esc`) empties the search.
+- **Keyword search** (the default): type a subject such as *carbon dioxide*, *methane* or *fire*; results appear as you type. Everyday words work too (*swamp* finds wetlands, *trees* finds forest growth). While you type, **suggestions** open under the box (search ideas, and data sets marked *Play* that start at once; `↑` `↓` `Enter` pick one). The **Try:** ideas under the box run a search in one click; **All data sets** lists everything. **Clear results** (above the results), **Clear** in the box or `Esc` removes the results and the words.
 - **Gemini** (the sparkle button at the top right; amber when on): write what you want to hear in your own words, for example *methane from wetlands in the Amazon*, and press **Ask Gemini**. Gemini picks the best data sets and finds the place (its latitude and longitude, even if it is not one of the 18 places); the **Area** menu shows it. It only searches for Earth data: other questions get a polite “only Earth data” answer.
 
 Choose a result to hear it in the tab that is open: **Image** draws its newest map, **Video** makes a time-lapse of the latest 24, 48 or 96 maps, **Data** plays one note per map (24, 60 or 120). Changing the area or the number of maps replays it. **Reload** (next to the menu) loads the current source again with the newest data.
@@ -134,7 +135,7 @@ Options:
 - **Points to play** – long series can be averaged to 240, 120, 60 or 30 steps (each step is the mean of its bucket; labels become ranges).
 - **NASA POWER daily data** – pick one of 18 places around the world and a year since 1981, then **Load** (online).
 - **NASA Earth Information Center** – use the search above the tabs. Each note is one map: its average over the area, with the highest value as a second channel.
-- **Open CSV** (or drop a file on the chart) – comma, semicolon or tab separated; up to six numeric columns; a year/date/name column becomes the labels; a unit in brackets (`Temp (°C)`) is detected.
+- **Your own data** – **Upload** (next to the tabs) or drop the file on the chart: CSV, TSV, TXT/DAT (comma, semicolon or tab separated), JSON (a list of numbers, of rows or of objects, or columns), GeoJSON (one row per feature), Excel **.xlsx/.xlsm** and OpenDocument **.ods** (the first sheet). Up to six numeric columns; a year/date/name column becomes the labels; a unit in brackets (`Temp (°C)`) is detected. Old .xls files: save as .xlsx or CSV first.
 
 ## Earth events tab
 
@@ -162,7 +163,7 @@ Events are played **from west to east**, as one sweep across the map, like readi
 - **NASA Earth Information Center**: search above the tabs; the newest map of the data set is drawn in its own colours over the real spread of the data in the area.
 - **Live NASA satellite views** (NASA GIBS): whole Earth today, Earth at night, Amazon, Himalaya, Greenland ice sheet, western Sahara. Choose the **Date** for daily views.
 - **Works offline**: a world relief map and two generated illustrations (clearly labelled as not satellite data).
-- **Open picture** (next to the Steps slider) – any PNG, JPG or WebP.
+- **Your own picture** – **Upload**: PNG, JPG, WebP, GIF, BMP, AVIF, SVG, ICO (and TIFF or HEIC where your browser can open them).
 
 Options:
 
@@ -174,7 +175,7 @@ Options:
 
 - **NASA EIC · GEDI forest height** – a globe of forest height measured by the GEDI lidar (2019–2020). You hear the **forest height shown** (m) and how much **land is in view** as the globe turns: the Amazon, Congo and South-East Asia rise in pitch.
 - **NASA EIC · Global carbon dioxide** – the DYAMOND model of CO₂ in January–March 2020. You hear the **CO₂ shown** (ppm) and the **area above ~420 ppm**: plumes over East Asia and fire regions are louder and higher.
-- **Open video** – your own MP4 or WebM (up to 200 MB). Bit2Beat plays its **brightness**, **colour** and **motion**; the empty background around a subject is left out. Analysis happens on your computer.
+- **Your own video** – **Upload**: MP4, WebM, MOV, M4V, OGV, MKV and others your browser can play (up to 200 MB). Bit2Beat plays its **brightness**, **colour** and **motion**; the empty background around a subject is left out. Analysis happens on your computer.
 
 The NASA presets are read **through their own colour bar**, so the notes follow the data the visualisation shows, not just how bright it looks. Each note stands for half a second of video.
 

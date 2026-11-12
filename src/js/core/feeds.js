@@ -178,7 +178,8 @@
   }
 
   async function liveEonet(days = 30) {
-    const j = await fetchJson(`https://eonet.gsfc.nasa.gov/api/v3/events?status=all&days=${days}`);
+    // EONET can take half a minute to answer a month of events: wait up to 45 s
+    const j = await fetchJson(`https://eonet.gsfc.nasa.gov/api/v3/events?status=all&days=${days}`, 45000);
     const flat = (a, o = []) => (typeof a[0] === 'number' ? (o.push(a), o) : (a.forEach((x) => flat(x, o)), o));
     let rows = (j.events || [])
       .map((x) => {
@@ -296,12 +297,23 @@
     };
   }
 
-  async function liveEvents(days = 30) {
+  /**
+   * Live natural events and earthquakes. When one service does not answer, its saved copy
+   * (`saved.eonet()` / `saved.quakes()`, else the bundled snapshot) fills in, so the sweep never
+   * loses a whole kind of event; the note says which part is not live.
+   */
+  async function liveEvents(days = 30, saved = {}) {
     const [ev, qk] = await Promise.allSettled([liveEonet(days), liveQuakes(quakeFeedFor(days))]);
     if (ev.status === 'rejected' && qk.status === 'rejected') throw new Error(ev.reason?.message || 'Neither NASA EONET nor USGS answered.');
-    const e = ev.status === 'fulfilled' ? ev.value : null;
-    const q = qk.status === 'fulfilled' ? qk.value : null;
-    return combineEvents(e, q, `Natural events and earthquakes · past ${days} days`, { source: [e && 'NASA EONET v3', q && 'USGS Earthquake Hazards Program'].filter(Boolean).join(' + '), url: e ? 'https://eonet.gsfc.nasa.gov/' : 'https://earthquake.usgs.gov/', fetched: new Date().toISOString(), live: true });
+    const e = ev.status === 'fulfilled' ? ev.value : (saved.eonet || offlineEonet)();
+    const q = qk.status === 'fulfilled' ? qk.value : (saved.quakes || offlineQuakes)();
+    const stale = ev.status === 'rejected' ? 'natural events' : qk.status === 'rejected' ? 'earthquakes' : '';
+    const out = combineEvents(e, q, `Natural events and earthquakes · past ${days} days`, { source: 'NASA EONET v3 + USGS Earthquake Hazards Program', url: 'https://eonet.gsfc.nasa.gov/', fetched: new Date().toISOString(), live: true });
+    if (stale) {
+      out.partial = true;
+      out.origin.note = `${out.origin.note ? out.origin.note + ' ' : ''}The ${stale} service did not answer in time, so the ${stale} are the last saved copy.`;
+    }
+    return out;
   }
   function offlineEvents() {
     const e = offlineEonet();

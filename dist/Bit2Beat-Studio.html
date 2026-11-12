@@ -3348,9 +3348,10 @@ select.combo-native {
   flex: 1 1 240px;
 }
 
-/* the Open button beside the Steps slider (Image tab) */
-#opts-image #uploadBtn {
-  align-self: end;
+/* Upload, next to the tabs: one button for every kind of file */
+.upload-btn {
+  border-color: var(--amber);
+  font-weight: 650;
 }
 
 /* ---------- Follow pointer: the pointer is the player, so the player bar steps aside ---------- */
@@ -3618,6 +3619,23 @@ body.pointer-mode main {
   margin-left: 6px;
 }
 
+.results-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.results-bar[hidden] {
+  display: none;
+}
+.results-bar .btn .i {
+  width: 12px;
+  height: 12px;
+}
+
 </style>
 <!-- abcjs licence:
 Copyright (c) 2009-2026 Paul Rosen and Gregory Dyke
@@ -3688,10 +3706,10 @@ THE SOFTWARE.
       <button role="tab" id="tab-earth" data-mode="earth" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Earth events</button>
       <button role="tab" id="tab-data" data-mode="data" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Data</button>
     </div>
+    <button type="button" class="btn upload-btn" id="uploadBtn" title="Open any file: data (CSV, TSV, TXT, JSON, GeoJSON, Excel, OpenDocument), a picture (PNG, JPG, WebP, GIF, SVG…) or a video (MP4, WebM, MOV, MKV…). Bit2Beat opens the right tab by itself."><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Upload</span></button>
+    <input type="file" id="fileInput" hidden accept=".csv,.tsv,.tab,.txt,.dat,.prn,.json,.geojson,.xlsx,.xlsm,.ods,.png,.jpg,.jpeg,.jfif,.webp,.gif,.bmp,.avif,.svg,.ico,.tif,.tiff,.heic,.heif,.mp4,.m4v,.webm,.mov,.qt,.ogv,.ogg,.mkv,.3gp,.3g2,.mpeg,.mpg,.avi,.wmv,.flv,.ts,.m2ts,image/*,video/*,text/csv,application/json">
     <label class="source-pick"><span class="sr-only">Source</span><select id="sourceSelect" aria-label="Choose what to listen to"></select></label>
     <button type="button" class="btn btn-quiet" id="reloadBtn" title="Load this source again (the newest data when online)"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Reload</button>
-    <button type="button" class="btn" id="uploadBtn"><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Open CSV</span></button>
-    <input type="file" id="fileInput" hidden>
   </div>
 
   <section class="eic-search" id="eicSearch" aria-labelledby="searchLabel">
@@ -3713,6 +3731,7 @@ THE SOFTWARE.
     </form>
     <div class="search-suggest" id="searchSuggest" aria-label="Ideas to search"></div>
     <p class="search-status" id="searchStatus" role="status">Results and suggestions appear as you type. Turn on Gemini to ask in your own words.</p>
+    <div class="results-bar" id="resultsBar" hidden><span id="resultsCount"></span><button type="button" class="btn btn-quiet btn-small" id="clearResults"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg>Clear results</button></div>
     <ul class="search-results" id="searchResults" aria-label="Search results"></ul>
     <details class="eic-more">
       <summary>Use another catalogue</summary>
@@ -3744,7 +3763,7 @@ THE SOFTWARE.
         <div class="canvas-wrap" id="dropZone">
           <canvas id="sourceCanvas" width="1200" height="560" role="img" aria-label="Source preview"></canvas>
           <div class="hover-tip" id="hoverTip" hidden></div>
-          <div class="drop-hint" id="dropHint" hidden>Drop a CSV, image or video</div>
+          <div class="drop-hint" id="dropHint" hidden>Drop any data file, picture or video</div>
         </div>
 
         <div class="source-options" id="opts-data" hidden>
@@ -3861,7 +3880,7 @@ THE SOFTWARE.
       <section class="card" aria-labelledby="soundTitle">
         <div class="card-head">
           <h2 id="soundTitle">Sound</h2>
-          <button type="button" class="btn btn-quiet" id="autoTuneBtn" title="Choose scale, tempo and instrument from the shape of the data">Suggest</button>
+          <button type="button" class="btn btn-quiet" id="autoTuneBtn" title="Smart Tuning: choose scale, tempo and instrument from the shape of the data">Smart Tuning</button>
         </div>
         <div class="mood-row">
           <span class="mood-label" id="moodLabel">Mood</span>
@@ -4105,7 +4124,7 @@ THE SOFTWARE.
   <ol class="help-steps">
     <li><b>Find something to hear.</b> Search NASA’s Earth Information Center above the tabs (turn on AI mode to ask in your own words), or pick from the menu. Image turns a map or picture into sound, Video follows a NASA animation or time-lapse, Earth events plays natural events and earthquakes across the map, Data plays climate series and your own CSV.</li>
     <li><b>Press Play.</b> Higher values play higher. The Melody panel and the score show the same notes.</li>
-    <li><b>Shape the sound.</b> Pick a mood (sad, happy or excited), change instrument, scale and tempo, mute or solo channels, or press Suggest.</li>
+    <li><b>Shape the sound.</b> Pick a mood (sad, happy or excited), change instrument, scale and tempo, mute or solo channels, or press Smart Tuning.</li>
     <li><b>Export.</b> Download audio, the notes as CSV or the score.</li>
   </ol>
   <div class="btn-row help-bitty"><button type="button" class="btn btn-primary" id="helpTour">Let Bitty guide me</button><button type="button" class="btn" id="helpStory">Listen to Bitty’s story</button></div>
@@ -6099,7 +6118,8 @@ THE SOFTWARE.
   }
 
   async function liveEonet(days = 30) {
-    const j = await fetchJson(`https://eonet.gsfc.nasa.gov/api/v3/events?status=all&days=${days}`);
+    // EONET can take half a minute to answer a month of events: wait up to 45 s
+    const j = await fetchJson(`https://eonet.gsfc.nasa.gov/api/v3/events?status=all&days=${days}`, 45000);
     const flat = (a, o = []) => (typeof a[0] === 'number' ? (o.push(a), o) : (a.forEach((x) => flat(x, o)), o));
     let rows = (j.events || [])
       .map((x) => {
@@ -6217,12 +6237,23 @@ THE SOFTWARE.
     };
   }
 
-  async function liveEvents(days = 30) {
+  /**
+   * Live natural events and earthquakes. When one service does not answer, its saved copy
+   * (`saved.eonet()` / `saved.quakes()`, else the bundled snapshot) fills in, so the sweep never
+   * loses a whole kind of event; the note says which part is not live.
+   */
+  async function liveEvents(days = 30, saved = {}) {
     const [ev, qk] = await Promise.allSettled([liveEonet(days), liveQuakes(quakeFeedFor(days))]);
     if (ev.status === 'rejected' && qk.status === 'rejected') throw new Error(ev.reason?.message || 'Neither NASA EONET nor USGS answered.');
-    const e = ev.status === 'fulfilled' ? ev.value : null;
-    const q = qk.status === 'fulfilled' ? qk.value : null;
-    return combineEvents(e, q, `Natural events and earthquakes · past ${days} days`, { source: [e && 'NASA EONET v3', q && 'USGS Earthquake Hazards Program'].filter(Boolean).join(' + '), url: e ? 'https://eonet.gsfc.nasa.gov/' : 'https://earthquake.usgs.gov/', fetched: new Date().toISOString(), live: true });
+    const e = ev.status === 'fulfilled' ? ev.value : (saved.eonet || offlineEonet)();
+    const q = qk.status === 'fulfilled' ? qk.value : (saved.quakes || offlineQuakes)();
+    const stale = ev.status === 'rejected' ? 'natural events' : qk.status === 'rejected' ? 'earthquakes' : '';
+    const out = combineEvents(e, q, `Natural events and earthquakes · past ${days} days`, { source: 'NASA EONET v3 + USGS Earthquake Hazards Program', url: 'https://eonet.gsfc.nasa.gov/', fetched: new Date().toISOString(), live: true });
+    if (stale) {
+      out.partial = true;
+      out.origin.note = `${out.origin.note ? out.origin.note + ' ' : ''}The ${stale} service did not answer in time, so the ${stale} are the last saved copy.`;
+    }
+    return out;
   }
   function offlineEvents() {
     const e = offlineEonet();
@@ -6997,6 +7028,223 @@ THE SOFTWARE.
   }
 
   return { MIME, workbook, zip, crc32, col };
+});
+
+</script>
+<script>/* src/js/core/tables.js */
+/**
+ * Bit2Beat core · smart upload: what kind of file is this, and tables from any spreadsheet.
+ *
+ * kindOf(name, type) → 'data' | 'image' | 'video' | 'audio' | 'unknown' from the extension
+ * (and the MIME type when the extension says nothing).
+ * Data files of every common kind become CSV text, so the one CSV reader (core/csv.js) handles
+ * them all: CSV / TSV / TXT / DAT, JSON (array of numbers, array of rows or objects, object of
+ * columns), GeoJSON (one row per feature), Excel .xlsx / .xlsm and OpenDocument .ods (the first
+ * sheet; unzipped with an injected `inflate`, so the browser's DecompressionStream does the work
+ * and the tests run in Node).
+ */
+(function (root, factory) {
+  const mod = factory();
+  if (typeof module === 'object' && module.exports) module.exports = mod;
+  else (root.Bit2Beat = root.Bit2Beat || {}).tables = mod;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const EXT = {
+    data: ['csv', 'tsv', 'tab', 'txt', 'dat', 'prn', 'json', 'geojson', 'xlsx', 'xlsm', 'ods'],
+    image: ['png', 'jpg', 'jpeg', 'jfif', 'pjpeg', 'webp', 'gif', 'bmp', 'avif', 'svg', 'ico', 'tif', 'tiff', 'heic', 'heif'],
+    video: ['mp4', 'm4v', 'webm', 'mov', 'qt', 'ogv', 'ogg', 'mkv', '3gp', '3g2', 'mpeg', 'mpg', 'avi', 'wmv', 'flv', 'ts', 'm2ts'],
+    audio: ['mp3', 'wav', 'flac', 'aac', 'm4a', 'opus', 'oga', 'wma', 'aiff', 'aif'],
+  };
+  /** Old or closed formats with a clear way out. */
+  const SAVE_AS = { xls: 'Excel 97–2003 (.xls)', numbers: 'Apple Numbers', pdf: 'PDF', doc: 'Word', docx: 'Word', pptx: 'PowerPoint' };
+
+  const extOf = (name) => (String(name || '').toLowerCase().match(/\.([a-z0-9]+)$/) || [])[1] || '';
+
+  function kindOf(name, type = '') {
+    const ext = extOf(name);
+    for (const [kind, list] of Object.entries(EXT)) if (list.includes(ext)) return kind;
+    if (/^image\//.test(type)) return 'image';
+    if (/^video\//.test(type)) return 'video';
+    if (/^audio\//.test(type)) return 'audio';
+    if (/csv|tab-separated|json|spreadsheet|text\/plain/.test(type)) return 'data';
+    return 'unknown';
+  }
+
+  /** A short, helpful message for a file Bit2Beat cannot open. */
+  function refusal(name, type = '') {
+    const ext = extOf(name);
+    const kind = kindOf(name, type);
+    if (kind === 'audio') return 'That is a sound file. Bit2Beat makes sound from data: open a data file (CSV, Excel, JSON), a picture or a video.';
+    if (SAVE_AS[ext]) return `${SAVE_AS[ext]} files cannot be read here. Save it as CSV or Excel (.xlsx) and open that.`;
+    return `Bit2Beat cannot open “.${ext || '?'}” files. Open data (CSV, TSV, TXT, JSON, GeoJSON, Excel .xlsx, OpenDocument .ods), a picture (PNG, JPG, WebP, GIF, BMP, AVIF, SVG…) or a video (MP4, WebM, MOV, MKV…).`;
+  }
+
+  // ---------------------------------------------------------------- CSV out
+  const cell = (v) => {
+    const s = v == null ? '' : String(v);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const toCsv = (rows) => rows.map((r) => r.map(cell).join(',')).join('\n');
+
+  // ---------------------------------------------------------------- JSON and GeoJSON
+  /** Rows (first row = header) from parsed JSON; throws a plain message if there is no table in it. */
+  function jsonRows(j) {
+    if (j && j.type === 'FeatureCollection' && Array.isArray(j.features)) {
+      const rows = j.features.map((f) => {
+        const p = { ...(f.properties || {}) };
+        const c = f.geometry?.type === 'Point' ? f.geometry.coordinates : null;
+        if (c) Object.assign(p, { longitude: c[0], latitude: c[1] });
+        return p;
+      });
+      return objectRows(rows);
+    }
+    // look one level down for the first array (e.g. { data: [...] } or { results: [...] })
+    if (j && !Array.isArray(j) && typeof j === 'object') {
+      const vals = Object.values(j);
+      if (vals.length && vals.every((v) => Array.isArray(v) && v.every((x) => typeof x !== 'object' || x === null))) {
+        // an object of columns: { year: [...], temp: [...] }
+        const keys = Object.keys(j);
+        const n = Math.max(...vals.map((v) => v.length));
+        return [keys, ...Array.from({ length: n }, (_, i) => keys.map((k) => j[k][i] ?? ''))];
+      }
+      const inner = vals.find((v) => Array.isArray(v) && v.length) || vals.find((v) => v && typeof v === 'object' && !Array.isArray(v));
+      if (inner) return jsonRows(inner);
+    }
+    if (!Array.isArray(j) || !j.length) throw new Error('This JSON file has no table of numbers in it.');
+    if (j.every((v) => typeof v === 'number' || v === null)) return [['value'], ...j.map((v) => [v])];
+    if (j.every((r) => Array.isArray(r))) return j.every((r) => r.every((v) => typeof v === 'number' || v === null)) ? [j[0].map((_, i) => `column ${i + 1}`), ...j] : j;
+    if (j.every((r) => r && typeof r === 'object')) return objectRows(j);
+    throw new Error('This JSON file has no table of numbers in it.');
+  }
+  function objectRows(list) {
+    const keys = [];
+    list.forEach((o) => Object.keys(o).forEach((k) => typeof o[k] !== 'object' || o[k] === null ? !keys.includes(k) && keys.push(k) : null));
+    if (!keys.length) throw new Error('This file has no columns of numbers in it.');
+    return [keys, ...list.map((o) => keys.map((k) => o[k] ?? ''))];
+  }
+
+  // ---------------------------------------------------------------- zip (xlsx, ods)
+  /** Files of a zip: { name → Uint8Array }. `inflate(bytes)` → Promise<Uint8Array> (raw deflate). */
+  async function unzip(bytes, inflate, wanted = () => true) {
+    const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+    let eocd = -1;
+    for (let i = u8.length - 22; i >= Math.max(0, u8.length - 66000); i--)
+      if (dv.getUint32(i, true) === 0x06054b50) {
+        eocd = i;
+        break;
+      }
+    if (eocd < 0) throw new Error('This file is damaged (not a valid spreadsheet).');
+    const count = dv.getUint16(eocd + 10, true);
+    let p = dv.getUint32(eocd + 16, true);
+    const out = {};
+    const dec = new TextDecoder();
+    for (let k = 0; k < count; k++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) break;
+      const method = dv.getUint16(p + 10, true);
+      const size = dv.getUint32(p + 20, true);
+      const nameLen = dv.getUint16(p + 28, true);
+      const extra = dv.getUint16(p + 30, true);
+      const comment = dv.getUint16(p + 32, true);
+      const local = dv.getUint32(p + 42, true);
+      const name = dec.decode(u8.subarray(p + 46, p + 46 + nameLen));
+      p += 46 + nameLen + extra + comment;
+      if (!wanted(name)) continue;
+      const start = local + 30 + dv.getUint16(local + 26, true) + dv.getUint16(local + 28, true);
+      const data = u8.subarray(start, start + size);
+      if (method === 0) out[name] = data;
+      else if (method === 8) out[name] = await inflate(data);
+      else throw new Error('This spreadsheet uses a compression Bit2Beat cannot read. Save it as CSV.');
+    }
+    return out;
+  }
+
+  const unescape = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n)).replace(/&amp;/g, '&');
+  const colIndex = (ref) => [...ref.replace(/\d+/g, '')].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+
+  /** Rows of the first sheet of an .xlsx / .xlsm workbook. */
+  async function xlsxRows(bytes, inflate) {
+    const files = await unzip(bytes, inflate, (n) => /^xl\/(sharedStrings\.xml|workbook\.xml|_rels\/workbook\.xml\.rels|worksheets\/sheet\d+\.xml)$/.test(n));
+    const dec = new TextDecoder();
+    const text = (n) => (files[n] ? dec.decode(files[n]) : '');
+    const shared = [...text('xl/sharedStrings.xml').matchAll(/<si>([\s\S]*?)<\/si>/g)].map((m) => unescape([...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map((t) => t[1]).join('')));
+    // the first sheet in workbook order
+    const first = (text('xl/workbook.xml').match(/<sheet [^>]*r:id="([^"]+)"/) || [])[1];
+    const target = first && (text('xl/_rels/workbook.xml.rels').match(new RegExp(`Id="${first}"[^>]*Target="([^"]+)"|Target="([^"]+)"[^>]*Id="${first}"`)) || []).slice(1).find(Boolean);
+    const sheet = text(target ? 'xl/' + target.replace(/^\/?xl\//, '') : '') || text(Object.keys(files).filter((n) => /worksheets\/sheet\d+\.xml$/.test(n)).sort()[0] || '');
+    if (!sheet) throw new Error('This workbook has no sheet with data.');
+    const rows = [];
+    for (const r of sheet.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
+      const row = [];
+      for (const c of r[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+        const attrs = c[1];
+        const ref = (attrs.match(/\br="([A-Z]+)\d+"/) || [])[1];
+        const t = (attrs.match(/\bt="([^"]+)"/) || [])[1];
+        const body = c[2] || '';
+        const v = (body.match(/<v>([\s\S]*?)<\/v>/) || [])[1];
+        let val = '';
+        if (t === 's') val = shared[+v] ?? '';
+        else if (t === 'inlineStr') val = unescape([...body.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map((m) => m[1]).join(''));
+        else if (t === 'b') val = v === '1' ? 'TRUE' : 'FALSE';
+        else if (v != null) val = t === 'str' || t === 'e' ? unescape(v) : v;
+        row[ref ? colIndex(ref) : row.length] = val;
+      }
+      rows.push(Array.from(row, (v) => v ?? ''));
+    }
+    return trim(rows);
+  }
+
+  /** Rows of the first table of an OpenDocument spreadsheet (.ods). */
+  async function odsRows(bytes, inflate) {
+    const files = await unzip(bytes, inflate, (n) => n === 'content.xml');
+    if (!files['content.xml']) throw new Error('This file is damaged (no content.xml).');
+    const xml = new TextDecoder().decode(files['content.xml']);
+    const table = (xml.match(/<table:table\b[\s\S]*?<\/table:table>/) || [])[0] || '';
+    const rows = [];
+    for (const r of table.matchAll(/<table:table-row\b([^>]*)>([\s\S]*?)<\/table:table-row>/g)) {
+      const row = [];
+      for (const c of r[2].matchAll(/<table:table-cell\b([^>]*?)(?:\/>|>([\s\S]*?)<\/table:table-cell>)/g)) {
+        const rep = Math.min(50, +((c[1].match(/number-columns-repeated="(\d+)"/) || [])[1] || 1));
+        const num = (c[1].match(/office:value="([^"]+)"/) || [])[1];
+        const txt = unescape([...(c[2] || '').matchAll(/<text:p[^>]*>([\s\S]*?)<\/text:p>/g)].map((m) => m[1].replace(/<[^>]+>/g, '')).join(' '));
+        for (let k = 0; k < rep; k++) row.push(num ?? txt);
+      }
+      const times = Math.min(10000, +((r[1].match(/number-rows-repeated="(\d+)"/) || [])[1] || 1));
+      for (let k = 0; k < times && rows.length < 100000; k++) rows.push(row);
+    }
+    return trim(rows);
+  }
+
+  /** Drop empty rows and the empty columns at the right. */
+  function trim(rows) {
+    const full = rows.filter((r) => r.some((v) => String(v).trim() !== ''));
+    if (!full.length) throw new Error('This sheet is empty.');
+    const width = Math.max(...full.map((r) => r.map((v) => String(v).trim() !== '').lastIndexOf(true) + 1));
+    return full.map((r) => Array.from({ length: width }, (_, i) => r[i] ?? ''));
+  }
+
+  /**
+   * Any data file → CSV text for core/csv.js.
+   * `read` = { text(): Promise<string>, bytes(): Promise<Uint8Array> }, `inflate` as in unzip().
+   */
+  async function toCsvText(name, read, inflate) {
+    const ext = extOf(name);
+    if (ext === 'json' || ext === 'geojson') {
+      let j;
+      try {
+        j = JSON.parse(await read.text());
+      } catch {
+        throw new Error('This JSON file could not be read (it is not valid JSON).');
+      }
+      return toCsv(jsonRows(j));
+    }
+    if (ext === 'xlsx' || ext === 'xlsm') return toCsv(await xlsxRows(await read.bytes(), inflate));
+    if (ext === 'ods') return toCsv(await odsRows(await read.bytes(), inflate));
+    return read.text();
+  }
+
+  return { EXT, extOf, kindOf, refusal, toCsv, jsonRows, unzip, xlsxRows, odsRows, toCsvText };
 });
 
 </script>
@@ -8783,10 +9031,13 @@ THE SOFTWARE.
       const timer = setTimeout(() => reject(new Error('The image took too long to load.')), timeoutMs);
       img.onload = () => {
         clearTimeout(timer);
-        const k = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+        // an SVG without a size has no natural size: draw it at 1200 × 800
+        const nw = img.naturalWidth || 1200;
+        const nh = img.naturalHeight || 800;
+        const k = Math.min(1, maxDim / Math.max(nw, nh));
         const c = document.createElement('canvas');
-        c.width = Math.max(1, Math.round(img.naturalWidth * k));
-        c.height = Math.max(1, Math.round(img.naturalHeight * k));
+        c.width = Math.max(1, Math.round(nw * k));
+        c.height = Math.max(1, Math.round(nh * k));
         const g = c.getContext('2d', { willReadFrequently: true });
         g.drawImage(img, 0, 0, c.width, c.height);
         try {
@@ -9937,7 +10188,7 @@ ${m.mouth}
   ];
 
   // ------------------------------------------------------------------ earth
-  const cacheKey = (feed, arg) => `b2b-feed3-${feed}-${arg ?? ''}`; // v3: west → east layout
+  const cacheKey = (feed, arg) => `b2b-feed4-${feed}-${arg ?? ''}`; // v4: never keeps a copy with one kind of event missing
 
   /** Instant offline source (cached live copy if any, else bundled snapshot). */
   function earthOffline(feed, arg) {
@@ -9947,8 +10198,10 @@ ${m.mouth}
   }
   /** Live source; saves a copy for offline use. */
   async function earthLive(feed, arg) {
-    const src = await B.feeds.live[feed](arg);
-    storage.set(cacheKey(feed, arg), src);
+    // the combined sweep fills a part that did not answer with that feed's own saved copy
+    const saved = feed === 'events' ? { eonet: () => earthOffline('eonet', arg), quakes: () => earthOffline('quakes', B.feeds.quakeFeedFor(arg)) } : undefined;
+    const src = await B.feeds.live[feed](arg, saved);
+    if (!src.partial) storage.set(cacheKey(feed, arg), src);
     return src;
   }
 
@@ -9957,7 +10210,7 @@ ${m.mouth}
     const parsed = B.csv.parseCSV(text);
     return {
       src: {
-        name: fileName.replace(/\.(csv|tsv|txt)$/i, ''),
+        name: fileName.replace(/\.[a-z0-9]+$/i, ''),
         kind: 'data',
         view: 'chart',
         origin: { source: 'Your file · ' + fileName, url: '', fetched: '', live: false, note: parsed.labelName ? `Steps are labelled by “${parsed.labelName}”.` : '' },
@@ -10058,11 +10311,20 @@ ${m.mouth}
     throw new Error('Unknown image.');
   }
 
+  /** Raw-deflate decompression for spreadsheets (.xlsx, .ods), done by the browser. */
+  async function inflate(bytes) {
+    if (typeof DecompressionStream === 'undefined') throw new Error('This browser cannot open spreadsheets: save the sheet as CSV.');
+    return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+  }
+
   async function fromImageFile(file) {
-    if (file.size > 15 * 1024 * 1024) throw new Error('Please choose an image smaller than 15 MB.');
+    if (file.size > 25 * 1024 * 1024) throw new Error('Please choose an image smaller than 25 MB.');
     const url = URL.createObjectURL(file);
+    const ext = B.tables.extOf(file.name);
     try {
-      const canvas = await B.illustrations.loadToCanvas(url, 1200);
+      const canvas = await B.illustrations.loadToCanvas(url, 1200).catch(() => {
+        throw new Error(`Your browser cannot open this ${ext ? '.' + ext + ' ' : ''}picture. Save it as JPG or PNG and open that.`);
+      });
       return { canvas, meta: { name: file.name.replace(/\.[a-z0-9]+$/i, ''), origin: { source: 'Your picture · ' + file.name, url: '', fetched: '', live: false } } };
     } finally {
       URL.revokeObjectURL(url);
@@ -10087,7 +10349,7 @@ ${m.mouth}
           signal?.removeEventListener('abort', cancel);
         };
         const done = () => { cleanup(); resolve(); };
-        const fail = () => { cleanup(); reject(new Error('Could not decode this video. Try an MP4 or WebM supported by your browser.')); };
+        const fail = () => { cleanup(); reject(new Error(`Your browser cannot play this video${B.tables.extOf(file.name) ? ' (.' + B.tables.extOf(file.name) + ')' : ''}. Convert it to MP4 or WebM and open that.`)); };
         const cancel = () => { cleanup(); reject(aborted()); };
         const timer = setTimeout(() => { cleanup(); reject(new Error('Video decoding timed out. Try a shorter clip.')); }, 15000);
         video.addEventListener(event, done, { once: true });
@@ -10179,7 +10441,7 @@ ${m.mouth}
     sel.value = state.choice[state.mode];
   }
 
-  B.sources = { fillSourceSelect, EARTH_MENU, IMAGE_MENU, VIDEO_MENU, earthSample, videoPreset, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile, fromVideoFile };
+  B.sources = { inflate, fillSourceSelect, EARTH_MENU, IMAGE_MENU, VIDEO_MENU, earthSample, videoPreset, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile, fromVideoFile };
 })(typeof self !== 'undefined' ? self : this);
 
 </script>
@@ -10367,7 +10629,7 @@ ${m.mouth}
       app.persist();
       if (rebuild) app.rebuild();
     };
-    /** Everything a mood or Suggest changes, so one click can undo it. */
+    /** Everything a mood or Smart Tuning changes, so one click can undo it. */
     const snapshot = () => ({ S: { ...S }, room: A.room, eq: { ...A.eq }, mix: app.state.mix.map((m) => m.instrument), note: $('autoTuneNote').textContent, noteHidden: $('autoTuneNote').hidden });
     const restore = (snap, what) => {
       Object.assign(S, snap.S);
@@ -10432,7 +10694,7 @@ ${m.mouth}
       app.persist();
       app.rebuild();
       announce(t.reason);
-      offerUndo(snap, `Suggested: ${music.SCALES[t.scale]?.name || t.scale}, ${t.tempo} BPM, ${B.audio.instruments[t.instrument]?.name || t.instrument}.`, 'Suggest');
+      offerUndo(snap, `Smart Tuning: ${music.SCALES[t.scale]?.name || t.scale}, ${t.tempo} BPM, ${B.audio.instruments[t.instrument]?.name || t.instrument}.`, 'Smart Tuning');
     };
     // moods: one click sets the whole sound (always pentatonic); any change by hand leaves the mood
     $$('#moods button').forEach((b) => {
@@ -11606,7 +11868,7 @@ ${m.mouth}
       steps: [
         { id: 'tabs', mood: 'curious', target: '.modes', ensure: 'data', title: 'Four ways to listen', text: 'Image turns NASA maps and satellite views into sound. Video follows NASA animations and time-lapses. Earth events plays natural events and earthquakes across the map. Data plays climate series and your own CSV files.' },
         { id: 'search', mood: 'excited', target: '#eicSearch', ensure: 'data', title: 'Ask for any Earth data', text: 'Type what you want to hear in your own words, like “methane from wetlands in the Amazon”. I search NASA’s Earth Information Center (Gemini helps me pick) and play it in the tab you are in: a map in Image, a time-lapse in Video, a melody in Data.' },
-        { id: 'source', mood: 'happy', target: '.source-pick', ensure: 'data', title: 'Pick a source', text: 'Each tab has its own menu. Everything in it is real data with a source line, and it works offline too. “Open CSV” brings your own numbers.' },
+        { id: 'source', mood: 'happy', target: '.source-pick', ensure: 'data', title: 'Pick a source', text: 'Each tab has its own menu. Everything in it is real data with a source line, and it works offline too. Upload brings your own file: data, a picture or a video, and opens the right tab by itself.' },
         { id: 'chart', mood: 'curious', target: '#sourceCard', ensure: 'data', title: 'This is what you hear', text: 'Left to right is time. Higher on the chart means a higher note. Hover to read a value; click anywhere to hear that one step.' },
         {
           id: 'play',
@@ -11621,7 +11883,7 @@ ${m.mouth}
         },
         { id: 'now', mood: 'happy', target: '.card.now', title: 'Now playing', text: 'The navy card says which step is playing, its note, and the real value behind it. The bars dance with the sound.' },
         { id: 'melody', mood: 'curious', target: '.duo', title: 'See it, read it', text: 'Melody shows every note, with the amber line as the playhead. “What the data says” explains the trend in plain words; Read aloud (or D) reads it to you, and you can pause or stop me at the top of the screen.' },
-        { id: 'sound', mood: 'happy', target: section('soundTitle'), title: 'Make it yours', text: 'Change the instrument, scale and tempo, or press Suggest and I’ll pick them from the shape of the data.' },
+        { id: 'sound', mood: 'happy', target: section('soundTitle'), title: 'Make it yours', text: 'Change the instrument, scale and tempo, or press Smart Tuning and I’ll pick them from the shape of the data.' },
         { id: 'channels', mood: 'curious', target: section('mixTitle'), title: 'One voice per series', text: 'Every series is its own voice. M mutes it, S plays it alone and ⇅ flips its pitch.' },
         {
           id: 'earth',
@@ -11657,7 +11919,7 @@ ${m.mouth}
         { id: 'd-source', mood: 'happy', target: '.source-pick', ensure: 'data', title: 'Pick a data set', text: 'NASA global temperature since 1880, the Arctic (Svalbard) by year or by day, or a practice shape. Practice shapes teach your ears what a rise, a peak or a cycle sounds like.' },
         { id: 'd-length', mood: 'curious', target: '#opts-data > .field', ensure: 'data', title: 'Points to play', text: 'Long series can be squeezed into 240, 120, 60 or 30 steps. Each step is the average of its group, so a whole year of days fits into half a minute.' },
         { id: 'd-power', mood: 'excited', target: '#powerForm', ensure: 'data', title: 'Any place, any year', text: 'NASA POWER has daily weather for every place on Earth. Pick one of 18 places and a year since 1981, then Load. You hear temperature and sunlight day by day (needs internet).' },
-        { id: 'd-csv', mood: 'happy', target: '#uploadBtn', ensure: 'data', title: 'Your own numbers', text: 'Open CSV, or drop a file on the chart. Up to six number columns, each one a voice; a year or date column becomes the labels. Your file never leaves your computer.' },
+        { id: 'd-csv', mood: 'happy', target: '#uploadBtn', ensure: 'data', title: 'Your own numbers', text: 'Upload (next to the tabs) opens any file and picks the right tab: CSV, TSV, TXT, JSON, GeoJSON, Excel or OpenDocument sheets play here. Up to six number columns, each one a voice; a year or date column becomes the labels. Your file never leaves your computer.' },
         { id: 'd-aids', mood: 'curious', target: '#insights', ensure: 'data', title: 'What the data says', text: 'I sum up the trend, the highest and lowest values and any sudden jumps. Under Listening aids you can add a reference tone at the baseline and a tick on sudden jumps.' },
         { id: 'd-table', mood: 'happy', target: '#tableBtn', title: 'Every number, as text', text: 'Readings (or T) lists every value with its note, frequency and time. Pick a row to hear that step.' },
       ],
@@ -11678,7 +11940,7 @@ ${m.mouth}
       title: 'The Image tab',
       steps: [
         { id: 'i-search', mood: 'excited', target: '#eicSearch', ensure: 'image', title: 'Search the Earth Information Center', text: 'Type a subject and a place in your own words. Choose a result and I draw its newest map, coloured over the real spread of the data, and play it.' },
-        { id: 'i-source', mood: 'curious', target: '.source-pick', ensure: 'image', title: 'Or pick a picture', text: 'NASA pictures that work offline, live NASA satellite views (choose a date), an offline world map, or Open picture (next to Steps) for your own.' },
+        { id: 'i-source', mood: 'curious', target: '.source-pick', ensure: 'image', title: 'Or pick a picture', text: 'NASA pictures that work offline, live NASA satellite views (choose a date), an offline world map, or Upload (next to the tabs) for your own picture.' },
         { id: 'i-look', mood: 'happy', target: '#analysisGroup', ensure: 'image', title: 'What to hear', text: 'Light plays brightness, detail and where the bright areas are. Colour plays red, green and blue. Colour key (NASA pictures) reads the real value through the picture’s own colour bar.' },
         { id: 'i-scan', mood: 'excited', target: '#scanGroup', ensure: 'image', title: 'How to scan', text: 'Left to right, top to bottom, Radar (a beam turns around the centre and reaches every corner), or Follow pointer: move your mouse or finger over the picture and hear the data under it. Click the picture to jump there.' },
         { id: 'i-steps', mood: 'curious', target: '#opts-image .field-range', ensure: 'image', title: 'Steps', text: 'How many bands the picture is cut into, from 16 to 160. More steps means more detail and a longer melody. Empty background around a globe stays silent.' },
@@ -11692,7 +11954,7 @@ ${m.mouth}
         { id: 'v-video', mood: 'excited', target: '#videoBox', ensure: 'video', title: 'The video follows the music', text: 'The NASA video plays muted, in step with the notes. Click it to play or pause; ← and → step through it and show that exact moment.' },
         { id: 'v-timeline', mood: 'curious', target: '#dropZone', ensure: 'video', title: 'Two notes per second', text: 'Below the video is the music’s timeline. Each note stands for half a second of video, averaged so flickering pictures do not fake a rhythm.' },
         { id: 'v-mix', mood: 'happy', target: section('mixTitle'), ensure: 'video', title: 'Read through the colour bar', text: 'NASA videos are read through their colour bar: you hear the value shown (forest height or CO₂) and how much of the picture shows data. Motion starts muted; unmute it to hear the change.' },
-        { id: 'v-open', mood: 'happy', target: '#uploadBtn', ensure: 'video', title: 'Your own video', text: 'Open video plays your MP4 or WebM (up to 200 MB): brightness, colour and motion, with empty background left out. It is analysed on your computer.' },
+        { id: 'v-open', mood: 'happy', target: '#uploadBtn', ensure: 'video', title: 'Your own video', text: 'Upload (next to the tabs) plays your own video: MP4, WebM, MOV, MKV and more (up to 200 MB). You hear brightness, colour and motion, with empty background left out. It is analysed on your computer.' },
       ],
     },
   };
@@ -12454,6 +12716,8 @@ ${m.mouth}
         }),
       );
       if (note != null) say(note);
+      $('resultsBar').hidden = !results.length;
+      $('resultsCount').textContent = `${results.length} result${results.length === 1 ? '' : 's'}`;
       syncIdeas();
       mark();
     }
@@ -12641,6 +12905,11 @@ ${m.mouth}
     });
     $('searchInput').addEventListener('blur', () => setTimeout(closeHints, 120));
     $('searchClear').onclick = clear;
+    // Clear results: remove the result cards (and the words that found them); what is playing keeps playing
+    $('clearResults').onclick = () => {
+      clear();
+      announce('Search results cleared.');
+    };
 
     // changing the area or the number of maps replays the data set that is playing
     const replay = () => {
@@ -12669,9 +12938,8 @@ ${m.mouth}
  * Bit2Beat ui · the options under the picture, per tab:
  *   Data   – points to play, NASA POWER daily data for a place and year;
  *   Earth  – period, rhythm of the sweep, Get latest;
- *   Image  – what to measure, how to scan, steps (with Open picture beside it), satellite date.
- * Also: Follow pointer hides the player bar (the pointer is the player), and the Open button
- * moves next to the Steps slider in the Image tab.
+ *   Image  – what to measure, how to scan, steps, satellite date.
+ * Also: Follow pointer hides the player bar (the pointer is the player).
  */
 (function (root) {
   'use strict';
@@ -12796,18 +13064,7 @@ ${m.mouth}
       document.body.classList.toggle('pointer-mode', on);
       if (on && app.player.playing) app.player.pause();
     }
-    /** In the Image tab the Open button sits next to the Steps slider; elsewhere in the toolbar. */
-    const stepsField = $('stepsRange').closest('label');
-    function placeOpen(mode) {
-      const btn = $('uploadBtn');
-      if (mode === 'image') stepsField.after(btn);
-      else $('fileInput').before(btn);
-    }
-    root.addEventListener('b2b:mode', (e) => {
-      placeOpen(e.detail.mode);
-      syncPointer();
-    });
-    placeOpen(state.mode);
+    root.addEventListener('b2b:mode', syncPointer);
     syncPointer();
 
     return { loadPower, syncPointer };
@@ -13160,7 +13417,7 @@ ${m.mouth}
 (function () {
   'use strict';
   const B = window.Bit2Beat || {};
-  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView', 'eic', 'eicView', 'eicSearch', 'search', 'options', 'xlsx'];
+  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView', 'eic', 'eicView', 'eicSearch', 'search', 'options', 'xlsx', 'tables'];
   const missing = need.filter((k) => !B[k]);
   if (missing.length) {
     document.body.insertAdjacentHTML('afterbegin', `<p role="alert" style="padding:16px;background:#fbe9d0;color:#14213d">Bit2Beat could not load: ${missing.join(', ')}. Open the single-file build in dist/ or serve the folder.</p>`);
@@ -13556,9 +13813,6 @@ ${m.mouth}
       b.tabIndex = on ? 0 : -1;
     });
     ['data', 'earth', 'image', 'video'].forEach((m) => ($('opts-' + m).hidden = m !== mode));
-    $('uploadBtn').hidden = mode === 'earth';
-    $('uploadLabel').textContent = mode === 'video' ? 'Open video' : mode === 'image' ? 'Open picture' : 'Open CSV';
-    $('fileInput').accept = mode === 'video' ? 'video/*,.mp4,.webm,.mov,.m4v' : mode === 'image' ? 'image/png,image/jpeg,image/webp' : '.csv,.tsv,.txt,text/csv';
     fillSourceSelect();
     syncEarthOptions();
     syncImageOptions();
@@ -13587,10 +13841,10 @@ ${m.mouth}
     videoImport?.abort();
     const controller = new AbortController();
     videoImport = controller;
-    const isCsv = /\.(csv|tsv|txt)$/i.test(file.name) || /csv|tab-separated|text\/plain/.test(file.type);
-    const isImage = /^image\/(png|jpe?g|webp)$/.test(file.type) || /\.(png|jpe?g|webp)$/i.test(file.name);
+    // smart upload: the kind of file decides the tab (data, picture or video)
+    const kind = B.tables.kindOf(file.name, file.type);
     try {
-      if (/^video\//.test(file.type) || /\.(mp4|webm|mov|m4v|ogv)$/i.test(file.name)) {
+      if (kind === 'video') {
         player.pause();
         setBusy(true, 'Analysing video…');
         const next = await B.sources.fromVideoFile(file, {
@@ -13604,9 +13858,12 @@ ${m.mouth}
         state.choice.video = 'upload';
         setMode('video');
         toast(`Video ready: ${next.labels.length} frames, two per second. Press Play: the picture follows the music.`, 5000);
-      } else if (isCsv) {
-        if (file.size > B.csv.LIMITS.maxBytes) throw new Error('Please choose a CSV smaller than 2 MB.');
-        const { src: s, parsed } = B.sources.fromCsv(await file.text(), file.name);
+      } else if (kind === 'data') {
+        if (file.size > 20 * 1024 * 1024) throw new Error('Please choose a data file smaller than 20 MB.');
+        setBusy(true, 'Reading the file…');
+        const text = await B.tables.toCsvText(file.name, { text: () => file.text(), bytes: async () => new Uint8Array(await file.arrayBuffer()) }, B.sources.inflate);
+        if (text.length > B.csv.LIMITS.maxBytes) throw new Error('This table is too big to play (more than 2 MB as text). Keep the columns you need, or fewer rows.');
+        const { src: s, parsed } = B.sources.fromCsv(text, file.name);
         uploads.data = s;
         state.choice.data = 'upload';
         if (state.mode !== 'data') setMode('data');
@@ -13615,7 +13872,7 @@ ${m.mouth}
           setSource(s);
         }
         toast(`Loaded ${parsed.count} rows, ${parsed.cols.length} channel${parsed.cols.length > 1 ? 's' : ''}.` + (parsed.skipped ? ` ${parsed.skipped} more numeric column(s) skipped (limit 6).` : '') + (parsed.missing ? ' Missing values stay silent.' : ''), 5000);
-      } else if (isImage) {
+      } else if (kind === 'image') {
         uploads.image = await B.sources.fromImageFile(file);
         state.choice.image = 'upload';
         if (state.mode !== 'image') setMode('image');
@@ -13625,11 +13882,14 @@ ${m.mouth}
           imageBase = uploads.image;
           analyseImage();
         }
-      } else throw new Error('Choose a CSV, PNG/JPG/WebP picture, or a browser-supported video (MP4 or WebM).');
+      } else throw new Error(B.tables.refusal(file.name, file.type));
     } catch (e) {
       if (e.name !== 'AbortError') toast(e.message, 5000);
     } finally {
-      if (videoImport === controller) { videoImport = null; setBusy(false); }
+      if (videoImport === controller) {
+        videoImport = null;
+        setBusy(false);
+      }
       $('fileInput').value = '';
     }
   }

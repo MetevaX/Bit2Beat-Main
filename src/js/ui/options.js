@@ -2,9 +2,8 @@
  * Bit2Beat ui · the options under the picture, per tab:
  *   Data   – points to play, NASA POWER daily data for a place and year;
  *   Earth  – period, rhythm of the sweep, Get latest;
- *   Image  – what to measure, how to scan, steps (with Open picture beside it), satellite date.
- * Also: Follow pointer hides the player bar (the pointer is the player), and the Open button
- * moves next to the Steps slider in the Image tab.
+ *   Image  – what to measure, how to scan, steps, satellite date.
+ * Also: Follow pointer hides the player bar (the pointer is the player).
  */
 (function (root) {
   'use strict';
@@ -129,18 +128,7 @@
       document.body.classList.toggle('pointer-mode', on);
       if (on && app.player.playing) app.player.pause();
     }
-    /** In the Image tab the Open button sits next to the Steps slider; elsewhere in the toolbar. */
-    const stepsField = $('stepsRange').closest('label');
-    function placeOpen(mode) {
-      const btn = $('uploadBtn');
-      if (mode === 'image') stepsField.after(btn);
-      else $('fileInput').before(btn);
-    }
-    root.addEventListener('b2b:mode', (e) => {
-      placeOpen(e.detail.mode);
-      syncPointer();
-    });
-    placeOpen(state.mode);
+    root.addEventListener('b2b:mode', syncPointer);
     syncPointer();
 
     return { loadPower, syncPointer };

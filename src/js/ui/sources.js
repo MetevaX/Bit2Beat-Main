@@ -36,7 +36,7 @@
   ];
 
   // ------------------------------------------------------------------ earth
-  const cacheKey = (feed, arg) => `b2b-feed3-${feed}-${arg ?? ''}`; // v3: west → east layout
+  const cacheKey = (feed, arg) => `b2b-feed4-${feed}-${arg ?? ''}`; // v4: never keeps a copy with one kind of event missing
 
   /** Instant offline source (cached live copy if any, else bundled snapshot). */
   function earthOffline(feed, arg) {
@@ -46,8 +46,10 @@
   }
   /** Live source; saves a copy for offline use. */
   async function earthLive(feed, arg) {
-    const src = await B.feeds.live[feed](arg);
-    storage.set(cacheKey(feed, arg), src);
+    // the combined sweep fills a part that did not answer with that feed's own saved copy
+    const saved = feed === 'events' ? { eonet: () => earthOffline('eonet', arg), quakes: () => earthOffline('quakes', B.feeds.quakeFeedFor(arg)) } : undefined;
+    const src = await B.feeds.live[feed](arg, saved);
+    if (!src.partial) storage.set(cacheKey(feed, arg), src);
     return src;
   }
 
@@ -56,7 +58,7 @@
     const parsed = B.csv.parseCSV(text);
     return {
       src: {
-        name: fileName.replace(/\.(csv|tsv|txt)$/i, ''),
+        name: fileName.replace(/\.[a-z0-9]+$/i, ''),
         kind: 'data',
         view: 'chart',
         origin: { source: 'Your file · ' + fileName, url: '', fetched: '', live: false, note: parsed.labelName ? `Steps are labelled by “${parsed.labelName}”.` : '' },
@@ -157,11 +159,20 @@
     throw new Error('Unknown image.');
   }
 
+  /** Raw-deflate decompression for spreadsheets (.xlsx, .ods), done by the browser. */
+  async function inflate(bytes) {
+    if (typeof DecompressionStream === 'undefined') throw new Error('This browser cannot open spreadsheets: save the sheet as CSV.');
+    return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+  }
+
   async function fromImageFile(file) {
-    if (file.size > 15 * 1024 * 1024) throw new Error('Please choose an image smaller than 15 MB.');
+    if (file.size > 25 * 1024 * 1024) throw new Error('Please choose an image smaller than 25 MB.');
     const url = URL.createObjectURL(file);
+    const ext = B.tables.extOf(file.name);
     try {
-      const canvas = await B.illustrations.loadToCanvas(url, 1200);
+      const canvas = await B.illustrations.loadToCanvas(url, 1200).catch(() => {
+        throw new Error(`Your browser cannot open this ${ext ? '.' + ext + ' ' : ''}picture. Save it as JPG or PNG and open that.`);
+      });
       return { canvas, meta: { name: file.name.replace(/\.[a-z0-9]+$/i, ''), origin: { source: 'Your picture · ' + file.name, url: '', fetched: '', live: false } } };
     } finally {
       URL.revokeObjectURL(url);
@@ -186,7 +197,7 @@
           signal?.removeEventListener('abort', cancel);
         };
         const done = () => { cleanup(); resolve(); };
-        const fail = () => { cleanup(); reject(new Error('Could not decode this video. Try an MP4 or WebM supported by your browser.')); };
+        const fail = () => { cleanup(); reject(new Error(`Your browser cannot play this video${B.tables.extOf(file.name) ? ' (.' + B.tables.extOf(file.name) + ')' : ''}. Convert it to MP4 or WebM and open that.`)); };
         const cancel = () => { cleanup(); reject(aborted()); };
         const timer = setTimeout(() => { cleanup(); reject(new Error('Video decoding timed out. Try a shorter clip.')); }, 15000);
         video.addEventListener(event, done, { once: true });
@@ -278,5 +289,5 @@
     sel.value = state.choice[state.mode];
   }
 
-  B.sources = { fillSourceSelect, EARTH_MENU, IMAGE_MENU, VIDEO_MENU, earthSample, videoPreset, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile, fromVideoFile };
+  B.sources = { inflate, fillSourceSelect, EARTH_MENU, IMAGE_MENU, VIDEO_MENU, earthSample, videoPreset, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile, fromVideoFile };
 })(typeof self !== 'undefined' ? self : this);

@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   const B = window.Bit2Beat || {};
-  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView', 'eic', 'eicView', 'eicSearch', 'search', 'options', 'xlsx'];
+  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView', 'eic', 'eicView', 'eicSearch', 'search', 'options', 'xlsx', 'tables'];
   const missing = need.filter((k) => !B[k]);
   if (missing.length) {
     document.body.insertAdjacentHTML('afterbegin', `<p role="alert" style="padding:16px;background:#fbe9d0;color:#14213d">Bit2Beat could not load: ${missing.join(', ')}. Open the single-file build in dist/ or serve the folder.</p>`);
@@ -402,9 +402,6 @@
       b.tabIndex = on ? 0 : -1;
     });
     ['data', 'earth', 'image', 'video'].forEach((m) => ($('opts-' + m).hidden = m !== mode));
-    $('uploadBtn').hidden = mode === 'earth';
-    $('uploadLabel').textContent = mode === 'video' ? 'Open video' : mode === 'image' ? 'Open picture' : 'Open CSV';
-    $('fileInput').accept = mode === 'video' ? 'video/*,.mp4,.webm,.mov,.m4v' : mode === 'image' ? 'image/png,image/jpeg,image/webp' : '.csv,.tsv,.txt,text/csv';
     fillSourceSelect();
     syncEarthOptions();
     syncImageOptions();
@@ -433,10 +430,10 @@
     videoImport?.abort();
     const controller = new AbortController();
     videoImport = controller;
-    const isCsv = /\.(csv|tsv|txt)$/i.test(file.name) || /csv|tab-separated|text\/plain/.test(file.type);
-    const isImage = /^image\/(png|jpe?g|webp)$/.test(file.type) || /\.(png|jpe?g|webp)$/i.test(file.name);
+    // smart upload: the kind of file decides the tab (data, picture or video)
+    const kind = B.tables.kindOf(file.name, file.type);
     try {
-      if (/^video\//.test(file.type) || /\.(mp4|webm|mov|m4v|ogv)$/i.test(file.name)) {
+      if (kind === 'video') {
         player.pause();
         setBusy(true, 'Analysing video…');
         const next = await B.sources.fromVideoFile(file, {
@@ -450,9 +447,12 @@
         state.choice.video = 'upload';
         setMode('video');
         toast(`Video ready: ${next.labels.length} frames, two per second. Press Play: the picture follows the music.`, 5000);
-      } else if (isCsv) {
-        if (file.size > B.csv.LIMITS.maxBytes) throw new Error('Please choose a CSV smaller than 2 MB.');
-        const { src: s, parsed } = B.sources.fromCsv(await file.text(), file.name);
+      } else if (kind === 'data') {
+        if (file.size > 20 * 1024 * 1024) throw new Error('Please choose a data file smaller than 20 MB.');
+        setBusy(true, 'Reading the file…');
+        const text = await B.tables.toCsvText(file.name, { text: () => file.text(), bytes: async () => new Uint8Array(await file.arrayBuffer()) }, B.sources.inflate);
+        if (text.length > B.csv.LIMITS.maxBytes) throw new Error('This table is too big to play (more than 2 MB as text). Keep the columns you need, or fewer rows.');
+        const { src: s, parsed } = B.sources.fromCsv(text, file.name);
         uploads.data = s;
         state.choice.data = 'upload';
         if (state.mode !== 'data') setMode('data');
@@ -461,7 +461,7 @@
           setSource(s);
         }
         toast(`Loaded ${parsed.count} rows, ${parsed.cols.length} channel${parsed.cols.length > 1 ? 's' : ''}.` + (parsed.skipped ? ` ${parsed.skipped} more numeric column(s) skipped (limit 6).` : '') + (parsed.missing ? ' Missing values stay silent.' : ''), 5000);
-      } else if (isImage) {
+      } else if (kind === 'image') {
         uploads.image = await B.sources.fromImageFile(file);
         state.choice.image = 'upload';
         if (state.mode !== 'image') setMode('image');
@@ -471,11 +471,14 @@
           imageBase = uploads.image;
           analyseImage();
         }
-      } else throw new Error('Choose a CSV, PNG/JPG/WebP picture, or a browser-supported video (MP4 or WebM).');
+      } else throw new Error(B.tables.refusal(file.name, file.type));
     } catch (e) {
       if (e.name !== 'AbortError') toast(e.message, 5000);
     } finally {
-      if (videoImport === controller) { videoImport = null; setBusy(false); }
+      if (videoImport === controller) {
+        videoImport = null;
+        setBusy(false);
+      }
       $('fileInput').value = '';
     }
   }

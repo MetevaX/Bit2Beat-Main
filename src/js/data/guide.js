@@ -64,7 +64,7 @@
       steps: [
         { id: 'tabs', mood: 'curious', target: '.modes', ensure: 'data', title: 'Four ways to listen', text: 'Image turns NASA maps and satellite views into sound. Video follows NASA animations and time-lapses. Earth events plays natural events and earthquakes across the map. Data plays climate series and your own CSV files.' },
         { id: 'search', mood: 'excited', target: '#eicSearch', ensure: 'data', title: 'Ask for any Earth data', text: 'Type what you want to hear in your own words, like “methane from wetlands in the Amazon”. I search NASA’s Earth Information Center (Gemini helps me pick) and play it in the tab you are in: a map in Image, a time-lapse in Video, a melody in Data.' },
-        { id: 'source', mood: 'happy', target: '.source-pick', ensure: 'data', title: 'Pick a source', text: 'Each tab has its own menu. Everything in it is real data with a source line, and it works offline too. “Open CSV” brings your own numbers.' },
+        { id: 'source', mood: 'happy', target: '.source-pick', ensure: 'data', title: 'Pick a source', text: 'Each tab has its own menu. Everything in it is real data with a source line, and it works offline too. Upload brings your own file: data, a picture or a video, and opens the right tab by itself.' },
         { id: 'chart', mood: 'curious', target: '#sourceCard', ensure: 'data', title: 'This is what you hear', text: 'Left to right is time. Higher on the chart means a higher note. Hover to read a value; click anywhere to hear that one step.' },
         {
           id: 'play',
@@ -79,7 +79,7 @@
         },
         { id: 'now', mood: 'happy', target: '.card.now', title: 'Now playing', text: 'The navy card says which step is playing, its note, and the real value behind it. The bars dance with the sound.' },
         { id: 'melody', mood: 'curious', target: '.duo', title: 'See it, read it', text: 'Melody shows every note, with the amber line as the playhead. “What the data says” explains the trend in plain words; Read aloud (or D) reads it to you, and you can pause or stop me at the top of the screen.' },
-        { id: 'sound', mood: 'happy', target: section('soundTitle'), title: 'Make it yours', text: 'Change the instrument, scale and tempo, or press Suggest and I’ll pick them from the shape of the data.' },
+        { id: 'sound', mood: 'happy', target: section('soundTitle'), title: 'Make it yours', text: 'Change the instrument, scale and tempo, or press Smart Tuning and I’ll pick them from the shape of the data.' },
         { id: 'channels', mood: 'curious', target: section('mixTitle'), title: 'One voice per series', text: 'Every series is its own voice. M mutes it, S plays it alone and ⇅ flips its pitch.' },
         {
           id: 'earth',
@@ -115,7 +115,7 @@
         { id: 'd-source', mood: 'happy', target: '.source-pick', ensure: 'data', title: 'Pick a data set', text: 'NASA global temperature since 1880, the Arctic (Svalbard) by year or by day, or a practice shape. Practice shapes teach your ears what a rise, a peak or a cycle sounds like.' },
         { id: 'd-length', mood: 'curious', target: '#opts-data > .field', ensure: 'data', title: 'Points to play', text: 'Long series can be squeezed into 240, 120, 60 or 30 steps. Each step is the average of its group, so a whole year of days fits into half a minute.' },
         { id: 'd-power', mood: 'excited', target: '#powerForm', ensure: 'data', title: 'Any place, any year', text: 'NASA POWER has daily weather for every place on Earth. Pick one of 18 places and a year since 1981, then Load. You hear temperature and sunlight day by day (needs internet).' },
-        { id: 'd-csv', mood: 'happy', target: '#uploadBtn', ensure: 'data', title: 'Your own numbers', text: 'Open CSV, or drop a file on the chart. Up to six number columns, each one a voice; a year or date column becomes the labels. Your file never leaves your computer.' },
+        { id: 'd-csv', mood: 'happy', target: '#uploadBtn', ensure: 'data', title: 'Your own numbers', text: 'Upload (next to the tabs) opens any file and picks the right tab: CSV, TSV, TXT, JSON, GeoJSON, Excel or OpenDocument sheets play here. Up to six number columns, each one a voice; a year or date column becomes the labels. Your file never leaves your computer.' },
         { id: 'd-aids', mood: 'curious', target: '#insights', ensure: 'data', title: 'What the data says', text: 'I sum up the trend, the highest and lowest values and any sudden jumps. Under Listening aids you can add a reference tone at the baseline and a tick on sudden jumps.' },
         { id: 'd-table', mood: 'happy', target: '#tableBtn', title: 'Every number, as text', text: 'Readings (or T) lists every value with its note, frequency and time. Pick a row to hear that step.' },
       ],
@@ -136,7 +136,7 @@
       title: 'The Image tab',
       steps: [
         { id: 'i-search', mood: 'excited', target: '#eicSearch', ensure: 'image', title: 'Search the Earth Information Center', text: 'Type a subject and a place in your own words. Choose a result and I draw its newest map, coloured over the real spread of the data, and play it.' },
-        { id: 'i-source', mood: 'curious', target: '.source-pick', ensure: 'image', title: 'Or pick a picture', text: 'NASA pictures that work offline, live NASA satellite views (choose a date), an offline world map, or Open picture (next to Steps) for your own.' },
+        { id: 'i-source', mood: 'curious', target: '.source-pick', ensure: 'image', title: 'Or pick a picture', text: 'NASA pictures that work offline, live NASA satellite views (choose a date), an offline world map, or Upload (next to the tabs) for your own picture.' },
         { id: 'i-look', mood: 'happy', target: '#analysisGroup', ensure: 'image', title: 'What to hear', text: 'Light plays brightness, detail and where the bright areas are. Colour plays red, green and blue. Colour key (NASA pictures) reads the real value through the picture’s own colour bar.' },
         { id: 'i-scan', mood: 'excited', target: '#scanGroup', ensure: 'image', title: 'How to scan', text: 'Left to right, top to bottom, Radar (a beam turns around the centre and reaches every corner), or Follow pointer: move your mouse or finger over the picture and hear the data under it. Click the picture to jump there.' },
         { id: 'i-steps', mood: 'curious', target: '#opts-image .field-range', ensure: 'image', title: 'Steps', text: 'How many bands the picture is cut into, from 16 to 160. More steps means more detail and a longer melody. Empty background around a globe stays silent.' },
@@ -150,7 +150,7 @@
         { id: 'v-video', mood: 'excited', target: '#videoBox', ensure: 'video', title: 'The video follows the music', text: 'The NASA video plays muted, in step with the notes. Click it to play or pause; ← and → step through it and show that exact moment.' },
         { id: 'v-timeline', mood: 'curious', target: '#dropZone', ensure: 'video', title: 'Two notes per second', text: 'Below the video is the music’s timeline. Each note stands for half a second of video, averaged so flickering pictures do not fake a rhythm.' },
         { id: 'v-mix', mood: 'happy', target: section('mixTitle'), ensure: 'video', title: 'Read through the colour bar', text: 'NASA videos are read through their colour bar: you hear the value shown (forest height or CO₂) and how much of the picture shows data. Motion starts muted; unmute it to hear the change.' },
-        { id: 'v-open', mood: 'happy', target: '#uploadBtn', ensure: 'video', title: 'Your own video', text: 'Open video plays your MP4 or WebM (up to 200 MB): brightness, colour and motion, with empty background left out. It is analysed on your computer.' },
+        { id: 'v-open', mood: 'happy', target: '#uploadBtn', ensure: 'video', title: 'Your own video', text: 'Upload (next to the tabs) plays your own video: MP4, WebM, MOV, MKV and more (up to 200 MB). You hear brightness, colour and motion, with empty background left out. It is analysed on your computer.' },
       ],
     },
   };

@@ -105,6 +105,8 @@
         }),
       );
       if (note != null) say(note);
+      $('resultsBar').hidden = !results.length;
+      $('resultsCount').textContent = `${results.length} result${results.length === 1 ? '' : 's'}`;
       syncIdeas();
       mark();
     }
@@ -292,6 +294,11 @@
     });
     $('searchInput').addEventListener('blur', () => setTimeout(closeHints, 120));
     $('searchClear').onclick = clear;
+    // Clear results: remove the result cards (and the words that found them); what is playing keeps playing
+    $('clearResults').onclick = () => {
+      clear();
+      announce('Search results cleared.');
+    };
 
     // changing the area or the number of maps replays the data set that is playing
     const replay = () => {

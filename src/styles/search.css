@@ -145,9 +145,10 @@
   flex: 1 1 240px;
 }
 
-/* the Open button beside the Steps slider (Image tab) */
-#opts-image #uploadBtn {
-  align-self: end;
+/* Upload, next to the tabs: one button for every kind of file */
+.upload-btn {
+  border-color: var(--amber);
+  font-weight: 650;
 }
 
 /* ---------- Follow pointer: the pointer is the player, so the player bar steps aside ---------- */
@@ -413,4 +414,21 @@ body.pointer-mode main {
 .ai-toggle .beta {
   display: inline-block;
   margin-left: 6px;
+}
+
+.results-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.results-bar[hidden] {
+  display: none;
+}
+.results-bar .btn .i {
+  width: 12px;
+  height: 12px;
 }

@@ -71,7 +71,7 @@ Because the index is rounded on an evenly divided list, the mapping never goes d
 - **Trend**: least-squares line; called a rise/fall only when R² ≥ 0.25 and the fitted change is ≥ 15 % of the range (“slightly” for R² ≥ 0.1 and ≥ 10 %). Reported per decade or month when the labels are years or days.
 - **Sudden jumps**: for each point, a straight line is fitted to its neighbours (window ≈ n/12, 5–31 points, shifted inwards at the edges, the point itself left out). Residuals are scored with the modified z-score `0.6745 (r − median)/MAD`; |z| ≥ 3.5 is a jump. The fit is repeated without the flagged points so one spike does not make its neighbours look odd, and a jump must be at least about 5 % of the range. Smooth curves, seasonal cycles and steady trends produce no flags (tested).
 - **Reference tone**: a soft fundamental + octave at the note of the baseline value (GISTEMP: 0 °C = the 1951–1980 average) or of the lead channel’s mean.
-- **Suggest**: smooth data → slower tempo and strings; jumpy data → faster and marimba; clearly rising → major, falling → minor.
+- **Smart Tuning**: smooth data → slower tempo and violin; jumpy data → faster and marimba; rising → major pentatonic, falling → minor pentatonic.
 
 ## 6. Playback and export
 

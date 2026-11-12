@@ -181,7 +181,7 @@
       app.persist();
       if (rebuild) app.rebuild();
     };
-    /** Everything a mood or Suggest changes, so one click can undo it. */
+    /** Everything a mood or Smart Tuning changes, so one click can undo it. */
     const snapshot = () => ({ S: { ...S }, room: A.room, eq: { ...A.eq }, mix: app.state.mix.map((m) => m.instrument), note: $('autoTuneNote').textContent, noteHidden: $('autoTuneNote').hidden });
     const restore = (snap, what) => {
       Object.assign(S, snap.S);
@@ -246,7 +246,7 @@
       app.persist();
       app.rebuild();
       announce(t.reason);
-      offerUndo(snap, `Suggested: ${music.SCALES[t.scale]?.name || t.scale}, ${t.tempo} BPM, ${B.audio.instruments[t.instrument]?.name || t.instrument}.`, 'Suggest');
+      offerUndo(snap, `Smart Tuning: ${music.SCALES[t.scale]?.name || t.scale}, ${t.tempo} BPM, ${B.audio.instruments[t.instrument]?.name || t.instrument}.`, 'Smart Tuning');
     };
     // moods: one click sets the whole sound (always pentatonic); any change by hand leaves the mood
     $$('#moods button').forEach((b) => {
