@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.8.1 — 12 November 2026
+- **AI search keeps working when Gemini is busy.** If Gemini 3.8 Flash answers "high demand", the server asks again, then lets Gemini 3.6 Flash (or 3.5 Flash) answer; the search line says which model picked. A real error (such as a wrong key) is shown at once.
+
 ## 2.8.0 — 12 November 2026
 - **The Earth Information Center comes first.** Tabs are now *Image · Video · Earth events · Data*, and the studio opens on the newest Earth Information Center map (the bundled GEDI picture when offline).
 - **One search for the whole catalogue.** A search box above Image, Video and Data replaces the three data-set menus: type what you want to hear in your own words ("methane from wetlands in the Amazon"). Keyword matches appear at once; then **Gemini 3.8 Flash** (thinking level high) picks the best data sets and finds the place, even one that is not in the list. Choose a result to hear it in the open tab: a map (Image), a time-lapse (Video) or one note per map (Data). The Gemini key stays on the server: a small Vercel function (`api/search.js`) reads it from the `GEMINI_API_KEY` setting. Without it, search still works by keyword.

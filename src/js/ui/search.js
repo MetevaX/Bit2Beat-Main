@@ -133,7 +133,8 @@
         const ans = X.answer(res, list);
         if (ans.place) setPlace(ans.place);
         if (ans.picks.length) {
-          show(ans.picks, `Gemini picked ${ans.picks.length} data set${ans.picks.length > 1 ? 's' : ''}${ans.place !== 'world' ? ` for ${ans.place.name}` : ''}. Choose one to listen.`);
+          const who = res.model && res.model !== X.MODEL ? `Gemini (${res.model.replace('gemini-', '').replace('-flash', ' Flash')}, as 3.8 Flash was busy)` : 'Gemini';
+          show(ans.picks, `${who} picked ${ans.picks.length} data set${ans.picks.length > 1 ? 's' : ''}${ans.place !== 'world' ? ` for ${ans.place.name}` : ''}. Choose one to listen.`);
           announce(`${ans.picks.length} results. First: ${info(ans.picks[0].id)?.title}.`);
         } else if (quick.length) $('searchStatus').textContent = `Gemini found nothing better; these are the keyword matches.`;
         else show([], `Nothing in the ${own ? 'Earth Information Center' : 'catalogue'} matches “${q}”. Try other words, like carbon, methane, fire or population.`);

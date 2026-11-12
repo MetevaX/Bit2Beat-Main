@@ -18,6 +18,7 @@
   'use strict';
 
   const MODEL = 'gemini-3.8-flash';
+  const FALLBACK = ['gemini-3.6-flash', 'gemini-3.5-flash']; // used only while 3.8 Flash is busy
   const MAX_QUERY = 200;
   const MAX_ITEMS = 400;
 
@@ -185,5 +186,5 @@
   /** The text of a generateContent response. */
   const textOf = (res) => (res?.candidates?.[0]?.content?.parts || []).map((p) => (p.thought ? '' : p.text || '')).join('');
 
-  return { MODEL, MAX_QUERY, MAX_ITEMS, SYNONYMS, rank, detectPlace, compact, prompt, answer, textOf, fold };
+  return { MODEL, FALLBACK, MAX_QUERY, MAX_ITEMS, SYNONYMS, rank, detectPlace, compact, prompt, answer, textOf, fold };
 });

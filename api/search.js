@@ -7,6 +7,8 @@
  * Body:   { q: "methane from swamps in the Amazon", mode: "data"|"image"|"video",
  *           collections: [{ id, title, years, about }] }   (the catalogue the page already has)
  * Answer: { picks: [{ id, why }], place: "world" | { name, lat, lon }, model }
+ * Gemini 3.8 Flash answers; while it is busy (429/5xx) it is asked once more, then the older
+ * Flash models (FALLBACK in core/eic-search.js) answer instead.
  */
 const S = require('../src/js/core/eic-search.js');
 
@@ -44,22 +46,30 @@ module.exports = async function handler(req, res) {
   if (!q) return res.status(400).json({ error: 'Type what you are looking for.' });
   if (!list.length) return res.status(400).json({ error: 'The catalogue is empty.' });
 
-  const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), 55000);
-  try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${S.MODEL}:generateContent`, {
-      method: 'POST',
-      signal: ctl.signal,
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify(S.prompt(q, mode, list)),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) return res.status(502).json({ error: `Gemini answered ${r.status}${j?.error?.message ? ': ' + String(j.error.message).slice(0, 160) : ''}` });
-    const out = S.answer(S.textOf(j), list);
-    return res.status(200).json({ ...out, model: S.MODEL });
-  } catch (e) {
-    return res.status(504).json({ error: e?.name === 'AbortError' ? 'Gemini took too long.' : 'Could not reach Gemini.' });
-  } finally {
-    clearTimeout(timer);
+  // Gemini 3.8 Flash first; when it is busy (429/500/503) try once more, then the older Flash models
+  const deadline = Date.now() + 55000;
+  let last = 'Could not reach Gemini.';
+  for (const [k, model] of [S.MODEL, S.MODEL, ...S.FALLBACK].entries()) {
+    if (Date.now() > deadline - 3000) break;
+    if (k === 1) await new Promise((r) => setTimeout(r, 1500));
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), Math.max(3000, deadline - Date.now()));
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: 'POST',
+        signal: ctl.signal,
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify(S.prompt(q, mode, list)),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok) return res.status(200).json({ ...S.answer(S.textOf(j), list), model });
+      last = `Gemini answered ${r.status}${j?.error?.message ? ': ' + String(j.error.message).slice(0, 160) : ''}`;
+      if (![429, 500, 503, 504].includes(r.status) && !(r.status === 404 && model !== S.MODEL)) break; // a real error: do not retry
+    } catch (e) {
+      last = e?.name === 'AbortError' ? 'Gemini took too long.' : 'Could not reach Gemini.';
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  return res.status(502).json({ error: last });
 };

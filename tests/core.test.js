@@ -685,6 +685,24 @@ test('api/search: key only from the server environment, checked answers, clear e
     assert.match(sent.url, /models\/gemini-3\.8-flash:generateContent$/);
     assert.equal(sent.init.headers['x-goog-api-key'], 'test-key', 'the key goes in a header, never the URL');
     assert.equal((await call({ q: '', collections }, 'test-key')).status, 400);
+    // busy model: retried, then an older Flash model answers
+    const tried = [];
+    global.fetch = async (url) => {
+      tried.push(url.match(/models\/([^:]+)/)[1]);
+      if (url.includes('gemini-3.8-flash')) return { ok: false, status: 503, json: async () => ({ error: { message: 'high demand' } }) };
+      return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"picks":[],"place":{"world":true}}' }] } }] }) };
+    };
+    const busy = await call({ q: 'carbon', collections }, 'test-key');
+    assert.equal(busy.status, 200);
+    assert.deepEqual(tried, ['gemini-3.8-flash', 'gemini-3.8-flash', 'gemini-3.6-flash']);
+    assert.equal(busy.json.model, 'gemini-3.6-flash');
+    // a real error (bad key) is not retried
+    tried.length = 0;
+    global.fetch = async (url) => (tried.push(url), { ok: false, status: 403, json: async () => ({ error: { message: 'bad key' } }) });
+    const bad = await call({ q: 'carbon', collections }, 'test-key');
+    assert.equal(bad.status, 502);
+    assert.equal(tried.length, 1);
+    assert.match(bad.json.error, /403: bad key/);
   } finally {
     global.fetch = realFetch;
   }
