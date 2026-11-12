@@ -145,10 +145,19 @@
   flex: 1 1 240px;
 }
 
-/* Upload, next to the tabs: one button for every kind of file */
-.upload-btn {
+/* Upload, in the top bar next to the pages: one button for every kind of file */
+.topbar .upload-btn {
+  margin-left: 6px;
   border-color: var(--amber);
+  color: var(--cream);
   font-weight: 650;
+}
+.topbar .upload-btn:hover {
+  background: rgba(232, 163, 61, 0.18);
+  border-color: var(--amber);
+}
+.topbar .upload-btn .i {
+  color: var(--amber);
 }
 
 /* ---------- Follow pointer: the pointer is the player, so the player bar steps aside ---------- */
@@ -431,4 +440,15 @@ body.pointer-mode main {
 .results-bar .btn .i {
   width: 12px;
   height: 12px;
+}
+@media (max-width: 760px) {
+  /* phones: Upload sits at the end of the page links row */
+  .topbar .topnav {
+    width: auto;
+    flex: 1 1 auto;
+  }
+  .topbar .upload-btn {
+    order: 4;
+    margin: 0 0 6px;
+  }
 }

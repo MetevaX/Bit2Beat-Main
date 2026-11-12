@@ -3348,10 +3348,19 @@ select.combo-native {
   flex: 1 1 240px;
 }
 
-/* Upload, next to the tabs: one button for every kind of file */
-.upload-btn {
+/* Upload, in the top bar next to the pages: one button for every kind of file */
+.topbar .upload-btn {
+  margin-left: 6px;
   border-color: var(--amber);
+  color: var(--cream);
   font-weight: 650;
+}
+.topbar .upload-btn:hover {
+  background: rgba(232, 163, 61, 0.18);
+  border-color: var(--amber);
+}
+.topbar .upload-btn .i {
+  color: var(--amber);
 }
 
 /* ---------- Follow pointer: the pointer is the player, so the player bar steps aside ---------- */
@@ -3635,6 +3644,17 @@ body.pointer-mode main {
   width: 12px;
   height: 12px;
 }
+@media (max-width: 760px) {
+  /* phones: Upload sits at the end of the page links row */
+  .topbar .topnav {
+    width: auto;
+    flex: 1 1 auto;
+  }
+  .topbar .upload-btn {
+    order: 4;
+    margin: 0 0 6px;
+  }
+}
 
 </style>
 <!-- abcjs licence:
@@ -3689,6 +3709,7 @@ THE SOFTWARE.
     <button type="button" class="topnav-link" data-page="story">Story</button>
     <button type="button" class="topnav-link" data-page="about">About the team</button>
   </nav>
+  <button type="button" class="top-btn upload-btn" id="uploadBtn" aria-label="Upload a file: data, picture or video" title="Open any file: data (CSV, TSV, TXT, JSON, GeoJSON, Excel, OpenDocument), a picture (PNG, JPG, WebP, GIF, SVG…) or a video (MP4, WebM, MOV, MKV…). Bit2Beat opens the right tab by itself."><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Upload</span></button>
   <div class="topbar-actions">
     <button type="button" class="top-btn guide-btn" id="guideBtn" aria-label="Guide: Bitty shows you how to use Bit2Beat (G)"><span class="guide-face" id="guideFace" aria-hidden="true"></span><span>Guide</span></button>
     <button type="button" class="top-btn" id="sessionsBtn">Sessions</button>
@@ -3706,7 +3727,6 @@ THE SOFTWARE.
       <button role="tab" id="tab-earth" data-mode="earth" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Earth events</button>
       <button role="tab" id="tab-data" data-mode="data" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Data</button>
     </div>
-    <button type="button" class="btn upload-btn" id="uploadBtn" title="Open any file: data (CSV, TSV, TXT, JSON, GeoJSON, Excel, OpenDocument), a picture (PNG, JPG, WebP, GIF, SVG…) or a video (MP4, WebM, MOV, MKV…). Bit2Beat opens the right tab by itself."><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Upload</span></button>
     <input type="file" id="fileInput" hidden accept=".csv,.tsv,.tab,.txt,.dat,.prn,.json,.geojson,.xlsx,.xlsm,.ods,.png,.jpg,.jpeg,.jfif,.webp,.gif,.bmp,.avif,.svg,.ico,.tif,.tiff,.heic,.heif,.mp4,.m4v,.webm,.mov,.qt,.ogv,.ogg,.mkv,.3gp,.3g2,.mpeg,.mpg,.avi,.wmv,.flv,.ts,.m2ts,image/*,video/*,text/csv,application/json">
     <label class="source-pick"><span class="sr-only">Source</span><select id="sourceSelect" aria-label="Choose what to listen to"></select></label>
     <button type="button" class="btn btn-quiet" id="reloadBtn" title="Load this source again (the newest data when online)"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Reload</button>
@@ -3880,7 +3900,7 @@ THE SOFTWARE.
       <section class="card" aria-labelledby="soundTitle">
         <div class="card-head">
           <h2 id="soundTitle">Sound</h2>
-          <button type="button" class="btn btn-quiet" id="autoTuneBtn" title="Smart Tuning: choose scale, tempo and instrument from the shape of the data">Smart Tuning</button>
+          <button type="button" class="btn btn-primary btn-small" id="autoTuneBtn" title="Smart Tuning: choose scale, tempo and instrument from the shape of the data">Smart Tuning</button>
         </div>
         <div class="mood-row">
           <span class="mood-label" id="moodLabel">Mood</span>
@@ -11919,7 +11939,7 @@ ${m.mouth}
         { id: 'd-source', mood: 'happy', target: '.source-pick', ensure: 'data', title: 'Pick a data set', text: 'NASA global temperature since 1880, the Arctic (Svalbard) by year or by day, or a practice shape. Practice shapes teach your ears what a rise, a peak or a cycle sounds like.' },
         { id: 'd-length', mood: 'curious', target: '#opts-data > .field', ensure: 'data', title: 'Points to play', text: 'Long series can be squeezed into 240, 120, 60 or 30 steps. Each step is the average of its group, so a whole year of days fits into half a minute.' },
         { id: 'd-power', mood: 'excited', target: '#powerForm', ensure: 'data', title: 'Any place, any year', text: 'NASA POWER has daily weather for every place on Earth. Pick one of 18 places and a year since 1981, then Load. You hear temperature and sunlight day by day (needs internet).' },
-        { id: 'd-csv', mood: 'happy', target: '#uploadBtn', ensure: 'data', title: 'Your own numbers', text: 'Upload (next to the tabs) opens any file and picks the right tab: CSV, TSV, TXT, JSON, GeoJSON, Excel or OpenDocument sheets play here. Up to six number columns, each one a voice; a year or date column becomes the labels. Your file never leaves your computer.' },
+        { id: 'd-csv', mood: 'happy', target: '#uploadBtn', ensure: 'data', title: 'Your own numbers', text: 'Upload (in the top bar) opens any file and picks the right tab: CSV, TSV, TXT, JSON, GeoJSON, Excel or OpenDocument sheets play here. Up to six number columns, each one a voice; a year or date column becomes the labels. Your file never leaves your computer.' },
         { id: 'd-aids', mood: 'curious', target: '#insights', ensure: 'data', title: 'What the data says', text: 'I sum up the trend, the highest and lowest values and any sudden jumps. Under Listening aids you can add a reference tone at the baseline and a tick on sudden jumps.' },
         { id: 'd-table', mood: 'happy', target: '#tableBtn', title: 'Every number, as text', text: 'Readings (or T) lists every value with its note, frequency and time. Pick a row to hear that step.' },
       ],
@@ -11940,7 +11960,7 @@ ${m.mouth}
       title: 'The Image tab',
       steps: [
         { id: 'i-search', mood: 'excited', target: '#eicSearch', ensure: 'image', title: 'Search the Earth Information Center', text: 'Type a subject and a place in your own words. Choose a result and I draw its newest map, coloured over the real spread of the data, and play it.' },
-        { id: 'i-source', mood: 'curious', target: '.source-pick', ensure: 'image', title: 'Or pick a picture', text: 'NASA pictures that work offline, live NASA satellite views (choose a date), an offline world map, or Upload (next to the tabs) for your own picture.' },
+        { id: 'i-source', mood: 'curious', target: '.source-pick', ensure: 'image', title: 'Or pick a picture', text: 'NASA pictures that work offline, live NASA satellite views (choose a date), an offline world map, or Upload (in the top bar) for your own picture.' },
         { id: 'i-look', mood: 'happy', target: '#analysisGroup', ensure: 'image', title: 'What to hear', text: 'Light plays brightness, detail and where the bright areas are. Colour plays red, green and blue. Colour key (NASA pictures) reads the real value through the picture’s own colour bar.' },
         { id: 'i-scan', mood: 'excited', target: '#scanGroup', ensure: 'image', title: 'How to scan', text: 'Left to right, top to bottom, Radar (a beam turns around the centre and reaches every corner), or Follow pointer: move your mouse or finger over the picture and hear the data under it. Click the picture to jump there.' },
         { id: 'i-steps', mood: 'curious', target: '#opts-image .field-range', ensure: 'image', title: 'Steps', text: 'How many bands the picture is cut into, from 16 to 160. More steps means more detail and a longer melody. Empty background around a globe stays silent.' },
@@ -11954,7 +11974,7 @@ ${m.mouth}
         { id: 'v-video', mood: 'excited', target: '#videoBox', ensure: 'video', title: 'The video follows the music', text: 'The NASA video plays muted, in step with the notes. Click it to play or pause; ← and → step through it and show that exact moment.' },
         { id: 'v-timeline', mood: 'curious', target: '#dropZone', ensure: 'video', title: 'Two notes per second', text: 'Below the video is the music’s timeline. Each note stands for half a second of video, averaged so flickering pictures do not fake a rhythm.' },
         { id: 'v-mix', mood: 'happy', target: section('mixTitle'), ensure: 'video', title: 'Read through the colour bar', text: 'NASA videos are read through their colour bar: you hear the value shown (forest height or CO₂) and how much of the picture shows data. Motion starts muted; unmute it to hear the change.' },
-        { id: 'v-open', mood: 'happy', target: '#uploadBtn', ensure: 'video', title: 'Your own video', text: 'Upload (next to the tabs) plays your own video: MP4, WebM, MOV, MKV and more (up to 200 MB). You hear brightness, colour and motion, with empty background left out. It is analysed on your computer.' },
+        { id: 'v-open', mood: 'happy', target: '#uploadBtn', ensure: 'video', title: 'Your own video', text: 'Upload (in the top bar) plays your own video: MP4, WebM, MOV, MKV and more (up to 200 MB). You hear brightness, colour and motion, with empty background left out. It is analysed on your computer.' },
       ],
     },
   };
@@ -13936,7 +13956,11 @@ ${m.mouth}
     syncImageOptions();
     loadChoice();
   };
-  $('uploadBtn').onclick = () => $('fileInput').click();
+  // Upload lives in the top bar: from the Story or About page it opens the studio first
+  $('uploadBtn').onclick = () => {
+    if ($('studio').hidden) showPage('studio', { focus: false });
+    $('fileInput').click();
+  };
   // Reload: fetch the current source again (live feeds and the Earth Information Center get their newest data)
   $('reloadBtn').onclick = () => {
     toast('Reloading…', 1500);

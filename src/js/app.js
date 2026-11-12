@@ -525,7 +525,11 @@
     syncImageOptions();
     loadChoice();
   };
-  $('uploadBtn').onclick = () => $('fileInput').click();
+  // Upload lives in the top bar: from the Story or About page it opens the studio first
+  $('uploadBtn').onclick = () => {
+    if ($('studio').hidden) showPage('studio', { focus: false });
+    $('fileInput').click();
+  };
   // Reload: fetch the current source again (live feeds and the Earth Information Center get their newest data)
   $('reloadBtn').onclick = () => {
     toast('Reloading…', 1500);

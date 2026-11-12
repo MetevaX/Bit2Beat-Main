@@ -99,7 +99,7 @@ Each chapter shows:
 | **Source card** | The chart, map or picture you are hearing, its source line (where the numbers come from and when), and options for that tab. Hover to read a value; click to hear that step. |
 | **Now playing** (navy panel) | The current step, its note and frequency, the reading behind it and live sound bars. |
 | **Sound** | Instrument, scale, key, range and tempo. **Smart Tuning** picks them from the shape of the data. |
-| **Upload** (next to the tabs) | One button for every file: data, picture or video. Bit2Beat looks at the file and opens the right tab. |
+| **Upload** (in the top bar, next to About the team) | One button for every file: data, picture or video. Bit2Beat looks at the file and opens the right tab. |
 | **Channels** | One row per data series: volume, instrument, **M**ute, **S**olo and **⇅** (flip pitch direction). |
 | **Listening aids** | Shared pitch scale, ticks on sudden jumps, reference tone. |
 | **Space & tone** | Output (stereo or binaural for headphones), movement, room and equaliser, and **Reset**. |
@@ -135,7 +135,7 @@ Options:
 - **Points to play** – long series can be averaged to 240, 120, 60 or 30 steps (each step is the mean of its bucket; labels become ranges).
 - **NASA POWER daily data** – pick one of 18 places around the world and a year since 1981, then **Load** (online).
 - **NASA Earth Information Center** – use the search above the tabs. Each note is one map: its average over the area, with the highest value as a second channel.
-- **Your own data** – **Upload** (next to the tabs) or drop the file on the chart: CSV, TSV, TXT/DAT (comma, semicolon or tab separated), JSON (a list of numbers, of rows or of objects, or columns), GeoJSON (one row per feature), Excel **.xlsx/.xlsm** and OpenDocument **.ods** (the first sheet). Up to six numeric columns; a year/date/name column becomes the labels; a unit in brackets (`Temp (°C)`) is detected. Old .xls files: save as .xlsx or CSV first.
+- **Your own data** – **Upload** (in the top bar, next to About the team) or drop the file on the chart: CSV, TSV, TXT/DAT (comma, semicolon or tab separated), JSON (a list of numbers, of rows or of objects, or columns), GeoJSON (one row per feature), Excel **.xlsx/.xlsm** and OpenDocument **.ods** (the first sheet). Up to six numeric columns; a year/date/name column becomes the labels; a unit in brackets (`Temp (°C)`) is detected. Old .xls files: save as .xlsx or CSV first.
 
 ## Earth events tab
 

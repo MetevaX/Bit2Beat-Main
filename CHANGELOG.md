@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.10.1 — 12 November 2026
+- **Upload moved to the top bar**, next to *About the team*, so it is there on every page (from Story or About it opens the studio first). On phones it is an icon at the end of the page links.
+- **Smart Tuning is an amber button**, like the other main actions.
+
 ## 2.10.0 — 12 November 2026
 - **Earth events: natural events no longer disappear.** NASA EONET can take half a minute to answer; Bit2Beat waited only 10 s, so the live sweep fell back to earthquakes only. It now waits up to 45 s, and if EONET still does not answer, its last saved copy fills in (the note says so) — the sweep always has every kind of event. Saved copies that were missing a part are no longer kept.
 - **Smart Upload, next to the tabs.** One **Upload** button (and drag-and-drop on the chart) for every file; Bit2Beat looks at the extension and opens the right tab: data (CSV, TSV, TXT, DAT, JSON, GeoJSON, Excel .xlsx/.xlsm, OpenDocument .ods), pictures (PNG, JPG, WebP, GIF, BMP, AVIF, SVG, ICO, and TIFF/HEIC where the browser can) and videos (MP4, WebM, MOV, M4V, OGV, MKV and more). Files it cannot read get a clear way out (for example “save it as .xlsx”). The separate Open buttons per tab are gone.

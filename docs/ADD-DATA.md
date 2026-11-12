@@ -31,7 +31,7 @@ Any [STAC API](https://stacspec.org/) whose maps are cloud-optimised GeoTIFFs an
 
 ## 3. A CSV file (no code)
 
-**Upload** (next to the tabs) or drop the file on the chart: CSV, TSV, TXT, JSON, GeoJSON, Excel (.xlsx) or OpenDocument (.ods) all work. A year, date or name column becomes the labels, up to six number columns become channels, and a unit in brackets (`CO2 (ppm)`) is detected.
+**Upload** (in the top bar, next to About the team) or drop the file on the chart: CSV, TSV, TXT, JSON, GeoJSON, Excel (.xlsx) or OpenDocument (.ods) all work. A year, date or name column becomes the labels, up to six number columns become channels, and a unit in brackets (`CO2 (ppm)`) is detected.
 
 ## 4. In code
 
