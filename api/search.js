@@ -19,9 +19,9 @@ module.exports = async function handler(req, res) {
   if (!q) return res.status(400).json({ error: 'Type what you are looking for.' });
   if (!list.length) return res.status(400).json({ error: 'The catalogue is empty.' });
   try {
-    const { text, model } = await ask(g.key, S.prompt(q, mode, list));
-    return res.status(200).json({ ...S.answer(text, list), model });
+    const { text, model, tried } = await ask(g.key, S.prompt(q, mode, list), { budget: 55000, perTry: 18000 });
+    return res.status(200).json({ ...S.answer(text, list), model, tried });
   } catch (e) {
-    return res.status(502).json({ error: e.message });
+    return res.status(502).json({ error: e.message, tried: e.tried || [] });
   }
 };

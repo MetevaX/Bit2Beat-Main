@@ -704,7 +704,7 @@ test('api/search: key only from the server environment, checked answers, clear e
     assert.match(sent.url, /models\/gemini-3\.8-flash:generateContent$/);
     assert.equal(sent.init.headers['x-goog-api-key'], 'test-key', 'the key goes in a header, never the URL');
     assert.equal((await call({ q: '', collections }, 'test-key')).status, 400);
-    // busy model: retried, then an older Flash model answers
+    // busy model: the next Flash model answers at once
     const tried = [];
     global.fetch = async (url) => {
       tried.push(url.match(/models\/([^:]+)/)[1]);
@@ -713,7 +713,7 @@ test('api/search: key only from the server environment, checked answers, clear e
     };
     const busy = await call({ q: 'carbon', collections }, 'test-key');
     assert.equal(busy.status, 200);
-    assert.deepEqual(tried, ['gemini-3.8-flash', 'gemini-3.8-flash', 'gemini-3.6-flash']);
+    assert.deepEqual(tried, ['gemini-3.8-flash', 'gemini-3.6-flash']);
     assert.equal(busy.json.model, 'gemini-3.6-flash');
     // a real error (bad key) is not retried
     tried.length = 0;
@@ -997,4 +997,30 @@ test('scientific maps: zoom reads only that part, across the date line, in full 
   const g = { data: Float32Array.from([1, 2.5, NaN, 10]), width: 2, height: 2 };
   const back = sciSource.unpack(sciSource.pack(g));
   assert.ok(Math.abs(back.data[1] - 2.5) < 1e-3 && Number.isNaN(back.data[2]), 'time-lapse frames packed in 16 bits keep their values');
+});
+
+test('Gemini: a slow or busy model is skipped, then every other Flash model the key can use', async () => {
+  const G = require('../api/_gemini.js');
+  const real = global.fetch;
+  const ok = (t) => ({ ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: t }] } }] }) });
+  const err = (s, m = 'busy') => ({ ok: false, status: s, json: async () => ({ error: { message: m } }) });
+  const hang = (o) => new Promise((_, rej) => o.signal.addEventListener('abort', () => rej(Object.assign(new Error('slow'), { name: 'AbortError' }))));
+  const req = { contents: [], generationConfig: { thinkingConfig: { thinkingLevel: 'high' } } };
+  try {
+    global.fetch = async (u, o) => (/3\.8-flash:/.test(u) ? hang(o) : ok('A'));
+    const a = await G.ask('k', req, { budget: 5000, perTry: 200 });
+    assert.equal(a.model, 'gemini-3.6-flash', 'a model that hangs is left after perTry');
+    global.fetch = async (u, o) =>
+      /models\?/.test(u)
+        ? { ok: true, json: async () => ({ models: ['gemini-2.5-flash', 'gemini-2.5-flash-image', 'gemini-3.8-flash'].map((n) => ({ name: 'models/' + n, supportedGenerationMethods: ['generateContent'] })) }) }
+        : /2\.5-flash:/.test(u)
+          ? JSON.parse(o.body).generationConfig.thinkingConfig ? err(400, 'thinking_level is not supported') : ok('B')
+          : err(503);
+    const b = await G.ask('k', req, { budget: 5000, perTry: 200 });
+    assert.equal(b.model, 'gemini-2.5-flash', 'when the usual models are busy, another Flash model from the key’s list answers');
+    global.fetch = async () => err(403, 'API key not valid');
+    await assert.rejects(G.ask('k', req, { budget: 5000, perTry: 200 }), /403/, 'a refused key stops at once');
+  } finally {
+    global.fetch = real;
+  }
 });
