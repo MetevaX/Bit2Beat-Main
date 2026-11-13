@@ -23,7 +23,7 @@ npm test        # test groups: algorithms, file formats (incl. NetCDF, HDF5, Geo
 
 ## What you can listen to
 
-One **search** above the Image, Video and Data tabs finds any data set of the NASA Earth Information Center from plain words (keyword matches at once, then Gemini 3.8 Flash picks the best ones and the place; the key stays on the server in `api/search.js`).
+One **search** above the Image, Video and Data tabs: Image and Video search the **EIC Content Database** named by the Space Apps challenge (NASA SVS pictures and videos made for the Earth Information Center; `api/eic-gallery.js`), Data searches the EIC data API. The challenge's data sets are presets in the menus and are left out of search. Image finds only pictures (the gallery plus 26 NASA satellite images of the whole Earth from GIBS, `core/gibs.js`), Video only videos, Data only data sets. Search needs no AI: results and suggestions appear as you type, and typos, word forms and everyday words are understood (`core/eic-search.js`).
 
 | Tab | Sources | Notes |
 | --- | --- | --- |
@@ -47,7 +47,7 @@ One **search** above the Image, Video and Data tabs finds any data set of the NA
 - **Tick on sudden jumps** – a quiet click on readings that jump away from their neighbours. Detection uses a leave-one-out local line and the modified z-score (|z| ≥ 3.5, Iglewicz & Hoaglin), refitted without the flagged points, so smooth curves, seasons and steady trends are not flagged.
 - **Reference tone** – a soft drone at the data’s baseline (e.g. GISTEMP’s 1951–1980 average) or its mean, so you hear above vs. below.
 - **Links remember everything** – mode, source, sound settings, mix and play position live in the address bar, so a refresh or a shared link opens the same view.
-- **Voice control** – on the first visit Bit2Beat asks (five seconds, Enter = yes) whether to turn it on; `V` toggles it. Say *play*, *pause*, *next*, *where am I*, *search for sea ice*, *go to video*, *violin*, *7.1*, *help*, *stop voice control*… Bit2Beat listens to the microphone itself and sends each phrase as a short clip to Gemini (`api/voice.js`), which understands any language or accent and may only answer with one of these commands; it works in every browser.
+- **Voice control** – on the first visit Bit2Beat asks (five seconds, Enter = yes) whether to turn it on; `V` toggles it. Say *play*, *pause*, *next*, *where am I*, *explain*, *search for sea ice* (the results are read out), *result 2*, *play ozone*, *go to video*, *violin*, *7.1*, *help*, *stop voice control*… Bit2Beat listens to the microphone itself and sends each phrase as a short clip to Gemini (`api/voice.js`), which understands any language or accent and may only answer with one of these commands; it works in every browser.
 - Keyboard scrubbing (`←` `→`, `Shift` for bars, `Home`/`End`), live captions, screen-reader updates, high contrast, dark theme, text size, larger buttons, reduced motion, mono audio.
 
 ## Export
@@ -69,6 +69,9 @@ src/js/core/                pure, Node-testable logic
   science.js sci-source.js   one way into GeoTIFF / NetCDF / HDF5; maps into sound
   sunlight.js   sunlight on Earth from astronomy (built-in map)
   voice-commands.js   the voice grammar and the checks on Gemini's answers
+  svs.js     the EIC content database (NASA SVS gallery): presets, gallery walk, search list
+  gibs.js    NASA satellite images of the whole Earth (GIBS) for the Image tab search
+  eic-search.js   keyword search without AI: typos, word forms, synonyms, ideas per tab
   spotlight.js  where Bitty’s guide bubble and dimmed areas go
   image.js   L* and colour analysis of pixels
   csv.js     CSV parser with label and unit detection
@@ -76,6 +79,7 @@ src/js/core/                pure, Node-testable logic
   eic.js     NASA Earth Information Center data API (STAC catalogue + raster statistics)
   geo.js     projection, land mask, coordinate repair
   score.js   ABC notation with correct accidentals and clefs
+  braille.js braille music code and BRF pages for embossers and braille displays
   spatial.js wav.js adm.js   3D panning, WAV and ADM BWF writers
 src/js/audio/               engine (synth, renderers) · player (scheduler) · exporter
 src/js/ui/                  one file per part of the page

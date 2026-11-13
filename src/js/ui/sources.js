@@ -14,7 +14,8 @@
     ['events', 'Natural events and earthquakes (NASA EONET + USGS)'],
     ['sample:events', 'Natural events and earthquakes · offline sample'],
   ];
-  const VIDEO_MENU = [['gedi', 'NASA EIC · GEDI forest height'], ['co2', 'NASA EIC · Global carbon dioxide']];
+  // the Space Apps challenge's data sets (core/svs.js): GEDI and CO₂ are bundled, the others load from NASA
+  const VIDEO_MENU = [['gedi', 'NASA EIC · GEDI forest height'], ['co2', 'NASA EIC · Global carbon dioxide'], ...B.svs.PRESETS.filter((p) => !p.bundled && p.video).map((p) => [`svs:${p.id}`, `NASA EIC · ${p.name}`])];
   function earthSample(id) {
     const source = B.feeds.offline[id.slice(7)]();
     source.name += ' · sample';
@@ -31,6 +32,7 @@
   }
   const IMAGE_MENU = [
     ['NASA EIC · works offline', [['nasa:gedi', 'GEDI forest height'], ['nasa:co2', 'Global carbon dioxide']]],
+    ['NASA EIC · Space Apps challenge data', B.svs.PRESETS.filter((p) => !p.bundled && p.still).map((p) => [`svs:${p.id}`, p.name])],
     ['Live NASA satellite view', [['sat:world', 'Whole Earth today (VIIRS NOAA-20)'], ['sat:lights', 'Earth at night, city lights (VIIRS Black Marble)'], ['sat:amazon', 'Amazon rainforest (MODIS)'], ['sat:himalaya', 'Himalaya and Tibetan Plateau (MODIS)'], ['sat:greenland', 'Greenland ice sheet (MODIS)'], ['sat:sahara', 'Western Sahara desert (MODIS)']]],
     ['Works offline', [['sci:sunlight', 'Sunlight on Earth, 21 June (worked out from astronomy)'], ['map:world', 'World relief map'], ['gen:storm', 'Storm spiral (generated illustration)'], ['gen:aurora', 'Aurora (generated illustration)']]],
   ];
@@ -182,11 +184,23 @@
   /** Decode a bounded number of small frames locally, keeping only two pixel buffers. */
   async function fromVideoFile(file, { signal, onProgress = () => {} } = {}) {
     if (file.size > 200 * 1024 * 1024) throw new Error('Please choose a video smaller than 200 MB.');
+    const url = URL.createObjectURL(file);
+    try {
+      const s = await fromVideo(url, { name: file.name, signal, onProgress, wait: 15000 });
+      s.origin = { source: 'Your video · ' + file.name, url: '', fetched: '', live: false, note: s.origin.note + ' Reopen the file after a refresh.' };
+      return s;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  /** Analyse a video at an address (a file of yours, or a NASA video through /svs/). */
+  async function fromVideo(url, { name = 'video', signal, onProgress = () => {}, wait = 15000 } = {}) {
+    const file = { name };
     const video = document.createElement('video');
     video.muted = true;
     video.preload = 'auto';
     video.playsInline = true;
-    const url = URL.createObjectURL(file);
     const aborted = () => new DOMException('Video analysis cancelled.', 'AbortError');
     function waitFor(event, action) {
       return new Promise((resolve, reject) => {
@@ -199,7 +213,7 @@
         const done = () => { cleanup(); resolve(); };
         const fail = () => { cleanup(); reject(new Error(`Your browser cannot play this video${B.tables.extOf(file.name) ? ' (.' + B.tables.extOf(file.name) + ')' : ''}. Convert it to MP4 or WebM and open that.`)); };
         const cancel = () => { cleanup(); reject(aborted()); };
-        const timer = setTimeout(() => { cleanup(); reject(new Error('Video decoding timed out. Try a shorter clip.')); }, 15000);
+        const timer = setTimeout(() => { cleanup(); reject(new Error('Video decoding timed out. Try a shorter clip.')); }, wait);
         video.addEventListener(event, done, { once: true });
         video.addEventListener('error', fail, { once: true });
         signal?.addEventListener('abort', cancel, { once: true });
@@ -241,14 +255,13 @@
       return {
         name: file.name.replace(/\.[a-z0-9]+$/i, ''), kind: 'video', view: 'chart',
         labels: times.map((t) => `${t.toFixed(1)} s`), times, duration: video.duration, channels,
-        origin: { source: 'Your video · ' + file.name, url: '', fetched: '', live: false,
-          note: `${times.length} frames over ${video.duration.toFixed(1)} s (two per second): brightness, colour and motion of the picture, background left out. Original sound is ignored. Reopen the file after a refresh.` },
+        origin: { source: name, url: '', fetched: '', live: false,
+          note: `${times.length} frames over ${video.duration.toFixed(1)} s (two per second): brightness, colour and motion of the picture, background left out. Original sound is ignored.` },
       };
     } finally {
       video.pause();
       video.removeAttribute('src');
       video.load();
-      URL.revokeObjectURL(url);
     }
   }
 
@@ -289,5 +302,5 @@
     sel.value = state.choice[state.mode];
   }
 
-  B.sources = { inflate, fillSourceSelect, EARTH_MENU, IMAGE_MENU, VIDEO_MENU, earthSample, videoPreset, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile, fromVideoFile };
+  B.sources = { inflate, fillSourceSelect, EARTH_MENU, IMAGE_MENU, VIDEO_MENU, earthSample, videoPreset, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile, fromVideoFile, fromVideo };
 })(typeof self !== 'undefined' ? self : this);

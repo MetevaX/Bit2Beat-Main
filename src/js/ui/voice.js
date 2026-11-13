@@ -214,6 +214,60 @@
       el.dispatchEvent(new Event(event, { bubbles: true }));
     };
 
+    // ---------------------------------------------------------------- explain, search results
+    const SOUND = { soft: 'piano', electric: 'electric piano', guitar: 'guitar', marimba: 'marimba', flute: 'flute', strings: 'violin' };
+    const first = (t) => (String(t || '').match(/^[^.!?]*[.!?]?/) || [''])[0].trim();
+    /** A short spoken explanation of what is loaded and what each sound means. */
+    function explain() {
+      const s = app.src;
+      const p = app.plan;
+      if (!s || !p?.count) return 'Nothing is loaded yet. Say search for, and a topic, or go to the image tab.';
+      const out = [`This is ${s.name.replace(/^NASA (EIC|satellite) · /, '')}.`];
+      const note = first(s.origin?.note);
+      if (note) out.push(note);
+      out.push(`It plays ${p.count} steps${p.labels[0] && p.count > 1 ? `, from ${p.labels[0]} to ${p.labels[p.count - 1]}` : ''}.`);
+      const chans = p.channels.filter((c) => c.active);
+      const heard = (chans.length ? chans : p.channels.slice(0, 1)).slice(0, 3);
+      const what = first(heard[0].hint).replace(/[.]$/, '');
+      const on = (c) => `${c.name}${SOUND[c.instrument] ? ` on the ${SOUND[c.instrument]}` : ''}`;
+      const names = heard.map(on);
+      out.push(`You hear ${names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0]}.${what && s.kind !== 'earth' ? ` ${heard[0].name}: ${what}.` : what ? ` ${what}.` : ''}${s.kind === 'earth' ? '' : ' Higher values play higher notes.'}`);
+      const insight = $('insights')?.querySelector('li')?.textContent;
+      if (insight) out.push(insight);
+      out.push('Say describe for more, or play to listen.');
+      return out.join(' ').replace(/\s+/g, ' ');
+    }
+
+    const S = () => B.search;
+    const WHAT = { image: 'pictures', video: 'videos', data: 'data sets' };
+    /** Read the top search results aloud, numbered. */
+    function readResults(q) {
+      const list = (S().results?.() || []).map((r) => S().info(r.id)).filter(Boolean).slice(0, 6);
+      if (!list.length) return say($('searchStatus').textContent || `Nothing found for ${q}.`);
+      say(`${list.length} ${(WHAT[S().mode()] || 'results').replace(/s$/, list.length === 1 ? '' : 's')} for ${q}. ` + list.map((c, k) => `${k + 1}: ${c.title}.`).join(' ') + ' Say result 1 to play the first one, or play and a name.');
+    }
+    /** Make sure a tab with search is open (Image, Video or Data); Earth events switches to Data. */
+    function searchTab() {
+      app.showPage?.('studio', { focus: false });
+      if (S()?.mode?.()) return '';
+      document.querySelector('[data-mode="data"]')?.click();
+      return ' in the Data tab';
+    }
+    /** Load one search result and start playing it. */
+    function playResult(id) {
+      const c = S().info(id);
+      const before = app.src;
+      say(`Loading ${c?.title || 'it'}.`, { quiet: true });
+      return S()
+        .choose(id)
+        .then(() => {
+          if (app.src === before || !app.plan?.count) return say(`Sorry, ${c?.title || 'that'} could not load.`);
+          if (!app.player.playing) app.play();
+          say(`Playing ${c?.title || 'it'}.`, { quiet: true });
+        })
+        .catch(() => say(`Sorry, ${c?.title || 'that'} could not load.`));
+    }
+
     /** Do one command and say what was done. */
     function run({ id, arg }, heard, reply) {
       const st = app.state;
@@ -222,6 +276,18 @@
       const label = (i) => (plan?.labels[i] ? `, ${plan.labels[i]}` : '');
       switch (id) {
         case 'play':
+          // "play hurricanes": a search result by name, or the first result of a search for it
+          if (arg && S()?.mode?.()) {
+            const shown = (S().results() || []).map((r) => S().info(r.id)).filter(Boolean);
+            const hit = B.eicSearch.rank(shown, arg, 1)[0];
+            if (hit) return playResult(hit.id);
+            return S()
+              .run(arg)
+              .then(() => {
+                const top = S().results()[0];
+                return top ? playResult(top.id) : say($('searchStatus').textContent || `Nothing found for ${arg}.`);
+              });
+          }
           if (!p.playing) app.play();
           return say(reply || 'Playing.', { quiet: true });
         case 'pause':
@@ -240,6 +306,16 @@
         }
         case 'where':
           return say(plan ? B.panels.stepSummary(app, st.position) : 'Nothing is loaded yet.');
+        case 'explain':
+          if (p.playing) app.play();
+          return say(explain());
+        case 'result': {
+          const list = S()?.results?.() || [];
+          if (!list.length) return say('There are no search results yet. Say search for, and a topic, for example: search for sea ice.');
+          const r = list[+arg - 1];
+          if (!r) return say(`There ${list.length === 1 ? 'is only 1 result' : `are only ${list.length} results`}.`);
+          return playResult(r.id);
+        }
         case 'describe':
           if (p.playing) app.play();
           return B.panels.speak(app);
@@ -263,12 +339,14 @@
           app.showPage?.('studio', { focus: false });
           document.querySelector(`[data-mode="${arg}"]`)?.click();
           return say(`${{ image: 'Image', video: 'Video', earth: 'Earth events', data: 'Data' }[arg]} tab.`);
-        case 'search':
-          app.showPage?.('studio', { focus: false });
-          $('searchInput').value = arg;
-          $('searchInput').dispatchEvent(new Event('input', { bubbles: true }));
-          $('searchForm').requestSubmit();
-          return say(`Searching for ${arg}.`);
+        case 'search': {
+          const where = searchTab();
+          if (where) say(`Searching for ${arg}${where}.`, { quiet: true });
+          return S()
+            .run(arg)
+            .then(() => readResults(arg))
+            .catch(() => say(`Sorry, the search did not work. ${$('searchStatus').textContent || ''}`));
+        }
         case 'instrument':
           setValue('instrument', V.INSTRUMENTS[arg]);
           return say(`${arg[0].toUpperCase() + arg.slice(1)}.`);

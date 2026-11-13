@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   const B = window.Bit2Beat || {};
-  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView', 'eic', 'eicView', 'eicSearch', 'search', 'options', 'xlsx', 'tables', 'science', 'sciSource', 'scienceView', 'voiceCommands', 'voice'];
+  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView', 'eic', 'eicView', 'eicSearch', 'search', 'options', 'xlsx', 'tables', 'science', 'sciSource', 'scienceView', 'voiceCommands', 'voice', 'svs', 'gibs', 'braille'];
   const missing = need.filter((k) => !B[k]);
   if (missing.length) {
     document.body.insertAdjacentHTML('afterbegin', `<p role="alert" style="padding:16px;background:#fbe9d0;color:#14213d">Bit2Beat could not load: ${missing.join(', ')}. Open the single-file build in dist/ or serve the folder.</p>`);
@@ -314,6 +314,7 @@
       if (state.mode === 'video') {
         if (id === 'custom') return;
         if (id === 'upload' && uploads.video) return setSource(uploads.video);
+        if (id.startsWith('svs:')) return B.eicView.presetVideo(id).then((s) => s && token === loadToken && setSource(s));
         if (id === 'eic') return B.eicView.video ? setSource(B.eicView.video) : B.eicView.loadVideo(state.eicVideo || {}).then((s) => s || app.choose('video', 'gedi'));
         return setSource(B.sources.videoPreset(id));
       }
@@ -327,6 +328,7 @@
       if (id === 'upload' && uploads.image) res = uploads.image;
       else if (id === 'eic') return B.eicView.image ? app.useImage(B.eicView.image) : B.eicView.loadImage(state.eicImage || {}).then((r) => r || app.choose('image', 'nasa:gedi'));
       else if (id.startsWith('sci:')) res = await sciView.builtIn(id);
+      else if (id.startsWith('svs:')) res = await B.eicView.presetStill(id);
       else {
         setBusy(true, 'Loading picture…');
         res = await B.sources.imageCanvas(id, state.image.date);

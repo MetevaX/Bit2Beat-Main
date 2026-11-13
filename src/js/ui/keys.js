@@ -28,6 +28,7 @@
       else if (k === 'd' || k === 'D') B.panels.speak(app);
       else if (k === 'g' || k === 'G') B.tour.hub();
       else if (k === 't' || k === 'T') B.dialogs.openTable(app);
+      else if ((k === 'b' || k === 'B') && app.plan) $('scoreBrailleBtn').click();
       else if (k === '?') $('helpDialog').showModal();
     });
   }

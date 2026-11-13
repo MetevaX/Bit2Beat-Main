@@ -4016,7 +4016,6 @@ THE SOFTWARE.
     <form id="searchForm" role="search" class="search-form">
       <div class="search-head">
         <label for="searchInput" id="searchLabel" class="search-label"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Search <span id="eicTitle">NASA Earth Information Center</span></label>
-        <button type="button" class="ai-toggle" id="aiMode" aria-pressed="false" aria-label="Ask Gemini (AI search)" title="Ask Gemini: write your question in your own words; Gemini picks the data sets and the place"><svg class="i sparkle" aria-hidden="true"><use href="#i-sparkle"/></svg><span>Gemini</span></button>
       </div>
       <div class="search-row">
         <div class="search-box">
@@ -4181,6 +4180,7 @@ THE SOFTWARE.
           <div class="btn-row">
             <button type="button" class="btn btn-quiet" id="fullScoreBtn">Full score</button>
             <button type="button" class="btn btn-quiet" id="scorePngBtn"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>PNG</button>
+            <button type="button" class="btn btn-quiet" id="scoreBrailleBtn" aria-label="Download the score in braille music (BRF)" title="Braille music (BRF) for braille embossers and braille displays"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Braille</button>
           </div>
         </div>
         <p class="card-note" id="scoreLabel"></p>
@@ -4437,6 +4437,7 @@ THE SOFTWARE.
     <button type="button" class="btn btn-primary" id="exportAudio"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Download audio</button>
     <button type="button" class="btn" id="exportCsv">Notes as CSV</button>
     <button type="button" class="btn" id="exportAbc">Score as ABC</button>
+    <button type="button" class="btn" id="exportBraille" title="Braille music (BRF) for braille embossers and braille displays">Score in braille</button>
   </div>
   <p class="dlg-status" id="exportStatus" role="status"></p>
 </dialog>
@@ -4496,6 +4497,7 @@ THE SOFTWARE.
     <dt><kbd>G</kbd></dt><dd>Bitty’s guide</dd>
     <dt><kbd>Esc</kbd></dt><dd>Stop reading aloud, close the guide</dd>
     <dt><kbd>T</kbd></dt><dd>Readings table</dd>
+    <dt><kbd>B</kbd></dt><dd>Download the score in braille music (BRF, for embossers and braille displays)</dd>
     <dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Scientific maps: zoom in, zoom out, whole map (also the mouse wheel; drag to move)</dd>
     <dt><kbd>V</kbd></dt><dd>Voice control on / off: say “play”, “pause”, “next”, “where am I”, “search for sea ice”, “go to video”, “violin”, “7.1”, “help” or “stop voice control”</dd>
     <dt><kbd>?</kbd></dt><dd>This help</dd>
@@ -6320,6 +6322,242 @@ THE SOFTWARE.
 });
 
 </script>
+<script>/* src/js/core/braille.js */
+/**
+ * Bit2Beat core · the score as braille music, for blind musicians (pure, no DOM).
+ *
+ * Written in braille music code (Music Braille Code; the same cells are used across English
+ * braille): each data reading is one eighth note, eight to a 4/4 bar, one part per channel.
+ *   notes     C D E F G A B  = cells d e f g h i j (dots 145, 15, 124, 1245, 125, 24, 245);
+ *             eighth notes as they are, quarter + dot 6, half + dot 3, whole + dots 3 and 6
+ *   rests     eighth ⠭ (1346), quarter ⠧ (1236), half ⠥ (136), whole ⠍ (134)
+ *   octaves   marks ⠈ ⠘ ⠸ ⠐ ⠨ ⠰ ⠠ for octaves 1–7 (4 = middle C), written on the first note of a
+ *             part and of every braille line, and after a leap: always for a sixth or more, for a
+ *             fourth or fifth only when the octave changes
+ *   accidentals sharp ⠩ (146), flat ⠣ (126), natural ⠡ (16); they last to the end of the bar
+ *   bars      a space between bars; ⠣⠅ double bar at the end; time signature ⠼⠙⠲ (4/4)
+ * Headings are uncontracted (grade 1) English braille. The file is BRF (Braille Ready Format:
+ * North American Braille ASCII, 40 cells × 25 lines a page) for embossers and braille displays;
+ * the same text is also given in Unicode braille.
+ */
+(function (root, factory) {
+  const mod = factory();
+  if (typeof module === 'object' && module.exports) module.exports = mod;
+  else (root.Bit2Beat = root.Bit2Beat || {}).braille = mod;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  // North American Braille ASCII: the character for each cell (index = dots as bits: dot n → 1 << n-1)
+  const ASCII = " A1B'K2L@CIF/MSP\"E3H9O6R^DJG>NTQ,*5<-U8V.%[$+X!&;:4\\0Z7(_?W]#Y)=";
+  const cell = (...dots) => dots.reduce((b, d) => b | (1 << (d - 1)), 0);
+  const WIDTH = 40;
+  const LINES = 25;
+
+  // ---------------------------------------------------------------- music
+  const LETTER = { C: [1, 4, 5], D: [1, 5], E: [1, 2, 4], F: [1, 2, 4, 5], G: [1, 2, 5], A: [2, 4], B: [2, 4, 5] };
+  const STEP = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+  const VALUE = { 8: [], 4: [6], 2: [3], 1: [3, 6] };
+  const REST = { 8: cell(1, 3, 4, 6), 4: cell(1, 2, 3, 6), 2: cell(1, 3, 6), 1: cell(1, 3, 4) };
+  const OCTAVE = { 1: [cell(4)], 2: [cell(4, 5)], 3: [cell(4, 5, 6)], 4: [cell(5)], 5: [cell(4, 6)], 6: [cell(5, 6)], 7: [cell(6)], 0: [cell(4), cell(4)], 8: [cell(6), cell(6)] };
+  const ACC = { 1: cell(1, 4, 6), '-1': cell(1, 2, 6), 0: cell(1, 6) };
+  const SHARP = [['C', 0], ['C', 1], ['D', 0], ['D', 1], ['E', 0], ['F', 0], ['F', 1], ['G', 0], ['G', 1], ['A', 0], ['A', 1], ['B', 0]];
+  const FLAT = [['C', 0], ['D', -1], ['D', 0], ['E', -1], ['E', 0], ['F', 0], ['G', -1], ['G', 0], ['A', -1], ['A', 0], ['B', -1], ['B', 0]];
+  const TIME_4_4 = [cell(3, 4, 5, 6), cell(1, 4, 5), cell(2, 5, 6)];
+  const DOUBLE_BAR = [cell(1, 2, 6), cell(1, 3)];
+
+  /** Letter, accidental, octave and diatonic number of a MIDI note. */
+  function spell(m, flats) {
+    const pc = ((m % 12) + 12) % 12;
+    const [letter, acc] = (flats ? FLAT : SHARP)[pc];
+    const octave = Math.floor(m / 12) - 1;
+    return { letter, acc, octave, diatonic: octave * 7 + STEP[letter] };
+  }
+
+  /** Does this note need an octave mark after `prev` (null = first note of a part or line)? */
+  function needsOctave(prev, cur) {
+    if (!prev) return true;
+    const interval = Math.abs(cur.diatonic - prev.diatonic) + 1; // 1 = unison, 2 = second …
+    if (interval >= 6) return true;
+    if (interval >= 4) return cur.octave !== prev.octave;
+    return false;
+  }
+
+  /**
+   * One part as bars of cells: midis = one per eighth (null = rest).
+   * Returns [[cells of bar 1], [cells of bar 2], …], each bar with its notes' spellings for octave marks
+   * (the marks at the start of lines are added when the lines are laid out).
+   */
+  function bars(midis, { flats = false } = {}) {
+    const out = [];
+    for (let b = 0; b * 8 < Math.max(1, midis.length); b++) {
+      const slice = midis.slice(b * 8, b * 8 + 8);
+      while (slice.length < 8) slice.push(null); // the last bar is filled with rests
+      const items = []; // { rest, cells (without octave), note }
+      const accs = new Map(); // letter+octave → accidental in force in this bar
+      // rests on the beat are joined: two eighths → a quarter, a whole silent bar → a whole rest
+      if (slice.every((m) => m == null)) items.push({ cells: [REST[1]] });
+      else
+        for (let i = 0; i < 8; i++) {
+          const m = slice[i];
+          if (m == null) {
+            if (i % 2 === 0 && slice[i + 1] == null) {
+              items.push({ cells: [REST[4]] });
+              i++;
+            } else items.push({ cells: [REST[8]] });
+            continue;
+          }
+          const n = spell(m, flats);
+          const id = n.letter + n.octave;
+          const cells = [];
+          const current = accs.has(id) ? accs.get(id) : 0;
+          if (n.acc !== current) {
+            cells.push(ACC[n.acc]);
+            accs.set(id, n.acc);
+          }
+          cells.push(cell(...LETTER[n.letter], ...VALUE[8]));
+          items.push({ cells, note: n });
+        }
+      out.push(items);
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------- text (uncontracted, grade 1)
+  const LETTERS = 'abcdefghijklmnopqrstuvwxyz';
+  const LETTER_DOTS = [[1], [1, 2], [1, 4], [1, 4, 5], [1, 5], [1, 2, 4], [1, 2, 4, 5], [1, 2, 5], [2, 4], [2, 4, 5], [1, 3], [1, 2, 3], [1, 3, 4], [1, 3, 4, 5], [1, 3, 5], [1, 2, 3, 4], [1, 2, 3, 4, 5], [1, 2, 3, 5], [2, 3, 4], [2, 3, 4, 5], [1, 3, 6], [1, 2, 3, 6], [2, 4, 5, 6], [1, 3, 4, 6], [1, 3, 4, 5, 6], [1, 3, 5, 6]];
+  const PUNCT = { '.': [cell(2, 5, 6)], ',': [cell(2)], ':': [cell(2, 5)], ';': [cell(2, 3)], '-': [cell(3, 6)], '?': [cell(2, 3, 6)], '!': [cell(2, 3, 5)], '/': [cell(5), cell(3, 4)], '%': [cell(4, 6), cell(3, 5, 6)], '(': [cell(5), cell(1, 2, 6)], ')': [cell(5), cell(3, 4, 5)], "'": [cell(3)], '’': [cell(3)] };
+  /** Words → cells, with capital, number and letter signs. Unknown symbols are left out. */
+  function text(str) {
+    const out = [];
+    let inNumber = false;
+    const chars = [...String(str).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[₂]/g, '2').replace(/[·•–—]/g, '-')];
+    // a word of two or more capitals (NASA, GIBS) takes the capital word sign once
+    const caps = new Set();
+    chars.join('').replace(/[A-Za-z]+/g, (w, at) => {
+      if (w.length > 1 && w === w.toUpperCase()) for (let i = 0; i < w.length; i++) caps.add(at + i);
+      return w;
+    });
+    for (const [i, ch] of chars.entries()) {
+      const lower = ch.toLowerCase();
+      const k = LETTERS.indexOf(lower);
+      if (/[0-9]/.test(ch)) {
+        if (!inNumber) out.push(cell(3, 4, 5, 6));
+        inNumber = true;
+        out.push(cell(...LETTER_DOTS[(+ch + 9) % 10]));
+        continue;
+      }
+      if (ch === '.' && inNumber) {
+        out.push(cell(2, 5, 6)); // decimal point keeps the number going
+        continue;
+      }
+      if (k >= 0) {
+        if (inNumber && k < 10 && ch === lower) out.push(cell(5, 6)); // a-j right after a number: letter sign
+        if (caps.has(i)) {
+          if (!caps.has(i - 1)) out.push(cell(6), cell(6));
+        } else if (ch !== lower) out.push(cell(6));
+        out.push(cell(...LETTER_DOTS[k]));
+      } else if (ch === ' ') out.push(0);
+      else if (PUNCT[ch]) out.push(...PUNCT[ch]);
+      inNumber = false;
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------- layout
+  /** Lines of words (arrays of cells) wrapped at 40 cells. */
+  function wrap(cells) {
+    const lines = [];
+    let line = [];
+    let word = [];
+    const flush = () => {
+      if (line.length && line.length + 1 + word.length > WIDTH) (lines.push(line), (line = []));
+      if (word.length) line = line.length ? [...line, 0, ...word] : word.slice(0, WIDTH);
+      word = [];
+    };
+    cells.forEach((c) => (c === 0 ? flush() : word.push(c)));
+    flush();
+    if (line.length) lines.push(line);
+    return lines;
+  }
+
+  /** Music lines for one part: bars kept whole, octave mark on the first note of every line. */
+  function musicLines(partBars) {
+    const lines = [];
+    let line = [];
+    let prev = null; // the last note written (for octave marks)
+    const render = (items, startOfLine) => {
+      const out = [];
+      let p = startOfLine ? null : prev;
+      for (const it of items) {
+        if (it.note) {
+          const marks = needsOctave(p, it.note) ? OCTAVE[Math.max(0, Math.min(8, it.note.octave))] : [];
+          // an accidental comes before the octave mark
+          const acc = it.cells.length > 1 ? [it.cells[0]] : [];
+          out.push(...acc, ...marks, it.cells[it.cells.length - 1]);
+          p = it.note;
+        } else out.push(...it.cells);
+      }
+      return { out, last: p };
+    };
+    partBars.forEach((items, b) => {
+      let r = render(items, !line.length);
+      const lastBar = b === partBars.length - 1;
+      const tail = lastBar ? DOUBLE_BAR : [];
+      if (line.length && line.length + 1 + r.out.length + tail.length > WIDTH) {
+        lines.push(line);
+        line = [];
+        r = render(items, true); // a new line starts with an octave mark again
+      }
+      line = line.length ? [...line, 0, ...r.out, ...tail] : [...r.out, ...tail];
+      prev = r.last;
+    });
+    if (line.length) lines.push(line);
+    return lines;
+  }
+
+  const toUnicode = (line) => line.map((c) => String.fromCharCode(0x2800 + c)).join('');
+  const toAscii = (line) => line.map((c) => ASCII[c]).join('');
+
+  /**
+   * The whole score.
+   * @param {object} o
+   * @param {string} o.title
+   * @param {string} [o.subtitle]
+   * @param {number} [o.tempo]
+   * @param {{name:string, midis:(number|null)[]}[]} o.voices  one per channel, one MIDI note (or null) per eighth
+   * @param {boolean} [o.flats]
+   * @returns {{ brf: string, unicode: string, lines: number, pages: number }}
+   */
+  function score({ title = 'Bit2Beat', subtitle = '', tempo = 96, voices = [], flats = false }) {
+    const lines = [];
+    const add = (cells) => lines.push(...wrap(cells));
+    add(text(title));
+    if (subtitle) add(text(subtitle));
+    add(text(`Tempo ${Math.round(tempo)} quarter notes a minute. Each reading is one eighth note, 8 to a bar.`));
+    lines.push([]);
+    voices.forEach((v, k) => {
+      add(text(voices.length > 1 ? `Part ${k + 1}: ${v.name}` : v.name));
+      const music = musicLines(bars(v.midis, { flats }));
+      music[0] = [...TIME_4_4, 0, ...music[0]];
+      if (music[0].length > WIDTH) music.splice(0, 1, TIME_4_4, music[0].slice(TIME_4_4.length + 1));
+      lines.push(...music);
+      lines.push([]);
+    });
+    // BRF pages of 25 lines, separated by a form feed
+    const pages = [];
+    for (let i = 0; i < lines.length; i += LINES) pages.push(lines.slice(i, i + LINES));
+    return {
+      brf: pages.map((p) => p.map(toAscii).join('\r\n')).join('\r\n\f') + '\r\n',
+      unicode: lines.map(toUnicode).join('\n') + '\n',
+      lines: lines.length,
+      pages: pages.length,
+    };
+  }
+
+  return { ASCII, cell, spell, needsOctave, bars, text, wrap, musicLines, score, toUnicode, toAscii, WIDTH };
+});
+
+</script>
 <script>/* src/js/core/feeds.js */
 /**
  * Bit2Beat core · Earth data feeds.
@@ -7051,9 +7289,10 @@ THE SOFTWARE.
 /**
  * Bit2Beat core · searching the NASA Earth Information Center catalogue.
  *
- * Two ways to find a data set from plain words ("methane from swamps in the Amazon"):
- *   - rank():   instant, offline keyword search over titles, ids and descriptions, with a small
- *               list of everyday words that scientists name differently (swamp → wetland …);
+ * Finding a data set from plain words ("methane from swamps in the Amazon"):
+ *   - rank():   instant, offline keyword search over titles, ids, descriptions and keywords, with
+ *               word stems (cities → city), one-letter typing mistakes (temprature) and everyday
+ *               words that scientists name differently (swamp → wetland …);
  *   - Gemini:   api/search.js (a Vercel function, so the API key never reaches the browser) sends
  *               the same catalogue and the question to Gemini, which picks the data sets and the
  *               place. prompt() builds that request and answer() checks what comes back: only ids
@@ -7072,44 +7311,90 @@ THE SOFTWARE.
   const MAX_QUERY = 200;
   const MAX_ITEMS = 400;
 
-  // everyday words → the words used in the catalogue
+  // everyday words → the words used in the catalogues (EIC data API, the SVS gallery, GIBS layers)
   const SYNONYMS = {
     methane: ['ch4', 'methane'],
     ch4: ['ch4', 'methane'],
     co2: ['co2', 'carbon dioxide', 'carbon'],
     carbon: ['carbon', 'co2'],
     swamp: ['wetland'],
-    swamps: ['wetland'],
     marsh: ['wetland'],
-    wetlands: ['wetland'],
-    fire: ['fire', 'burn'],
-    fires: ['fire', 'burn'],
-    wildfire: ['fire', 'burn'],
-    smoke: ['fire', 'aerosol'],
-    people: ['population'],
-    city: ['population', 'urban', 'odiac', 'vulcan'],
-    cities: ['population', 'urban', 'odiac', 'vulcan'],
-    traffic: ['vulcan', 'odiac', 'fossil'],
-    cars: ['vulcan', 'odiac', 'fossil'],
-    factories: ['fossil', 'odiac', 'vulcan', 'emissions'],
-    pollution: ['emissions', 'no2', 'fossil'],
-    forest: ['npp', 'biomass', 'vegetation', 'forest'],
-    forests: ['npp', 'biomass', 'vegetation', 'forest'],
-    trees: ['npp', 'biomass', 'vegetation', 'forest'],
-    plants: ['npp', 'vegetation', 'photosynthesis'],
+    wetland: ['wetland'],
+    fire: ['fire', 'burn', 'wildfire', 'thermal'],
+    wildfire: ['fire', 'burn', 'wildfire'],
+    burn: ['fire', 'burn'],
+    smoke: ['fire', 'aerosol', 'smoke'],
+    people: ['population', 'people'],
+    human: ['population', 'people'],
+    city: ['population', 'urban', 'city', 'odiac', 'vulcan', 'lights'],
+    urban: ['population', 'urban', 'city'],
+    traffic: ['vulcan', 'odiac', 'fossil', 'no2', 'nitrogen'],
+    car: ['vulcan', 'odiac', 'fossil', 'no2'],
+    factory: ['fossil', 'odiac', 'vulcan', 'emissions', 'no2', 'so2'],
+    pollution: ['emissions', 'no2', 'fossil', 'aerosol', 'pollution', 'air quality'],
+    smog: ['no2', 'aerosol', 'pollution', 'air quality'],
+    haze: ['aerosol', 'haze'],
+    dust: ['dust', 'aerosol'],
+    sand: ['dust', 'desert'],
+    forest: ['npp', 'biomass', 'vegetation', 'forest', 'gedi', 'tree'],
+    tree: ['npp', 'biomass', 'vegetation', 'forest', 'tree'],
+    plant: ['npp', 'vegetation', 'photosynthesis', 'plant', 'green'],
+    green: ['vegetation', 'ndvi', 'green'],
     growth: ['npp', 'gpp', 'production'],
     grow: ['npp', 'gpp', 'production'],
-    growing: ['npp', 'gpp', 'production'],
+    crop: ['agriculture', 'crop', 'vegetation', 'farm'],
+    farm: ['agriculture', 'crop', 'farm'],
     rice: ['wetland', 'agriculture', 'methane'],
-    cows: ['agriculture', 'livestock', 'methane'],
-    farms: ['agriculture'],
+    cow: ['agriculture', 'livestock', 'methane'],
     oil: ['fossil', 'oil', 'gas'],
     gas: ['fossil', 'gas'],
-    ocean: ['ocean', 'sea'],
-    sea: ['ocean', 'sea'],
-    heat: ['temperature'],
-    hot: ['temperature'],
-    warming: ['temperature', 'co2'],
+    ocean: ['ocean', 'sea', 'marine'],
+    sea: ['ocean', 'sea', 'marine'],
+    marine: ['ocean', 'sea'],
+    current: ['current', 'circulation', 'flow'],
+    wave: ['ocean', 'wave'],
+    heat: ['temperature', 'heat', 'hot'],
+    hot: ['temperature', 'heat', 'hot'],
+    warm: ['temperature', 'warm'],
+    cold: ['temperature', 'cold', 'ice', 'snow'],
+    temperature: ['temperature'],
+    warming: ['temperature', 'co2', 'climate'],
+    climate: ['climate', 'temperature'],
+    rain: ['rain', 'precipitation', 'imerg', 'storm'],
+    precipitation: ['rain', 'precipitation'],
+    flood: ['flood', 'rain', 'precipitation'],
+    drought: ['drought', 'soil moisture', 'water', 'dry'],
+    dry: ['drought', 'soil moisture', 'dry'],
+    water: ['water', 'moisture', 'groundwater'],
+    storm: ['storm', 'hurricane', 'cyclone', 'rain', 'cloud'],
+    hurricane: ['hurricane', 'cyclone', 'typhoon', 'storm'],
+    typhoon: ['hurricane', 'cyclone', 'typhoon', 'storm'],
+    cyclone: ['hurricane', 'cyclone', 'typhoon', 'storm'],
+    wind: ['wind', 'atmospheric', 'circulation'],
+    cloud: ['cloud'],
+    weather: ['weather', 'cloud', 'rain', 'storm', 'model'],
+    ice: ['ice', 'sea ice', 'glacier', 'snow', 'frozen', 'polar'],
+    snow: ['snow', 'ice'],
+    glacier: ['glacier', 'ice'],
+    arctic: ['arctic', 'sea ice', 'polar'],
+    antarctica: ['antarctic', 'ice'],
+    polar: ['arctic', 'antarctic', 'ice'],
+    night: ['night', 'lights', 'black marble'],
+    light: ['lights', 'night', 'black marble'],
+    electricity: ['lights', 'night', 'energy'],
+    energy: ['energy', 'lights', 'solar'],
+    lightning: ['lightning', 'thunder', 'flash'],
+    thunder: ['lightning', 'thunderstorm'],
+    volcano: ['volcano', 'so2', 'sulfur'],
+    ozone: ['ozone'],
+    sun: ['solar', 'sun', 'radiation'],
+    mountain: ['elevation', 'mountain', 'topography'],
+    height: ['elevation', 'height', 'gedi'],
+    level: ['sea level', 'level'],
+    plankton: ['chlorophyll', 'plankton', 'phytoplankton'],
+    salt: ['salinity', 'salt'],
+    air: ['air', 'aerosol', 'atmosphere', 'quality'],
+    sky: ['cloud', 'atmosphere'],
   };
   const GENERIC = new Set(['desert', 'central', 'center', 'space', 'plateau', 'texas', 'kenya']);
   const STOP = new Set('a an and are at by do for from how i in is it me of on or over show the to what where with'.split(' '));
@@ -7121,28 +7406,100 @@ THE SOFTWARE.
       .toLowerCase();
   const words = (s) => fold(s).split(/[^a-z0-9₂₄]+/).filter((w) => w && !STOP.has(w));
 
-  /** The best catalogue matches for the words of a question (offline). */
-  function rank(list, query, limit = 8) {
-    const terms = words(query).flatMap((w) => [w, ...(SYNONYMS[w] || [])]);
-    if (!terms.length) return [];
-    const scored = list.map((c) => {
-      const title = fold(c.title);
-      const id = fold(c.id).replace(/[-_]/g, ' ');
-      const text = fold(c.text).slice(0, 600);
-      let score = 0;
-      const seen = new Set();
-      for (const t of terms) {
-        if (seen.has(t)) continue;
-        seen.add(t);
-        const re = new RegExp(`(^|[^a-z0-9])${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
-        if (re.test(title)) score += 4;
-        else if (re.test(id)) score += 3;
-        else if (re.test(text)) score += 1;
+  /** A word's simple stem: rivers → river, burning → burn, cities → city. */
+  function stem(w) {
+    if (w.length <= 3 || /^\d/.test(w)) return w;
+    return w
+      .replace(/ies$/, 'y')
+      .replace(/(ss)$/, '$1')
+      .replace(/(ing|ed)$/, '')
+      .replace(/(xes|ches|shes)$/, (m) => m.slice(0, -2))
+      .replace(/([^s])s$/, '$1');
+  }
+  /** True when two words differ by at most one letter (typing mistakes: temprature, hurricain). */
+  function near(a, b) {
+    if (Math.abs(a.length - b.length) > 1 || a.length < 4 || b.length < 4) return false;
+    if (a.length === b.length) {
+      // two letters swapped (mountian → mountain)
+      const d = [...a].map((ch, k) => (ch === b[k] ? -1 : k)).filter((k) => k >= 0);
+      if (d.length === 2 && d[1] === d[0] + 1 && a[d[0]] === b[d[1]] && a[d[1]] === b[d[0]]) return true;
+    }
+    if (a.length < 5 || b.length < 5) return false; // short words: only two swapped letters (rian → rain)
+    let i = 0;
+    let j = 0;
+    let edits = 0;
+    while (i < a.length && j < b.length) {
+      if (a[i] === b[j]) (i++, j++);
+      else {
+        if (++edits > 1) return false;
+        if (a.length > b.length) i++;
+        else if (b.length > a.length) j++;
+        else (i++, j++);
       }
-      return { id: c.id, score };
+    }
+    return edits + (a.length - i) + (b.length - j) <= 1;
+  }
+  const index = new WeakMap(); // entry → its words, prepared once
+  function wordsOf(c) {
+    let x = index.get(c);
+    if (!x) {
+      const t = words(c.title).map(stem);
+      const d = words(`${String(c.id).replace(/[-_:]/g, ' ')} ${c.text || ''}`).map(stem);
+      x = { title: new Set(t), text: new Set(d), titleList: t, textList: [...new Set(d)], titleFold: fold(c.title), textFold: fold(c.text) };
+      index.set(c, x);
+    }
+    return x;
+  }
+
+  /**
+   * The best catalogue matches for the words of a question (offline, instant).
+   * Each word counts once (its best match): in the title 5, a title word that starts with it 4,
+   * one letter off in the title 3, in the description or keywords 2 (start 1.5, one letter off 1);
+   * everyday words also try the catalogue's own words (swamp → wetland). Results that match every
+   * word of the question, or the whole phrase in the title, come first.
+   */
+  function rank(list, query, limit = 8) {
+    const qs = words(query);
+    if (!qs.length) return [];
+    // each word of the question: the person's own word first, then the catalogue's words for it
+    const groups = qs.map((w) => {
+      const st = stem(w);
+      const syn = [...(SYNONYMS[w] || []), ...(SYNONYMS[st] || [])].map((x) => (x.includes(' ') ? fold(x) : stem(fold(x))));
+      return [...new Set([st, ...syn])];
+    });
+    const phrase = fold(query).replace(/\s+/g, ' ').trim();
+    const scored = list.map((c) => {
+      const x = wordsOf(c);
+      let score = 0;
+      let hit = 0;
+      let weak = 0; // words found only as a loose synonym somewhere in the text
+      for (const g of groups) {
+        let best = 0;
+        let also = 0;
+        for (const [k, t] of g.entries()) {
+          let v = 0;
+          if (t.includes(' ')) v = x.titleFold.includes(t) ? 5 : x.textFold.includes(t) ? 2 : 0; // a phrase: sea ice, air quality
+          else if (x.title.has(t)) v = 5;
+          else if (k === 0 && t.length >= 3 && x.titleList.some((w) => w.startsWith(t))) v = 4.5; // snow → Snowfall
+          else if (x.text.has(t)) v = 2;
+          else if (k === 0 && t.length >= 5 && x.titleList.some((w) => w.length >= 4 && t.startsWith(w))) v = 3.5; // greenery → green
+          else if (k === 0 && t.length >= 4 && x.textList.some((w) => w.startsWith(t))) v = 1.5;
+          else if (k === 0 && t.length >= 4 && x.titleList.some((w) => near(w, t))) v = 3;
+          else if (k === 0 && t.length >= 4 && x.textList.some((w) => near(w, t))) v = 1;
+          if (v) also++;
+          best = Math.max(best, k ? v * 0.8 : v); // the person's own word counts more than a synonym
+        }
+        if (best) hit++;
+        if (best && best < 2.5) weak++;
+        score += best + 0.4 * Math.min(3, Math.max(0, also - 1)); // a little more when several of its words fit
+      }
+      if (hit === groups.length && groups.length > 1) score += weak ? 1 : 3;
+      if (groups.length > 1 && x.titleFold.includes(phrase)) score += 4;
+      // with several words, at least half of them must be found
+      return { id: c.id, score: hit * 2 >= groups.length ? score : 0 };
     });
     return scored
-      .filter((s) => s.score > 0)
+      .filter((r) => r.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
   }
@@ -7195,7 +7552,8 @@ THE SOFTWARE.
   /** The generateContent request body for one question. */
   function prompt(query, mode, list) {
     const q = clean(query);
-    const use = { data: 'a time series (one note per map)', image: 'the newest map as a picture', video: 'a time-lapse of the latest maps' }[mode] || 'a time series';
+    const gallery = list.some((c) => String(c.id).startsWith('svs:'));
+    const use = gallery ? 'a NASA picture or video from the Earth Information Center gallery (Scientific Visualization Studio)' : { data: 'a time series (one note per map)', image: 'the newest map as a picture', video: 'a time-lapse of the latest maps' }[mode] || 'a time series';
     const text = [
       'You are the search box of Bit2Beat, a NASA Space Apps app that turns Earth data into sound.',
       'Your only job: pick data sets from the NASA Earth Information Center (earth.gov) catalogue below.',
@@ -7256,11 +7614,17 @@ THE SOFTWARE.
 
   /** Ideas shown under the search box (each one finds something in the Earth Information Center). */
   const SUGGESTIONS = ['Carbon dioxide', 'Methane from wetlands', 'Fire emissions', 'Forest growth in the Amazon', 'Where people live', 'Fossil fuel emissions'];
+  /** Ideas for each tab (only those that find something are shown). */
+  const IDEAS = {
+    data: SUGGESTIONS.concat(['Land carbon flux', 'Methane from rice fields', 'Fire emissions in Australia', 'Population in India', 'Wetland methane in Siberia']),
+    image: ['Sea surface temperature', 'Rain', 'Air pollution', 'Wildfires', 'Green vegetation', 'Ozone layer', 'Where people live', 'Soil moisture', 'Sea ice', 'Lightning', 'Mountains', 'Clouds', 'Desert dust', 'Plankton'],
+    video: ['Hurricanes', 'Ocean currents', 'Sea ice', 'Carbon dioxide', 'Fires', 'Sea level', 'Clouds and rain', 'Air quality', 'Ice sheets', 'Temperature', 'Storms', 'Weather'],
+  };
 
   /** The text of a generateContent response. */
   const textOf = (res) => (res?.candidates?.[0]?.content?.parts || []).map((p) => (p.thought ? '' : p.text || '')).join('');
 
-  return { MODEL, FALLBACK, MAX_QUERY, SUGGESTIONS, clean, MAX_ITEMS, SYNONYMS, rank, detectPlace, compact, prompt, answer, textOf, fold };
+  return { stem, near, IDEAS, MODEL, FALLBACK, MAX_QUERY, SUGGESTIONS, clean, MAX_ITEMS, SYNONYMS, rank, detectPlace, compact, prompt, answer, textOf, fold };
 });
 
 </script>
@@ -9947,6 +10311,254 @@ THE SOFTWARE.
   }
 
   return { S0, DAY, ORIGIN, source, LAT, LON, HOURS, MONTHS, sun, instant, daily, overhead, grid, arrays, ATTRS };
+});
+
+</script>
+<script>/* src/js/core/svs.js */
+/**
+ * Bit2Beat core · the NASA Earth Information Center content database (pure, no DOM).
+ *
+ * The Space Apps "Earth Information Jukebox" challenge points to the Earth Information Center
+ * (EIC) Content Database: the visuals NASA's Scientific Visualization Studio (SVS) made for the EIC
+ * at NASA Headquarters (https://svs.gsfc.nasa.gov/gallery/earth-information-center/). Its pictures
+ * and videos are the data Bit2Beat plays.
+ *
+ * The SVS API (https://svs.gsfc.nasa.gov/api/<id>) does not let other websites read it, so the page
+ * reaches it through its own address: /svs/… is passed on to svs.gsfc.nasa.gov by Vercel
+ * (vercel.json) and by the development server (scripts/serve.js). api/eic-gallery.js walks the
+ * gallery once a day and sends the short list that search uses.
+ *
+ * PRESETS are the data sets the challenge lists; they sit in the Image and Video menus and are
+ * left out of search results, so nothing appears twice.
+ */
+(function (root, factory) {
+  const mod = factory();
+  if (typeof module === 'object' && module.exports) module.exports = mod;
+  else (root.Bit2Beat = root.Bit2Beat || {}).svs = mod;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const SITE = 'https://svs.gsfc.nasa.gov';
+  const GALLERY = 40467; // "Earth Information Center (EIC)"
+  const PROXY = 'svs/'; // same-site path that leads to SITE
+  const page = (id) => `${SITE}/${id}/`;
+  const media = (path) => `${PROXY}vis/${path}`; // a picture or video, through the site's own address
+
+  /**
+   * The challenge's data sets (Space Apps 2026 · The Earth Information Jukebox · Resources).
+   * GEDI and DYAMOND CO₂ are bundled with the app (they work offline); the others load from NASA.
+   * still / video: paths under svs.gsfc.nasa.gov/vis/, chosen to be plain H.264 or pictures a
+   * browser can read (some originals are H.265 or ProRes only).
+   */
+  const PRESETS = [
+    { id: 4950, key: 'gedi', name: 'GEDI forest height', bundled: true },
+    { id: 5196, key: 'co2', name: 'Global carbon dioxide (DYAMOND)', bundled: true },
+    { id: 3912, name: 'Sea surface currents and temperature', still: 'a000000/a003900/a003912/flat_global_ecco2_2028x1024.25000.jpg', video: 'a000000/a003900/a003912/ecco2_sst_flow.m4v', credit: 'Greg Shirah', about: 'Ocean surface currents from the ECCO2 model, coloured by sea surface temperature.' },
+    { id: 5425, name: 'Perpetual Ocean 2: western boundary currents', still: 'a000000/a005400/a005425/perpetual_ocean2_CLOSE_093_4k_clean_noDate.00000_print.jpg', video: 'a000000/a005400/a005425/perpetual_ocean2_CLOSE_093_clean_noDate_1080p30.mp4', credit: 'Greg Shirah', about: 'Strong ocean currents along the western edges of the oceans, such as the Gulf Stream and the Kuroshio, from a NASA ocean model.' },
+    { id: 5669, name: 'GEOS aerosols (smoke, dust, sea salt)', still: 'a000000/a005600/a005669/Aerosols_2025-08-19T20_00_00_1920x1080.png', about: 'Smoke, dust, sea salt and other particles in the air from the GEOS model, each type in its own colour.' },
+    { id: 5533, name: 'Air quality model runs', still: 'a000000/a005500/a005533/AirQuality_WithLabels_1920x1080_0000.png', video: 'a000000/a005500/a005533/EIC_AirQuality_Preview_3840x1080.mp4', credit: 'Helen-Nicole Kostis, Joseph V. Ardizzone; science: Lesley Ott', about: 'Air pollution forecasts from NASA’s GEOS model.' },
+    { id: 5313, name: 'Night lights 2012–2023', still: 'a000000/a005300/a005313/nightlights_flat_series_and_change_wZooms_13_EIC.02599_print.jpg', credit: 'Kel Elkins', about: 'City lights at night seen by the VIIRS instrument (Black Marble), and how they changed between 2012 and 2023.' },
+    { id: 5011, name: 'Lightning seen from the ISS 2017–2023', still: 'a000000/a005000/a005011/iss_lightning_preview.jpg', video: 'a000000/a005000/a005011/iss_lightning_sphere_07312023.mp4', credit: 'Michala Garrison', about: 'Lightning flashes detected by the Lightning Imaging Sensor on the International Space Station.' },
+    { id: 4960, name: 'An atmospheric river in 3D', still: 'a000000/a004900/a004960/atmos_rivers_narrated_4k.00090_print.jpg', video: 'a000000/a004900/a004960/atmos_river_HD.mp4', credit: 'Greg Shirah; produced by Jefferson Beck', about: 'A long band of water vapour carried across the Pacific in a NASA Earth system model.' },
+  ];
+  const PRESET_IDS = new Set(PRESETS.map((p) => p.id));
+
+  /** SVS visualization id from a media address (…/a005300/a005313/… → 5313). */
+  const visId = (url) => {
+    const m = String(url || '').match(/\/a\d{6}\/a\d{6}\/a0*(\d+)\//);
+    return m ? +m[1] : null;
+  };
+  const rel = (u) => String(u || '').replace(/^https?:\/\/svs\.gsfc\.nasa\.gov\/vis\//, '');
+  const strip = (s) =>
+    String(s || '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\|\|[\s\S]*$/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  /** The media files of a visualization page (API JSON). */
+  const mediaOf = (j) => (j.media_groups || []).flatMap((g) => (g.items || []).map((i) => i.instance).filter(Boolean)).filter((m) => /\/vis\//.test(m.url || ''));
+
+  /** The picture to show: a print-size still (about 1024–2048 wide), never a thumbnail. */
+  function pickStill(list, main = null) {
+    const imgs = list.filter((m) => m.media_type === 'Image' && /\.(jpe?g|png)$/i.test(m.url) && !/_thm|searchweb|_web\.png|cbar|colorbar_only|SIGGRAPH|logo/i.test(m.url) && m.width >= 640);
+    imgs.sort((a, b) => /_print\.jpg$/.test(b.url) - /_print\.jpg$/.test(a.url) || Math.abs(a.width - 1500) - Math.abs(b.width - 1500));
+    return imgs[0] || (main && /\.(jpe?g|png)$/i.test(main.url) ? main : null);
+  }
+  /** The video to read: the smallest plain one a browser plays (no H.265 or ProRes), at least 640 wide. */
+  function pickVideo(list) {
+    const vids = list.filter((m) => m.media_type === 'Movie' && /\.(mp4|webm|m4v)$/i.test(m.url) && !/h265|hevc|prores/i.test(m.url));
+    const area = (m) => (m.width || 1920) * (m.height || 1080);
+    vids.sort((a, b) => ((a.width || 9999) < 640) - ((b.width || 9999) < 640) || area(a) - area(b) || /\.mp4$/.test(b.url) - /\.mp4$/.test(a.url));
+    return vids[0] || null;
+  }
+
+  /** One short entry for search. */
+  function compact(j, gallery = '') {
+    const list = mediaOf(j);
+    const s = pickStill(list, j.main_image);
+    const v = pickVideo(list);
+    return {
+      id: j.id,
+      t: String(j.title || '').slice(0, 160),
+      y: String(j.release_date || '').slice(0, 4),
+      d: strip(j.description).slice(0, 260),
+      k: (j.keywords || []).map((k) => k.name || k).filter((k) => !/hyperwall|presentation|science on a sphere|eic \(|earth information center/i.test(k)).slice(0, 6),
+      g: gallery,
+      s: s ? rel(s.url) : '',
+      v: v ? rel(v.url) : '',
+      c: Object.values(j.main_credits || {}).flat().map((p) => p.name).slice(0, 3).join(', '),
+    };
+  }
+
+  /**
+   * Walk the EIC gallery (and its sub-galleries) and describe every visualization in it.
+   * getJson(id) → the SVS API JSON for page `id`. Returns entries sorted by id.
+   */
+  async function crawl(getJson, { concurrency = 6, maxGalleries = 40 } = {}) {
+    const galleries = new Set();
+    const found = new Map(); // id → gallery path
+    async function gallery(id, path, depth) {
+      if (galleries.has(id) || depth > 4 || galleries.size >= maxGalleries) return;
+      galleries.add(id);
+      const j = await getJson(id).catch(() => null);
+      for (const g of j?.media_groups || [])
+        for (const it of g.items || []) {
+          const inst = it.instance || {};
+          const where = [...path, g.title || ''].filter(Boolean).join(' › ');
+          if (it.type === 'gallery_page' && inst.id) await gallery(inst.id, [...path, inst.title], depth + 1);
+          else if (it.type === 'details_page' && inst.id) found.has(inst.id) || found.set(inst.id, where);
+          else {
+            const v = visId(inst.url);
+            if (v && !found.has(v)) found.set(v, where);
+          }
+        }
+    }
+    await gallery(GALLERY, [], 0);
+    const queue = [...found.entries()];
+    const out = [];
+    while (queue.length)
+      await Promise.all(
+        queue.splice(0, concurrency).map(async ([id, where]) => {
+          const j = await getJson(id).catch(() => null);
+          if (j && j.title) out.push(compact(j, where));
+        }),
+      );
+    return out.sort((a, b) => a.id - b.id);
+  }
+
+  /** Gallery entries → search catalogue entries (presets left out). */
+  function catalogue(entries) {
+    return (entries || [])
+      .filter((e) => e && e.id && e.s && !PRESET_IDS.has(+e.id))
+      .map((e) => ({
+        id: `svs:${e.id}`,
+        title: e.t,
+        from: e.y || '',
+        to: e.y || '',
+        years: e.y || '',
+        text: [e.d, e.k?.join(', '), e.g].filter(Boolean).join(' · '),
+        about: e.d,
+        kind: e.v ? 'video' : 'picture',
+        svs: e,
+      }));
+  }
+
+  /** A preset or a search entry as { id, title, still, video, page, credit, about }. */
+  function item(idOrEntry) {
+    const e = typeof idOrEntry === 'object' ? idOrEntry : null;
+    const id = e ? +e.id : +String(idOrEntry).replace(/^svs:/, '');
+    const p = PRESETS.find((x) => x.id === id);
+    if (p) return { id, title: p.name, still: p.still || '', video: p.video || '', page: page(id), credit: p.credit || '', about: p.about || '', preset: true, bundled: !!p.bundled, key: p.key };
+    if (!e) return null;
+    return { id, title: e.t, still: e.s, video: e.v, page: page(id), credit: e.c || '', about: e.d || '', preset: false };
+  }
+
+  return { SITE, GALLERY, PROXY, PRESETS, PRESET_IDS, page, media, visId, pickStill, pickVideo, compact, crawl, catalogue, item };
+});
+
+</script>
+<script>/* src/js/core/gibs.js */
+/**
+ * Bit2Beat core · NASA satellite images for the Image tab search (GIBS, pure, no DOM).
+ *
+ * NASA's Global Imagery Browse Services (GIBS) draws more than a thousand satellite and model
+ * layers as pictures of the whole Earth. These are the ones that tell a clear story in sound; each
+ * was checked to draw the whole world (13 November 2026). Daily layers ask for a day a few days
+ * back, when the satellites have covered the whole planet; monthly and fixed ones use their own
+ * date. Every layer is read the same way as any picture (core/image.js).
+ *
+ * The true-colour Earth and the Black Marble night lights are presets in the Image menu, so they
+ * are not in search.
+ */
+(function (root, factory) {
+  const mod = factory();
+  if (typeof module === 'object' && module.exports) module.exports = mod;
+  else (root.Bit2Beat = root.Bit2Beat || {}).gibs = mod;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const WMS = 'https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi';
+  // lag: days back from today (daily layers); time: a fixed date; neither: the layer's own newest
+  const LAYERS = [
+    { key: 'sst', layer: 'GHRSST_L4_MUR_Sea_Surface_Temperature', title: 'Sea surface temperature', lag: 3, by: 'GHRSST MUR (NASA JPL)', about: 'How warm the top of the ocean is, every day, from several satellites combined.', words: 'ocean sea water temperature warm hot cold el nino marine heat' },
+    { key: 'landtemp', layer: 'MODIS_Terra_Land_Surface_Temp_Day', title: 'Land surface temperature (day)', lag: 3, by: 'MODIS Terra', about: 'How hot the ground itself is in the daytime; deserts and cities glow.', words: 'land ground heat hot temperature desert heatwave warm city' },
+    { key: 'airtemp', layer: 'MERRA2_2m_Air_Temperature_Monthly', title: 'Air temperature (monthly)', by: 'MERRA-2 (NASA GMAO)', about: 'The average temperature of the air near the ground over a month.', words: 'air temperature climate warming cold hot weather month' },
+    { key: 'rain', layer: 'IMERG_Precipitation_Rate', title: 'Rain and snowfall rate', lag: 4, by: 'GPM IMERG', about: 'Where it was raining or snowing, from the Global Precipitation Measurement mission.', words: 'rain rainfall precipitation storm storms monsoon flood snow weather hurricane' },
+    { key: 'snowfall', layer: 'MERRA2_Snowfall_Monthly', title: 'Snowfall (monthly)', by: 'MERRA-2 (NASA GMAO)', about: 'How much snow fell over a month.', words: 'snow snowfall winter cold ice' },
+    { key: 'clouds', layer: 'MODIS_Terra_Cloud_Fraction_Day', title: 'Cloud cover', lag: 3, by: 'MODIS Terra', about: 'How much of the sky is covered by cloud.', words: 'cloud clouds cloudy sky weather' },
+    { key: 'vapour', layer: 'MODIS_Terra_Water_Vapor_5km_Day', title: 'Water vapour', lag: 3, by: 'MODIS Terra', about: 'Invisible water in the air, the fuel of clouds and storms.', words: 'water vapor vapour humidity moisture air steam' },
+    { key: 'aerosols', layer: 'MODIS_Combined_Value_Added_AOD', title: 'Aerosols: smoke, dust and haze', lag: 3, by: 'MODIS Terra and Aqua', about: 'Tiny particles in the air that block sunlight: smoke from fires, desert dust, pollution haze.', words: 'aerosol aerosols smoke dust haze pollution particles air quality fire' },
+    { key: 'dust', layer: 'MERRA2_Dust_Surface_Mass_Concentration_Monthly', title: 'Desert dust near the ground (monthly)', by: 'MERRA-2 (NASA GMAO)', about: 'Dust blown from the Sahara and other deserts.', words: 'dust sand desert sahara storm air' },
+    { key: 'no2', layer: 'OMI_Nitrogen_Dioxide_Tropo_Column', title: 'Nitrogen dioxide (traffic and industry pollution)', lag: 6, by: 'OMI on Aura', about: 'A gas from cars, power plants and factories; cities stand out.', words: 'no2 nitrogen dioxide pollution traffic cars city cities industry factories air quality smog' },
+    { key: 'so2', layer: 'OMI_SO2_Planetary_Boundary_Layer', title: 'Sulfur dioxide (volcanoes and coal burning)', lag: 3, by: 'OMI on Aura', about: 'A gas from volcanoes and coal burning.', words: 'so2 sulfur sulphur dioxide volcano volcanoes eruption pollution coal power' },
+    { key: 'co', layer: 'AIRS_L3_Carbon_Monoxide_500hPa_Volume_Mixing_Ratio_Monthly_Day', title: 'Carbon monoxide (monthly)', by: 'AIRS on Aqua', about: 'A gas from fires and burning fuel, carried far by the wind.', words: 'carbon monoxide co fire fires smoke pollution burning' },
+    { key: 'ozone', layer: 'OMPS_Ozone_Total_Column', title: 'Ozone layer', lag: 13, by: 'OMPS on Suomi NPP', about: 'The ozone that shields us from the Sun’s ultraviolet rays; the ozone hole appears over Antarctica in spring.', words: 'ozone hole layer uv ultraviolet stratosphere antarctica' },
+    { key: 'fires', layer: 'VIIRS_NOAA20_CorrectedReflectance_TrueColor,VIIRS_NOAA20_Thermal_Anomalies_375m_All', title: 'Fires burning now', lag: 2, by: 'VIIRS on NOAA-20', about: 'Active fires and hot spots on a true-colour picture of the Earth.', words: 'fire fires wildfire wildfires forest fires bushfires burning burn hot spots smoke flames' },
+    { key: 'vegetation', layer: 'MODIS_Terra_NDVI_8Day', title: 'Green vegetation (NDVI)', lag: 3, by: 'MODIS Terra', about: 'How green and leafy the land is: forests, crops and grassland.', words: 'vegetation plants green greenness forest forests trees crops agriculture farms grass ndvi leaves' },
+    { key: 'landcover', layer: 'MODIS_Combined_L3_IGBP_Land_Cover_Type_Annual', title: 'Land cover types', by: 'MODIS Terra and Aqua', about: 'Forests, grassland, crops, cities, ice and desert, each in its own colour.', words: 'land cover forest desert crops farms city urban ice grassland map' },
+    { key: 'soil', layer: 'SMAP_L4_Analyzed_Root_Zone_Soil_Moisture', title: 'Soil moisture', lag: 4, by: 'SMAP', about: 'How wet the soil is where plant roots grow; dry land shows drought.', words: 'soil moisture wet dry drought water farms agriculture ground' },
+    { key: 'water', layer: 'GRACE_Tellus_Liquid_Water_Equivalent_Thickness_Mascon_CRI', title: 'Water stored on land (GRACE)', by: 'GRACE-FO', about: 'Changes in groundwater, lakes, snow and ice, weighed by satellites from their pull on gravity.', words: 'water groundwater drought aquifer gravity grace ice mass storage' },
+    { key: 'salinity', layer: 'SMAP_L3_Sea_Surface_Salinity_CAP_Monthly', title: 'Ocean saltiness (monthly)', by: 'SMAP', about: 'How salty the sea surface is; big rivers make fresher patches.', words: 'salt salty salinity ocean sea water rivers' },
+    { key: 'chlorophyll', layer: 'OCI_PACE_Chlorophyll_a', title: 'Ocean plankton (chlorophyll)', lag: 3, by: 'OCI on PACE', about: 'Tiny plants in the sea, seen by their green colour.', words: 'chlorophyll plankton phytoplankton algae ocean sea life fish marine green' },
+    { key: 'seaice', layer: 'AMSRU2_Sea_Ice_Concentration_12km', title: 'Sea ice', time: '2025-03-01', by: 'AMSR2', about: 'Ice floating on the Arctic and Antarctic oceans (1 March 2025, near the Arctic maximum).', words: 'sea ice arctic antarctic polar frozen ice cold north pole' },
+    { key: 'lightning', layer: 'LIS_Very_High_Resolution_Lightning_Full_Climatology_LIS_Mean_Flash_Rate', title: 'Where lightning strikes most', by: 'LIS on TRMM and the ISS', about: 'How often lightning flashes, averaged over many years.', words: 'lightning thunder thunderstorm storms flashes' },
+    { key: 'population', layer: 'GPW_Population_Density_2020', title: 'Where people live (2020)', by: 'SEDAC (NASA)', about: 'How many people live in each square kilometre.', words: 'people population cities city towns density humans urban' },
+    { key: 'elevation', layer: 'ASTER_GDEM_Color_Shaded_Relief', title: 'Mountains and elevation', by: 'ASTER GDEM', about: 'How high the land is, from the coast to the highest mountains.', words: 'elevation height mountains mountain topography terrain relief altitude himalaya andes' },
+    { key: 'nightnow', layer: 'VIIRS_SNPP_DayNightBand_At_Sensor_Radiance', title: 'The night side, recently', lag: 12, by: 'VIIRS on Suomi NPP', about: 'Lights, moonlit clouds, fires and fishing boats seen at night.', words: 'night lights city cities moon dark fishing boats' },
+    { key: 'bluemarble', layer: 'BlueMarble_NextGeneration', title: 'Blue Marble: the Earth without clouds', by: 'NASA Earth Observatory', about: 'A cloud-free picture of the whole planet.', words: 'earth planet blue marble land ocean colour color photo' },
+  ];
+
+  const day = (now, lag) => new Date(now - lag * 864e5).toISOString().slice(0, 10);
+  /** The date a layer is asked for ('' = the layer's own newest). */
+  const timeOf = (l, now = Date.now()) => l.time || (l.lag != null ? day(now, l.lag) : '');
+
+  /** WMS address for one layer of the whole world (EPSG:4326, west at the left). */
+  function url(l, { width = 1440, now = Date.now(), bbox = [-90, -180, 90, 180] } = {}) {
+    const [s, w, n, e] = bbox;
+    const p = new URLSearchParams({ SERVICE: 'WMS', REQUEST: 'GetMap', VERSION: '1.3.0', LAYERS: l.layer, CRS: 'EPSG:4326', BBOX: `${s},${w},${n},${e}`, WIDTH: String(width), HEIGHT: String(Math.round((width * (n - s)) / (e - w))), FORMAT: 'image/png', TRANSPARENT: 'TRUE' });
+    const t = timeOf(l, now);
+    if (t) p.set('TIME', t);
+    return `${WMS}?${p}`;
+  }
+
+  /** Search entries (same shape as the gallery's). */
+  function catalogue(now = Date.now()) {
+    return LAYERS.map((l) => ({
+      id: `gibs:${l.key}`,
+      title: l.title,
+      from: '',
+      to: '',
+      years: timeOf(l, now) || 'newest',
+      text: `${l.about} · ${l.by} · ${l.words}`,
+      about: l.about,
+      kind: 'satellite image',
+      gibs: l,
+    }));
+  }
+  const find = (id) => LAYERS.find((l) => `gibs:${l.key}` === id || l.key === id) || null;
+
+  return { WMS, LAYERS, timeOf, url, catalogue, find };
 });
 
 </script>
@@ -12716,6 +13328,24 @@ THE SOFTWARE.
     download(new Blob([fullAbc(plan)], { type: 'text/plain;charset=utf-8' }), slug(plan.source.name) + '.abc');
   }
 
+  /** The whole score as braille music (BRF for embossers and braille displays). */
+  function brailleOf(plan) {
+    const m = B.music;
+    const mood = `${m.KEYS[plan.settings.key] || 'C'} ${m.SCALES[plan.settings.scale]?.name || plan.settings.scale}`;
+    return B.braille.score({
+      title: plan.source.name,
+      subtitle: `Bit2Beat - ${mood} - ${plan.count} readings`,
+      tempo: plan.settings.tempo,
+      flats: flatsFor(plan),
+      voices: voices(plan).map((v) => ({ name: `${v.c.name}${v.c.unit ? ' in ' + v.c.unit : ''}`, midis: v.c.midi })),
+    });
+  }
+  function downloadBraille(plan) {
+    const b = brailleOf(plan);
+    download(new Blob([b.brf], { type: 'text/plain;charset=us-ascii' }), slug(plan.source.name) + '-braille-music.brf');
+    return b;
+  }
+
   /** Render (up to 64 steps of) the score off-screen and save it as a PNG. */
   function downloadPng(plan, pos) {
     const start = Math.floor(pos / 64) * 64;
@@ -12775,7 +13405,7 @@ THE SOFTWARE.
     paperKey = '';
   };
 
-  B.scoreView = { preview, open, paper, turn, downloadAbc, downloadPng, fullAbc, invalidate };
+  B.scoreView = { preview, open, paper, turn, downloadAbc, downloadPng, downloadBraille, brailleOf, fullAbc, invalidate };
 })(typeof self !== 'undefined' ? self : this);
 
 </script>
@@ -13074,7 +13704,8 @@ ${m.mouth}
     ['events', 'Natural events and earthquakes (NASA EONET + USGS)'],
     ['sample:events', 'Natural events and earthquakes · offline sample'],
   ];
-  const VIDEO_MENU = [['gedi', 'NASA EIC · GEDI forest height'], ['co2', 'NASA EIC · Global carbon dioxide']];
+  // the Space Apps challenge's data sets (core/svs.js): GEDI and CO₂ are bundled, the others load from NASA
+  const VIDEO_MENU = [['gedi', 'NASA EIC · GEDI forest height'], ['co2', 'NASA EIC · Global carbon dioxide'], ...B.svs.PRESETS.filter((p) => !p.bundled && p.video).map((p) => [`svs:${p.id}`, `NASA EIC · ${p.name}`])];
   function earthSample(id) {
     const source = B.feeds.offline[id.slice(7)]();
     source.name += ' · sample';
@@ -13091,6 +13722,7 @@ ${m.mouth}
   }
   const IMAGE_MENU = [
     ['NASA EIC · works offline', [['nasa:gedi', 'GEDI forest height'], ['nasa:co2', 'Global carbon dioxide']]],
+    ['NASA EIC · Space Apps challenge data', B.svs.PRESETS.filter((p) => !p.bundled && p.still).map((p) => [`svs:${p.id}`, p.name])],
     ['Live NASA satellite view', [['sat:world', 'Whole Earth today (VIIRS NOAA-20)'], ['sat:lights', 'Earth at night, city lights (VIIRS Black Marble)'], ['sat:amazon', 'Amazon rainforest (MODIS)'], ['sat:himalaya', 'Himalaya and Tibetan Plateau (MODIS)'], ['sat:greenland', 'Greenland ice sheet (MODIS)'], ['sat:sahara', 'Western Sahara desert (MODIS)']]],
     ['Works offline', [['sci:sunlight', 'Sunlight on Earth, 21 June (worked out from astronomy)'], ['map:world', 'World relief map'], ['gen:storm', 'Storm spiral (generated illustration)'], ['gen:aurora', 'Aurora (generated illustration)']]],
   ];
@@ -13242,11 +13874,23 @@ ${m.mouth}
   /** Decode a bounded number of small frames locally, keeping only two pixel buffers. */
   async function fromVideoFile(file, { signal, onProgress = () => {} } = {}) {
     if (file.size > 200 * 1024 * 1024) throw new Error('Please choose a video smaller than 200 MB.');
+    const url = URL.createObjectURL(file);
+    try {
+      const s = await fromVideo(url, { name: file.name, signal, onProgress, wait: 15000 });
+      s.origin = { source: 'Your video · ' + file.name, url: '', fetched: '', live: false, note: s.origin.note + ' Reopen the file after a refresh.' };
+      return s;
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  /** Analyse a video at an address (a file of yours, or a NASA video through /svs/). */
+  async function fromVideo(url, { name = 'video', signal, onProgress = () => {}, wait = 15000 } = {}) {
+    const file = { name };
     const video = document.createElement('video');
     video.muted = true;
     video.preload = 'auto';
     video.playsInline = true;
-    const url = URL.createObjectURL(file);
     const aborted = () => new DOMException('Video analysis cancelled.', 'AbortError');
     function waitFor(event, action) {
       return new Promise((resolve, reject) => {
@@ -13259,7 +13903,7 @@ ${m.mouth}
         const done = () => { cleanup(); resolve(); };
         const fail = () => { cleanup(); reject(new Error(`Your browser cannot play this video${B.tables.extOf(file.name) ? ' (.' + B.tables.extOf(file.name) + ')' : ''}. Convert it to MP4 or WebM and open that.`)); };
         const cancel = () => { cleanup(); reject(aborted()); };
-        const timer = setTimeout(() => { cleanup(); reject(new Error('Video decoding timed out. Try a shorter clip.')); }, 15000);
+        const timer = setTimeout(() => { cleanup(); reject(new Error('Video decoding timed out. Try a shorter clip.')); }, wait);
         video.addEventListener(event, done, { once: true });
         video.addEventListener('error', fail, { once: true });
         signal?.addEventListener('abort', cancel, { once: true });
@@ -13301,14 +13945,13 @@ ${m.mouth}
       return {
         name: file.name.replace(/\.[a-z0-9]+$/i, ''), kind: 'video', view: 'chart',
         labels: times.map((t) => `${t.toFixed(1)} s`), times, duration: video.duration, channels,
-        origin: { source: 'Your video · ' + file.name, url: '', fetched: '', live: false,
-          note: `${times.length} frames over ${video.duration.toFixed(1)} s (two per second): brightness, colour and motion of the picture, background left out. Original sound is ignored. Reopen the file after a refresh.` },
+        origin: { source: name, url: '', fetched: '', live: false,
+          note: `${times.length} frames over ${video.duration.toFixed(1)} s (two per second): brightness, colour and motion of the picture, background left out. Original sound is ignored.` },
       };
     } finally {
       video.pause();
       video.removeAttribute('src');
       video.load();
-      URL.revokeObjectURL(url);
     }
   }
 
@@ -13349,7 +13992,7 @@ ${m.mouth}
     sel.value = state.choice[state.mode];
   }
 
-  B.sources = { inflate, fillSourceSelect, EARTH_MENU, IMAGE_MENU, VIDEO_MENU, earthSample, videoPreset, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile, fromVideoFile };
+  B.sources = { inflate, fillSourceSelect, EARTH_MENU, IMAGE_MENU, VIDEO_MENU, earthSample, videoPreset, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile, fromVideoFile, fromVideo };
 })(typeof self !== 'undefined' ? self : this);
 
 </script>
@@ -14028,6 +14671,14 @@ ${m.mouth}
     // score
     $('fullScoreBtn').onclick = () => B.scoreView.open(app.plan, app.state.position);
     $('scorePngBtn').onclick = () => B.scoreView.downloadPng(app.plan, app.state.position);
+    const braille = () => {
+      const b = B.scoreView.downloadBraille(app.plan);
+      const msg = `Braille music saved: ${b.pages} page${b.pages > 1 ? 's' : ''} of BRF, one eighth note per reading, for an embosser or a braille display.`;
+      B.dom.announce(msg);
+      return msg;
+    };
+    $('scoreBrailleBtn').onclick = () => B.dom.toast(braille(), 5000);
+    $('exportBraille').onclick = () => ($('exportStatus').textContent = braille());
     $('scoreVoices').onchange = () => B.scoreView.paper(app.plan, app.state.position, false);
     $('scorePrev').onclick = () => B.scoreView.turn(app.plan, app.state.position, -1);
     $('scoreNext').onclick = () => B.scoreView.turn(app.plan, app.state.position, 1);
@@ -14351,7 +15002,7 @@ ${m.mouth}
     // Earth Information Center pick: "id~place~maps" (place = world | lat,lon | lat,lon,Name)
     if (has('eic')) {
       const [id, place, steps] = q.get('eic').split('~');
-      if (/^[\w.-]{1,120}$/.test(id || '')) out.eic = { id, place: (place || 'world').slice(0, 80), ...(num(steps, 1, 200) ? { steps: num(steps, 1, 200) | 0 } : {}) };
+      if (/^[\w.:-]{1,120}$/.test(id || '')) out.eic = { id, place: (place || 'world').slice(0, 80), ...(num(steps, 1, 200) ? { steps: num(steps, 1, 200) | 0 } : {}) };
     }
     if (has('place')) {
       const [lat, lon, year] = q.get('place').split(',').map(Number);
@@ -14370,7 +15021,7 @@ ${m.mouth}
     return out;
   }
 
-  const DEFAULT_CHOICE = { data: 'gistemp', earth: 'events', image: 'eic', video: 'gedi' };
+  const DEFAULT_CHOICE = { data: 'gistemp', earth: 'events', image: 'nasa:gedi', video: 'gedi' };
 
   /** Build the query string for the current state. */
   function query(app, page = 'studio') {
@@ -15173,6 +15824,7 @@ ${m.mouth}
     { id: 'previous', say: 'back', help: 'the step before' },
     { id: 'where', say: 'where am I', help: 'hear the current step, its value and note' },
     { id: 'describe', say: 'describe', help: 'hear what the data says' },
+    { id: 'explain', say: 'explain', help: 'hear briefly what this data is and what each sound means' },
     { id: 'faster', say: 'faster', help: 'speed up' },
     { id: 'slower', say: 'slower', help: 'slow down' },
     { id: 'louder', say: 'louder', help: 'turn the volume up' },
@@ -15181,6 +15833,7 @@ ${m.mouth}
     { id: 'unmute', say: 'unmute', help: 'sound on again' },
     { id: 'tab', say: 'go to image, video, earth events or data', help: 'change the tab', args: TABS },
     { id: 'search', say: 'search for …', help: 'search NASA Earth data, for example: search for sea ice' },
+    { id: 'result', say: 'result 1, result 2 … or play the first one', help: 'play one of the search results', args: ['1', '2', '3', '4', '5', '6'] },
     { id: 'instrument', say: 'piano, guitar, marimba, flute, violin or electric piano', help: 'change the instrument', args: Object.keys(INSTRUMENTS) },
     { id: 'mood', say: 'happy, sad or excited mood', help: 'change the mood', args: MOODS },
     { id: 'tuning', say: 'smart tuning', help: 'let Bit2Beat choose the sound' },
@@ -15223,6 +15876,12 @@ ${m.mouth}
       if (q && !/^(it|that|this)$/.test(q) && !/^(the )?(data|images?|pictures?|videos?|earth|earth events|events)( tab| page)?$/.test(q)) return { id: 'search', arg: q };
     }
     if (/^(help|commands|what can i say|what can you do|options)( me)?$/.test(t) || /\bwhat can i say\b/.test(t)) return { id: 'help' };
+    if (/\b(explain|what is this( data)?|what am i (hearing|listening to)|tell me about (this|it)|what does this mean)\b/.test(t)) return { id: 'explain' };
+    const ORD = { one: 1, first: 1, two: 2, second: 2, three: 3, third: 3, four: 4, fourth: 4, five: 5, fifth: 5, six: 6, sixth: 6 };
+    if ((m = t.match(/\b(?:result|number|option|choice|item)\s*(\d|one|two|three|four|five|six)\b/) || t.match(/\b(first|second|third|fourth|fifth|sixth)\b(?:\s+(?:one|result|item|option))?/))) {
+      const n = /^\d$/.test(m[1]) ? +m[1] : ORD[m[1]];
+      if (n >= 1) return { id: 'result', arg: String(n) }; // more than shown: "there are only 6 results"
+    }
     if (/^(repeat|say (it|that) again|again|what did you say|pardon)$/.test(t)) return { id: 'repeat' };
     if ((m = t.match(/\b(image|picture|photo|video|movie|earth|events?|earthquakes?|data|chart|numbers?)\b.*\b(tab|page|mode)?\b/)) && /\b(go|open|switch|show|tab|change)\b/.test(t)) {
       const w = m[1];
@@ -15246,7 +15905,7 @@ ${m.mouth}
     if (/\b(slower|slow down)\b/.test(t)) return { id: 'slower' };
     if (/\b(start over|restart|from (the )?(start|beginning)|beginning|rewind)\b/.test(t)) return { id: 'restart' };
     if (/^(pause|stop|hold on|wait|stop (it|music|playing)|pause (it|music))$/.test(t) || /\b(pause|stop (the )?music|stop playing)\b/.test(t)) return { id: 'pause' };
-    if (/^(play|start|go|resume|continue|play (it|music)|start (it|music|playing)|listen)$/.test(t) || /\b(play|resume)\b/.test(t)) return { id: 'play' };
+    if (/^(play|start|go|resume|continue|play (it|music)|start (it|music|playing)|listen)$/.test(t)) return { id: 'play' };
     if (/\b(next|forward|skip)\b/.test(t)) return { id: 'next' };
     if (/\b(back|previous|before|last step)\b/.test(t)) return { id: 'previous' };
     if (/\b(where am i|what('?s| is) (this|playing|here)|current (step|value)|which step)\b/.test(t)) return { id: 'where' };
@@ -15255,6 +15914,10 @@ ${m.mouth}
     if (/\b(export|save|download)\b/.test(t)) return { id: 'export' };
     if (/\b(open|upload|choose|load)\b.*\bfile\b|\bupload\b/.test(t)) return { id: 'upload' };
     if (/\bstory\b|\bbitty\b/.test(raw)) return { id: 'story' };
+    if (/^(open )?help$/.test(t)) return { id: 'help' };
+    // "play hurricanes": play the search result with that name (or search for it)
+    if ((m = t.match(/^(?:play|open|listen to|choose|pick)\s+(?:the\s+)?(.{3,60})$/)) && !/^(it|music|the music|it again|again|now|on|please|it now|it please)$/.test(m[1])) return { id: 'play', arg: m[1] };
+    if (/\b(play|resume)\b/.test(t)) return { id: 'play' };
     return null;
   }
 
@@ -15697,6 +16360,60 @@ ${m.mouth}
       el.dispatchEvent(new Event(event, { bubbles: true }));
     };
 
+    // ---------------------------------------------------------------- explain, search results
+    const SOUND = { soft: 'piano', electric: 'electric piano', guitar: 'guitar', marimba: 'marimba', flute: 'flute', strings: 'violin' };
+    const first = (t) => (String(t || '').match(/^[^.!?]*[.!?]?/) || [''])[0].trim();
+    /** A short spoken explanation of what is loaded and what each sound means. */
+    function explain() {
+      const s = app.src;
+      const p = app.plan;
+      if (!s || !p?.count) return 'Nothing is loaded yet. Say search for, and a topic, or go to the image tab.';
+      const out = [`This is ${s.name.replace(/^NASA (EIC|satellite) · /, '')}.`];
+      const note = first(s.origin?.note);
+      if (note) out.push(note);
+      out.push(`It plays ${p.count} steps${p.labels[0] && p.count > 1 ? `, from ${p.labels[0]} to ${p.labels[p.count - 1]}` : ''}.`);
+      const chans = p.channels.filter((c) => c.active);
+      const heard = (chans.length ? chans : p.channels.slice(0, 1)).slice(0, 3);
+      const what = first(heard[0].hint).replace(/[.]$/, '');
+      const on = (c) => `${c.name}${SOUND[c.instrument] ? ` on the ${SOUND[c.instrument]}` : ''}`;
+      const names = heard.map(on);
+      out.push(`You hear ${names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0]}.${what && s.kind !== 'earth' ? ` ${heard[0].name}: ${what}.` : what ? ` ${what}.` : ''}${s.kind === 'earth' ? '' : ' Higher values play higher notes.'}`);
+      const insight = $('insights')?.querySelector('li')?.textContent;
+      if (insight) out.push(insight);
+      out.push('Say describe for more, or play to listen.');
+      return out.join(' ').replace(/\s+/g, ' ');
+    }
+
+    const S = () => B.search;
+    const WHAT = { image: 'pictures', video: 'videos', data: 'data sets' };
+    /** Read the top search results aloud, numbered. */
+    function readResults(q) {
+      const list = (S().results?.() || []).map((r) => S().info(r.id)).filter(Boolean).slice(0, 6);
+      if (!list.length) return say($('searchStatus').textContent || `Nothing found for ${q}.`);
+      say(`${list.length} ${(WHAT[S().mode()] || 'results').replace(/s$/, list.length === 1 ? '' : 's')} for ${q}. ` + list.map((c, k) => `${k + 1}: ${c.title}.`).join(' ') + ' Say result 1 to play the first one, or play and a name.');
+    }
+    /** Make sure a tab with search is open (Image, Video or Data); Earth events switches to Data. */
+    function searchTab() {
+      app.showPage?.('studio', { focus: false });
+      if (S()?.mode?.()) return '';
+      document.querySelector('[data-mode="data"]')?.click();
+      return ' in the Data tab';
+    }
+    /** Load one search result and start playing it. */
+    function playResult(id) {
+      const c = S().info(id);
+      const before = app.src;
+      say(`Loading ${c?.title || 'it'}.`, { quiet: true });
+      return S()
+        .choose(id)
+        .then(() => {
+          if (app.src === before || !app.plan?.count) return say(`Sorry, ${c?.title || 'that'} could not load.`);
+          if (!app.player.playing) app.play();
+          say(`Playing ${c?.title || 'it'}.`, { quiet: true });
+        })
+        .catch(() => say(`Sorry, ${c?.title || 'that'} could not load.`));
+    }
+
     /** Do one command and say what was done. */
     function run({ id, arg }, heard, reply) {
       const st = app.state;
@@ -15705,6 +16422,18 @@ ${m.mouth}
       const label = (i) => (plan?.labels[i] ? `, ${plan.labels[i]}` : '');
       switch (id) {
         case 'play':
+          // "play hurricanes": a search result by name, or the first result of a search for it
+          if (arg && S()?.mode?.()) {
+            const shown = (S().results() || []).map((r) => S().info(r.id)).filter(Boolean);
+            const hit = B.eicSearch.rank(shown, arg, 1)[0];
+            if (hit) return playResult(hit.id);
+            return S()
+              .run(arg)
+              .then(() => {
+                const top = S().results()[0];
+                return top ? playResult(top.id) : say($('searchStatus').textContent || `Nothing found for ${arg}.`);
+              });
+          }
           if (!p.playing) app.play();
           return say(reply || 'Playing.', { quiet: true });
         case 'pause':
@@ -15723,6 +16452,16 @@ ${m.mouth}
         }
         case 'where':
           return say(plan ? B.panels.stepSummary(app, st.position) : 'Nothing is loaded yet.');
+        case 'explain':
+          if (p.playing) app.play();
+          return say(explain());
+        case 'result': {
+          const list = S()?.results?.() || [];
+          if (!list.length) return say('There are no search results yet. Say search for, and a topic, for example: search for sea ice.');
+          const r = list[+arg - 1];
+          if (!r) return say(`There ${list.length === 1 ? 'is only 1 result' : `are only ${list.length} results`}.`);
+          return playResult(r.id);
+        }
         case 'describe':
           if (p.playing) app.play();
           return B.panels.speak(app);
@@ -15746,12 +16485,14 @@ ${m.mouth}
           app.showPage?.('studio', { focus: false });
           document.querySelector(`[data-mode="${arg}"]`)?.click();
           return say(`${{ image: 'Image', video: 'Video', earth: 'Earth events', data: 'Data' }[arg]} tab.`);
-        case 'search':
-          app.showPage?.('studio', { focus: false });
-          $('searchInput').value = arg;
-          $('searchInput').dispatchEvent(new Event('input', { bubbles: true }));
-          $('searchForm').requestSubmit();
-          return say(`Searching for ${arg}.`);
+        case 'search': {
+          const where = searchTab();
+          if (where) say(`Searching for ${arg}${where}.`, { quiet: true });
+          return S()
+            .run(arg)
+            .then(() => readResults(arg))
+            .catch(() => say(`Sorry, the search did not work. ${$('searchStatus').textContent || ''}`));
+        }
         case 'instrument':
           setValue('instrument', V.INSTRUMENTS[arg]);
           return say(`${arg[0].toUpperCase() + arg.slice(1)}.`);
@@ -16065,6 +16806,7 @@ ${m.mouth}
       else if (k === 'd' || k === 'D') B.panels.speak(app);
       else if (k === 'g' || k === 'G') B.tour.hub();
       else if (k === 't' || k === 'T') B.dialogs.openTable(app);
+      else if ((k === 'b' || k === 'B') && app.plan) $('scoreBrailleBtn').click();
       else if (k === '?') $('helpDialog').showModal();
     });
   }
@@ -16741,10 +17483,11 @@ ${m.mouth}
 </script>
 <script>/* src/js/ui/eic-view.js */
 /**
- * Bit2Beat ui · NASA Earth Information Center (earth.gov) in every tab that takes data.
- *   Data  – a data set, a place and how many maps: one note per map (the average around the place).
- *   Image – the newest map of a data set as a picture, read back through its own colour bar.
- *   Video – a time-lapse of the latest maps: one picture and one note per map.
+ * Bit2Beat ui · NASA Earth Information Center in every tab that takes data.
+ *   Data  – the EIC data API (earth.gov): a data set, a place and how many maps; one note per map.
+ *   Image – a picture from the EIC content database (NASA SVS gallery, core/svs.js).
+ *   Video – a video from the EIC content database, read two samples a second.
+ * The challenge's own data sets are presets in the Image and Video menus and are left out of search.
  * Data sets are found with the search above the tabs (ui/search.js); this file holds the live
  * catalogue (core/eic.js) and loads what was chosen. “Use another catalogue” points it at any
  * STAC + raster API (for example NASA VEDA).
@@ -16796,7 +17539,8 @@ ${m.mouth}
 
     $('eicStac').value = api.stac;
     $('eicRaster').value = api.raster;
-    const title = () => ($('eicTitle').textContent = api.stac === E.ENDPOINTS.stac ? 'NASA Earth Information Center' : api.name);
+    const title = () => ($('eicTitle').textContent = api.stac !== E.ENDPOINTS.stac ? api.name : !usesGallery() ? 'NASA Earth Information Center data' : S.mode === 'video' ? 'NASA videos (Earth Information Center gallery)' : 'NASA pictures (Earth Information Center gallery and satellites)');
+    root.addEventListener('b2b:mode', () => title());
 
     /** The catalogue (loaded once; again after changing catalogue). */
     function fill() {
@@ -16841,6 +17585,79 @@ ${m.mouth}
       return info;
     };
 
+    // ---------------------------------------------------------------- EIC content database (SVS)
+    const SV = B.svs;
+    let gallery = [];
+    let galleryLoading = null;
+    const GKEY = 'b2b-eic-gallery';
+    /** Image and Video search the content database, unless another catalogue was chosen. */
+    const usesGallery = (mode = S.mode) => (mode === 'image' || mode === 'video') && api.stac === E.ENDPOINTS.stac;
+    function fillGallery() {
+      if (gallery.length) return Promise.resolve(gallery);
+      if (galleryLoading) return galleryLoading;
+      const saved = storage.get(GKEY, null);
+      const use = (items) => {
+        gallery = SV.catalogue(items);
+        root.dispatchEvent(new CustomEvent('b2b:catalogue', { detail: { count: gallery.length } }));
+        return gallery;
+      };
+      if (saved?.items?.length && Date.now() - saved.at < 7 * 864e5) return Promise.resolve(use(saved.items));
+      galleryLoading = get('api/eic-gallery', { timeout: 60000 })
+        .then((j) => {
+          storage.set(GKEY, { at: Date.now(), items: j.items });
+          return use(j.items);
+        })
+        .catch((err) => {
+          galleryLoading = null;
+          if (saved?.items?.length) return use(saved.items); // an older copy is better than nothing
+          throw new Error(`the Earth Information Center gallery is not reachable (${err.message})`);
+        });
+      return galleryLoading;
+    }
+
+    const originOf = (it) => ({ source: `NASA Earth Information Center gallery · ${it.title} (NASA SVS ${it.id}${it.credit ? ', ' + it.credit : ''})`, url: it.page, fetched: new Date().toISOString(), live: true, note: it.about || '' });
+
+    /** A picture from the content database (saved small in the browser, so presets work offline after once). */
+    async function svsStill(it) {
+      const key = `b2b-svs-img-${it.id}`;
+      let canvas;
+      try {
+        canvas = await B.illustrations.loadToCanvas(SV.media(it.still), 1200, 45000);
+        try {
+          const k = Math.min(1, 900 / Math.max(canvas.width, canvas.height));
+          const c = document.createElement('canvas');
+          [c.width, c.height] = [Math.round(canvas.width * k), Math.round(canvas.height * k)];
+          c.getContext('2d').drawImage(canvas, 0, 0, c.width, c.height);
+          storage.set(key, c.toDataURL('image/jpeg', 0.82));
+        } catch {}
+      } catch (e) {
+        const copy = storage.get(key, null);
+        if (!copy) throw new Error(`NASA's picture could not be loaded (${e.message}). It needs the internet the first time.`);
+        canvas = await B.illustrations.loadToCanvas(copy, 1200, 15000);
+      }
+      return { canvas, meta: { name: `NASA EIC · ${it.title}`, noBackground: false, origin: originOf(it) } };
+    }
+
+    /** A video from the content database, read two samples a second (the result is kept in the browser). */
+    async function svsVideo(it, { signal } = {}) {
+      const key = `b2b-svs-vid-${it.id}`;
+      const url = SV.media(it.video);
+      let s = storage.get(key, null);
+      if (!s) {
+        s = await B.sources.fromVideo(url, { name: it.title, signal, wait: 60000, onProgress: (n, total) => app.busy(true, `Reading NASA's video… ${n}/${total}`) });
+        storage.set(key, s);
+      }
+      return { ...s, name: `NASA EIC · ${it.title}`, videoUrl: url, origin: { ...originOf(it), note: `${it.about ? it.about + ' ' : ''}${s.labels.length} samples, two per second: brightness, colour and motion of the picture.` } };
+    }
+
+    /** Presets (Image and Video menus): `id` = 'svs:5313'. */
+    const presetStill = (id) => svsStill(SV.item(id));
+    const presetVideo = (id) =>
+      busy('Reading NASA’s video…', () => svsVideo(SV.item(id))).then((s) => {
+        if (s) toast(`${s.labels.length} samples of ${SV.item(id).title}. Press Play: the video follows the music.`, 5000);
+        return s;
+      });
+
     /** Data tab. `pick` = { id, place ('world', 'lat,lon' or 'lat,lon,Name'), steps }. */
     async function load(pick) {
       const info = await infoFor(pick);
@@ -16858,7 +17675,59 @@ ${m.mouth}
     }
 
     /** Image tab: the newest map, read through its own colours. */
+    /** A NASA satellite image (GIBS) of the whole world, on black where the layer has no data. */
+    async function gibsImage(l) {
+      const key = `b2b-gibs-${l.key}`;
+      const when = B.gibs.timeOf(l);
+      let canvas;
+      let saved = false;
+      try {
+        const img = await B.illustrations.loadToCanvas(B.gibs.url(l), 1440, 45000);
+        canvas = document.createElement('canvas');
+        [canvas.width, canvas.height] = [img.width, img.height];
+        const g = canvas.getContext('2d', { willReadFrequently: true });
+        g.fillStyle = '#000';
+        g.fillRect(0, 0, canvas.width, canvas.height);
+        g.drawImage(img, 0, 0);
+        try {
+          storage.set(key, canvas.toDataURL('image/jpeg', 0.85));
+        } catch {}
+      } catch (e) {
+        const copy = storage.get(key, null);
+        if (!copy) throw new Error(`NASA's satellite image could not be loaded (${e.message}).`);
+        canvas = await B.illustrations.loadToCanvas(copy, 1440, 15000);
+        saved = true;
+      }
+      return { canvas, meta: { name: `NASA satellite · ${l.title}`, origin: { source: `NASA GIBS · ${l.by} · ${l.title}${when ? ' · ' + when : ''}`, url: 'https://worldview.earthdata.nasa.gov/', fetched: saved ? '' : new Date().toISOString(), live: !saved, cached: saved, note: `${l.about} The whole world, west on the left; black where the layer has no data (silent).` } } };
+    }
+
     async function loadImage(pick) {
+      if (!pick.id && usesGallery('image')) return app.choose('image', 'nasa:gedi'), null;
+      if (String(pick.id).startsWith('gibs:')) {
+        const l = B.gibs.find(pick.id);
+        if (!l) return null;
+        const res = await busy('Getting NASA’s satellite image…', () => gibsImage(l));
+        if (!res) return null;
+        S.eicImage = { id: pick.id };
+        B.eicView.image = res;
+        S.choice.image = 'eic';
+        app.fillSourceSelect();
+        app.useImage(res);
+        return res;
+      }
+      if (String(pick.id).startsWith('svs:')) {
+        const entry = (await fillGallery().catch(() => gallery)).find((c) => c.id === pick.id);
+        const it = SV.item(entry?.svs || pick.id);
+        if (!it) return toast('That picture is no longer in the gallery.'), null;
+        const res = await busy('Loading NASA’s picture…', () => svsStill(it));
+        if (!res) return null;
+        S.eicImage = { id: pick.id };
+        B.eicView.image = res;
+        S.choice.image = 'eic';
+        app.fillSourceSelect();
+        app.useImage(res);
+        return res;
+      }
       const info = await infoFor(pick);
       if (!info) return null;
       const res = await busy('Drawing the latest map…', async () => {
@@ -16886,6 +17755,21 @@ ${m.mouth}
 
     /** Video tab: a time-lapse of the latest maps. */
     async function loadVideo(pick) {
+      if (!pick.id && usesGallery('video')) return app.choose('video', 'gedi'), null;
+      if (String(pick.id).startsWith('svs:')) {
+        const entry = (await fillGallery().catch(() => gallery)).find((c) => c.id === pick.id);
+        const it = SV.item(entry?.svs || pick.id);
+        if (!it?.video) return toast('This one is a picture: open it in the Image tab.'), null;
+        const s = await busy('Reading NASA’s video…', () => svsVideo(it));
+        if (!s) return null;
+        S.eicVideo = { id: pick.id };
+        B.eicView.video = s;
+        S.choice.video = 'eic';
+        app.setSource(s);
+        app.fillSourceSelect();
+        toast(`${s.labels.length} samples, two per second. Press Play: the video follows the music.`, 5000);
+        return s;
+      }
       const info = await infoFor(pick);
       if (!info) return null;
       const s = await busy('Making the time-lapse…', () =>
@@ -16901,7 +17785,28 @@ ${m.mouth}
       return s;
     }
 
-    Object.assign(B.eicView, { load, loadImage, loadVideo, fill, catalogue: () => list, api: () => api });
+    // search, one catalogue per tab (presets left out):
+    //   Image – the gallery's pictures and NASA satellite images (GIBS); Video – the gallery's videos;
+    //   Data – the EIC data API.
+    const gibsList = B.gibs.catalogue();
+    function catalogueFor(mode = S.mode) {
+      if (!usesGallery(mode)) return list;
+      if (mode === 'video') return gallery.filter((c) => c.kind === 'video');
+      return [...gallery.filter((c) => c.kind === 'picture'), ...gibsList];
+    }
+    function fillFor() {
+      const mode = S.mode;
+      if (!usesGallery(mode)) return fill();
+      // satellite images need no gallery: the Image tab can search even when NASA's gallery is slow
+      return fillGallery().then(
+        () => catalogueFor(mode),
+        (e) => {
+          if (mode === 'image') return catalogueFor(mode);
+          throw e;
+        },
+      );
+    }
+    Object.assign(B.eicView, { load, loadImage, loadVideo, fill: fillFor, catalogue: () => catalogueFor(), api: () => api, usesGallery, presetStill, presetVideo });
     $('eicUse').onclick = () => {
       const stac = $('eicStac').value.trim();
       const raster = $('eicRaster').value.trim();
@@ -16932,12 +17837,13 @@ ${m.mouth}
 /**
  * Bit2Beat ui · one search for the NASA Earth Information Center, above the Image, Video and
  * Data tabs.
- *   Keyword search (default): results appear as you type, from the catalogue's titles and
- *   descriptions (plus everyday words: swamp → wetland …). Works without any AI.
- *   AI mode (Gemini): the question in your own words goes to api/search.js, where the key stays on
- *   the server; Gemini picks the data sets and the place. It only answers Earth-data searches.
- * Choosing a result plays it in the tab that is open: Image draws its newest map, Video makes a
- * time-lapse, Data plays one note per map.
+ *   Keyword search: results appear as you type, from the catalogue's titles, descriptions and
+ *   keywords, with word stems, one-letter typing mistakes and everyday words (swamp → wetland …)
+ *   (core/eic-search.js rank). No AI, works offline for what is already loaded.
+ * Image and Video search the EIC content database (NASA's SVS gallery made for the Earth
+ * Information Center; the challenge's own data sets are presets in the menus and never appear
+ * here); Data searches the EIC data API (earth.gov), where every map is real numbers.
+ * Choosing a result plays it in the tab that is open.
  */
 (function (root) {
   'use strict';
@@ -16947,14 +17853,14 @@ ${m.mouth}
   const STEPS = { data: [24, 60, 120], video: [24, 48, 96] };
   const DEFAULT_STEPS = { data: 60, video: 24 };
   const DENSITY = { day: 'daily', month: 'monthly', year: 'yearly' };
-  // more ideas for the suggestions while typing (the first six are also the "Try:" buttons)
-  const MORE_IDEAS = ['Carbon dioxide over the Amazon', 'Methane from rice fields', 'Fossil fuel emissions in cities', 'Fire emissions in Australia', 'Population in India', 'Land carbon flux', 'Wetland methane in Siberia', 'Greenhouse gases over the whole world'];
-  const HELLO = 'Results and suggestions appear as you type. Turn on Gemini to ask in your own words.';
+  const HELLO = 'Results and suggestions appear as you type.';
+  const WHAT = { image: ['picture', 'pictures'], video: ['video', 'videos'], data: ['data set', 'data sets'] };
+  const what = (m, n) => (WHAT[m] || WHAT.data)[n === 1 ? 0 : 1];
+  const PLACEHOLDER = { image: 'Type a subject, e.g. sea temperature, rain, wildfires', video: 'Type a subject, e.g. hurricanes, ocean currents, sea ice', data: 'Type a subject, e.g. carbon dioxide, methane, fire' };
 
   function init(app) {
     const S = app.state;
     const box = $('eicSearch');
-    let ai = !!storage.get('b2b-ai-search', false);
     let results = []; // [{ id, why }]
     let token = 0;
     let typing = 0;
@@ -16980,7 +17886,11 @@ ${m.mouth}
       const m = mode();
       box.hidden = !m;
       if (!m) return;
-      const steps = STEPS[m];
+      $('searchInput').placeholder = PLACEHOLDER[m];
+      // the content database (Image, Video) has whole pictures and videos: no area or number of maps
+      const gal = B.eicView.usesGallery?.(m);
+      $('searchPlace').closest('label').hidden = !!gal;
+      const steps = gal ? null : STEPS[m];
       $('searchStepsField').hidden = !steps;
       if (steps) {
         const keep = +$('searchSteps').value;
@@ -16991,21 +17901,6 @@ ${m.mouth}
       if (pick?.place && [...$('searchPlace').options].some((o) => o.value === pick.place)) $('searchPlace').value = pick.place;
       mark();
     }
-
-    // ---------------------------------------------------------------- AI mode
-    function syncAi() {
-      $('aiMode').setAttribute('aria-pressed', String(ai));
-      box.classList.toggle('is-ai', ai);
-      $('searchInput').placeholder = ai ? 'Ask in your own words, e.g. methane from wetlands in the Amazon' : 'Type a subject, e.g. carbon dioxide, methane, fire';
-      $('searchBtn').textContent = ai ? 'Ask Gemini' : 'Search';
-    }
-    $('aiMode').onclick = () => {
-      ai = !ai;
-      storage.set('b2b-ai-search', ai);
-      syncAi();
-      say(ai ? 'Gemini is on: write what you want to hear and press Ask Gemini. It only finds Earth data.' : 'Gemini is off: keyword search, results appear as you type.');
-      $('searchInput').focus();
-    };
 
     // ---------------------------------------------------------------- results
     const info = (id) => B.eicView.catalogue().find((c) => c.id === id);
@@ -17023,7 +17918,7 @@ ${m.mouth}
       $('searchResults').replaceChildren(
         ...results.map((r, k) => {
           const c = info(r.id);
-          const years = `${c.from.slice(0, 4)}–${c.to.slice(0, 4)}${c.density ? ' · ' + (DENSITY[c.density] || c.density) : ''}`;
+          const years = c.svs || c.gibs ? `${c.years || 'NASA SVS'} · ${c.kind}` : `${c.from.slice(0, 4)}–${c.to.slice(0, 4)}${c.density ? ' · ' + (DENSITY[c.density] || c.density) : ''}`;
           const b = el(
             'button',
             { type: 'button', class: 'result', 'data-id': c.id, title: c.text.slice(0, 300) },
@@ -17070,58 +17965,18 @@ ${m.mouth}
       const found = X.rank(list, q, 6);
       const near = X.detectPlace(q, B.snapshots.PLACES);
       if (near) setPlace(near);
-      show(found, found.length ? `${found.length} data set${found.length > 1 ? 's' : ''} match “${q}”.${ai ? '' : ' Choose one to listen.'}` : quiet ? '' : `Nothing matches “${q}”. Try another word, or turn on Gemini.`);
+      const m = mode();
+      const ideas = (X.IDEAS[m] || []).filter((t) => X.rank(list, t, 1).length).slice(0, 3);
+      show(found, found.length ? `${found.length} ${what(m, found.length)} match${found.length === 1 ? 'es' : ''} “${q}”. Choose one to listen.` : quiet ? '' : `No ${what(m, 2)} match “${q}”.${ideas.length ? ` Try ${ideas.map((t) => `“${t.toLowerCase()}”`).join(', ')}.` : ' Try another word.'}`);
       return found;
-    }
-
-    /** AI mode: Gemini picks the data sets and the place. */
-    async function askGemini(q) {
-      const my = ++token;
-      const list = await catalogue();
-      if (!list || my !== token) return;
-      const quick = await keywords(q, true);
-      say(quick.length ? `${quick.length} keyword match${quick.length > 1 ? 'es' : ''}. Gemini is thinking…` : 'Gemini is thinking…');
-      $('searchBtn').disabled = true;
-      box.classList.add('is-thinking');
-      try {
-        const res = await B.eicView.get('api/search', { method: 'POST', timeout: 65000, body: { q, mode: mode() || 'data', collections: X.compact(list) } });
-        if (my !== token) return;
-        const ans = X.answer(res, list);
-        if (ans.offTopic) return say('AI search only looks for Earth data (air, land, water, climate, people on Earth). Try “carbon dioxide over the Amazon”.');
-        if (ans.place) setPlace(ans.place);
-        if (ans.picks.length) {
-          const who = res.model && res.model !== X.MODEL ? `Gemini (${res.model.replace('gemini-', '').replace('-flash', ' Flash')}, as 3.8 Flash was busy)` : 'Gemini';
-          // Gemini's picks first, then the keyword matches it did not pick (marked), up to 6
-          const ids = new Set(ans.picks.map((p) => p.id));
-          const more = quick.filter((r) => !ids.has(r.id)).slice(0, Math.max(0, 6 - ans.picks.length)).map((r) => ({ ...r, why: r.why || 'Keyword match' }));
-          show([...ans.picks, ...more], `${ans.summary ? ans.summary + ' ' : ''}${who} picked ${ans.picks.length} data set${ans.picks.length > 1 ? 's' : ''}${ans.place !== 'world' ? ` for ${ans.place.name}` : ''}. Choose one to listen.`);
-          announce(`${ans.picks.length} results. First: ${info(ans.picks[0].id)?.title}.`);
-        } else say(quick.length ? 'Gemini found nothing better; these are the keyword matches.' : `Nothing in the catalogue matches “${q}”. Try other words, like carbon, methane, fire or population.`);
-        alsoTry(ans.alsoTry);
-      } catch (e) {
-        if (my !== token) return;
-        const why = /404|405|not set up|Failed to fetch|network/i.test(e.message) ? 'AI search is not available here (it works on bit2beat.vercel.app)' : /429|Too many/.test(e.message) ? 'too many AI searches: wait a minute' : e.message;
-        say(quick.length ? `Showing keyword matches (${why}).` : `No keyword matches, and ${why}. Try other words.`);
-      } finally {
-        if (my === token) {
-          $('searchBtn').disabled = false;
-          box.classList.remove('is-thinking');
-        }
-      }
-    }
-
-    /** Gemini's "also try" ideas, as chips under the results. */
-    function alsoTry(list = []) {
-      if (!list.length) return;
-      $('searchSuggest').hidden = false;
-      $('searchSuggest').replaceChildren(el('span', { class: 'suggest-label', text: 'Gemini suggests:' }), ...list.map((t) => el('button', { type: 'button', class: 'chip', onclick: () => run(t) }, t)));
     }
 
     // ---------------------------------------------------------------- ideas, clear, typing
     function syncIdeas() {
       const empty = !$('searchInput').value.trim() && !results.length;
       const list = B.eicView.catalogue();
-      const ideas = X.SUGGESTIONS.filter((t) => !list.length || X.rank(list, t, 1).length);
+      const m = mode();
+      const ideas = (X.IDEAS[m] || X.SUGGESTIONS).filter((t) => !list.length || X.rank(list, t, 1).length).slice(0, 7);
       $('searchSuggest').hidden = !empty;
       $('searchSuggest').replaceChildren(
         ...(empty
@@ -17130,7 +17985,7 @@ ${m.mouth}
               ...ideas.map((t) =>
                 el('button', { type: 'button', class: 'chip', onclick: () => run(t) }, t),
               ),
-              el('button', { type: 'button', class: 'chip chip-quiet', onclick: () => run('') }, 'All data sets'),
+              el('button', { type: 'button', class: 'chip chip-quiet', onclick: () => run('') }, `All ${what(m, 2)}`),
             ]
           : []),
       );
@@ -17152,7 +18007,11 @@ ${m.mouth}
     function showHints(q) {
       const list = B.eicView.catalogue();
       const f = X.fold(q);
-      const ideas = [...X.SUGGESTIONS, ...MORE_IDEAS].filter((t) => X.fold(t).includes(f) && X.fold(t) !== f).map((t) => ({ kind: 'idea', text: t }));
+      // ideas of this tab that start with (or contain) what is typed and find something here
+      const ideas = (X.IDEAS[mode()] || [])
+        .filter((t) => X.fold(t) !== f && (X.fold(t).startsWith(f) || X.fold(t).includes(' ' + f) || X.fold(t).includes(f)) && X.rank(list, t, 1).length)
+        .sort((p, q) => X.fold(q).startsWith(f) - X.fold(p).startsWith(f))
+        .map((t) => ({ kind: 'idea', text: t }));
       const sets = (list.length ? X.rank(list, q, 5) : []).map((r) => ({ kind: 'set', id: r.id, text: info(r.id).title }));
       hints = [...ideas.slice(0, 3), ...sets].slice(0, 6);
       hintAt = -1;
@@ -17194,10 +18053,10 @@ ${m.mouth}
       $('searchInput').value = q;
       $('searchClear').hidden = !q;
       if (!q) return listAll();
-      return ai ? askGemini(q) : keywords(q);
+      return keywords(q);
     }
     function listAll() {
-      return catalogue().then((list) => list && show(list.map((c) => ({ id: c.id })), `${list.length} data sets, A to Z. Type to narrow them.`));
+      return catalogue().then((list) => list && show([...list].sort((p, q) => p.title.localeCompare(q.title)).map((c) => ({ id: c.id })), `${list.length} ${what(mode(), list.length)}, A to Z. Type to narrow them.`));
     }
     function clear() {
       ++token;
@@ -17218,10 +18077,10 @@ ${m.mouth}
       $('searchClear').hidden = !q;
       clearTimeout(typing);
       if (!q) return closeHints(), show([], HELLO);
-      // keyword mode: results as you type; AI mode waits for Ask Gemini. Both show suggestions.
+      // results and suggestions as you type
       typing = setTimeout(() => {
         showHints(q);
-        if (!ai && q.length >= 2) keywords(q, true);
+        if (q.length >= 2) keywords(q, true);
       }, 180);
     });
     $('searchInput').addEventListener('keydown', (e) => {
@@ -17250,14 +18109,26 @@ ${m.mouth}
     $('searchPlace').onchange = replay;
     $('searchSteps').onchange = replay;
     root.addEventListener('b2b:source', syncMode);
-    root.addEventListener('b2b:mode', syncMode);
+    root.addEventListener('b2b:mode', () => {
+      syncMode();
+      // Image and Video search NASA's gallery, Data the data API: search again in the new one
+      if (!mode()) return;
+      const m = mode();
+      B.eicView
+        .fill()
+        .then(() => {
+          if (mode() !== m) return; // another tab was chosen meanwhile
+          const q = X.clean($('searchInput').value); // read now: voice may have typed meanwhile
+          return q ? keywords(q, true) : results.length ? show([], HELLO) : syncIdeas();
+        })
+        .catch(() => {});
+    });
     root.addEventListener('b2b:catalogue', syncIdeas);
     // open the catalogue in the background once the page is idle (search is then instant)
     setTimeout(() => mode() && B.eicView.fill().catch(() => {}), 1500);
-    syncAi();
     syncMode();
     syncIdeas();
-    B.search = Object.assign(B.search || {}, { run, choose, clear, results: () => results, ai: () => ai });
+    B.search = Object.assign(B.search || {}, { run, choose, clear, results: () => results, info, mode });
   }
 
   B.search = { init };
@@ -17752,7 +18623,7 @@ ${m.mouth}
 (function () {
   'use strict';
   const B = window.Bit2Beat || {};
-  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView', 'eic', 'eicView', 'eicSearch', 'search', 'options', 'xlsx', 'tables', 'science', 'sciSource', 'scienceView', 'voiceCommands', 'voice'];
+  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView', 'eic', 'eicView', 'eicSearch', 'search', 'options', 'xlsx', 'tables', 'science', 'sciSource', 'scienceView', 'voiceCommands', 'voice', 'svs', 'gibs', 'braille'];
   const missing = need.filter((k) => !B[k]);
   if (missing.length) {
     document.body.insertAdjacentHTML('afterbegin', `<p role="alert" style="padding:16px;background:#fbe9d0;color:#14213d">Bit2Beat could not load: ${missing.join(', ')}. Open the single-file build in dist/ or serve the folder.</p>`);
@@ -18060,6 +18931,7 @@ ${m.mouth}
       if (state.mode === 'video') {
         if (id === 'custom') return;
         if (id === 'upload' && uploads.video) return setSource(uploads.video);
+        if (id.startsWith('svs:')) return B.eicView.presetVideo(id).then((s) => s && token === loadToken && setSource(s));
         if (id === 'eic') return B.eicView.video ? setSource(B.eicView.video) : B.eicView.loadVideo(state.eicVideo || {}).then((s) => s || app.choose('video', 'gedi'));
         return setSource(B.sources.videoPreset(id));
       }
@@ -18073,6 +18945,7 @@ ${m.mouth}
       if (id === 'upload' && uploads.image) res = uploads.image;
       else if (id === 'eic') return B.eicView.image ? app.useImage(B.eicView.image) : B.eicView.loadImage(state.eicImage || {}).then((r) => r || app.choose('image', 'nasa:gedi'));
       else if (id.startsWith('sci:')) res = await sciView.builtIn(id);
+      else if (id.startsWith('svs:')) res = await B.eicView.presetStill(id);
       else {
         setBusy(true, 'Loading picture…');
         res = await B.sources.imageCanvas(id, state.image.date);

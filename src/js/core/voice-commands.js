@@ -28,6 +28,7 @@
     { id: 'previous', say: 'back', help: 'the step before' },
     { id: 'where', say: 'where am I', help: 'hear the current step, its value and note' },
     { id: 'describe', say: 'describe', help: 'hear what the data says' },
+    { id: 'explain', say: 'explain', help: 'hear briefly what this data is and what each sound means' },
     { id: 'faster', say: 'faster', help: 'speed up' },
     { id: 'slower', say: 'slower', help: 'slow down' },
     { id: 'louder', say: 'louder', help: 'turn the volume up' },
@@ -36,6 +37,7 @@
     { id: 'unmute', say: 'unmute', help: 'sound on again' },
     { id: 'tab', say: 'go to image, video, earth events or data', help: 'change the tab', args: TABS },
     { id: 'search', say: 'search for …', help: 'search NASA Earth data, for example: search for sea ice' },
+    { id: 'result', say: 'result 1, result 2 … or play the first one', help: 'play one of the search results', args: ['1', '2', '3', '4', '5', '6'] },
     { id: 'instrument', say: 'piano, guitar, marimba, flute, violin or electric piano', help: 'change the instrument', args: Object.keys(INSTRUMENTS) },
     { id: 'mood', say: 'happy, sad or excited mood', help: 'change the mood', args: MOODS },
     { id: 'tuning', say: 'smart tuning', help: 'let Bit2Beat choose the sound' },
@@ -78,6 +80,12 @@
       if (q && !/^(it|that|this)$/.test(q) && !/^(the )?(data|images?|pictures?|videos?|earth|earth events|events)( tab| page)?$/.test(q)) return { id: 'search', arg: q };
     }
     if (/^(help|commands|what can i say|what can you do|options)( me)?$/.test(t) || /\bwhat can i say\b/.test(t)) return { id: 'help' };
+    if (/\b(explain|what is this( data)?|what am i (hearing|listening to)|tell me about (this|it)|what does this mean)\b/.test(t)) return { id: 'explain' };
+    const ORD = { one: 1, first: 1, two: 2, second: 2, three: 3, third: 3, four: 4, fourth: 4, five: 5, fifth: 5, six: 6, sixth: 6 };
+    if ((m = t.match(/\b(?:result|number|option|choice|item)\s*(\d|one|two|three|four|five|six)\b/) || t.match(/\b(first|second|third|fourth|fifth|sixth)\b(?:\s+(?:one|result|item|option))?/))) {
+      const n = /^\d$/.test(m[1]) ? +m[1] : ORD[m[1]];
+      if (n >= 1) return { id: 'result', arg: String(n) }; // more than shown: "there are only 6 results"
+    }
     if (/^(repeat|say (it|that) again|again|what did you say|pardon)$/.test(t)) return { id: 'repeat' };
     if ((m = t.match(/\b(image|picture|photo|video|movie|earth|events?|earthquakes?|data|chart|numbers?)\b.*\b(tab|page|mode)?\b/)) && /\b(go|open|switch|show|tab|change)\b/.test(t)) {
       const w = m[1];
@@ -101,7 +109,7 @@
     if (/\b(slower|slow down)\b/.test(t)) return { id: 'slower' };
     if (/\b(start over|restart|from (the )?(start|beginning)|beginning|rewind)\b/.test(t)) return { id: 'restart' };
     if (/^(pause|stop|hold on|wait|stop (it|music|playing)|pause (it|music))$/.test(t) || /\b(pause|stop (the )?music|stop playing)\b/.test(t)) return { id: 'pause' };
-    if (/^(play|start|go|resume|continue|play (it|music)|start (it|music|playing)|listen)$/.test(t) || /\b(play|resume)\b/.test(t)) return { id: 'play' };
+    if (/^(play|start|go|resume|continue|play (it|music)|start (it|music|playing)|listen)$/.test(t)) return { id: 'play' };
     if (/\b(next|forward|skip)\b/.test(t)) return { id: 'next' };
     if (/\b(back|previous|before|last step)\b/.test(t)) return { id: 'previous' };
     if (/\b(where am i|what('?s| is) (this|playing|here)|current (step|value)|which step)\b/.test(t)) return { id: 'where' };
@@ -110,6 +118,10 @@
     if (/\b(export|save|download)\b/.test(t)) return { id: 'export' };
     if (/\b(open|upload|choose|load)\b.*\bfile\b|\bupload\b/.test(t)) return { id: 'upload' };
     if (/\bstory\b|\bbitty\b/.test(raw)) return { id: 'story' };
+    if (/^(open )?help$/.test(t)) return { id: 'help' };
+    // "play hurricanes": play the search result with that name (or search for it)
+    if ((m = t.match(/^(?:play|open|listen to|choose|pick)\s+(?:the\s+)?(.{3,60})$/)) && !/^(it|music|the music|it again|again|now|on|please|it now|it please)$/.test(m[1])) return { id: 'play', arg: m[1] };
+    if (/\b(play|resume)\b/.test(t)) return { id: 'play' };
     return null;
   }
 

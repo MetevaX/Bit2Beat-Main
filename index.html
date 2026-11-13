@@ -77,7 +77,6 @@
     <form id="searchForm" role="search" class="search-form">
       <div class="search-head">
         <label for="searchInput" id="searchLabel" class="search-label"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Search <span id="eicTitle">NASA Earth Information Center</span></label>
-        <button type="button" class="ai-toggle" id="aiMode" aria-pressed="false" aria-label="Ask Gemini (AI search)" title="Ask Gemini: write your question in your own words; Gemini picks the data sets and the place"><svg class="i sparkle" aria-hidden="true"><use href="#i-sparkle"/></svg><span>Gemini</span></button>
       </div>
       <div class="search-row">
         <div class="search-box">
@@ -242,6 +241,7 @@
           <div class="btn-row">
             <button type="button" class="btn btn-quiet" id="fullScoreBtn">Full score</button>
             <button type="button" class="btn btn-quiet" id="scorePngBtn"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>PNG</button>
+            <button type="button" class="btn btn-quiet" id="scoreBrailleBtn" aria-label="Download the score in braille music (BRF)" title="Braille music (BRF) for braille embossers and braille displays"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Braille</button>
           </div>
         </div>
         <p class="card-note" id="scoreLabel"></p>
@@ -498,6 +498,7 @@
     <button type="button" class="btn btn-primary" id="exportAudio"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Download audio</button>
     <button type="button" class="btn" id="exportCsv">Notes as CSV</button>
     <button type="button" class="btn" id="exportAbc">Score as ABC</button>
+    <button type="button" class="btn" id="exportBraille" title="Braille music (BRF) for braille embossers and braille displays">Score in braille</button>
   </div>
   <p class="dlg-status" id="exportStatus" role="status"></p>
 </dialog>
@@ -557,6 +558,7 @@
     <dt><kbd>G</kbd></dt><dd>Bitty’s guide</dd>
     <dt><kbd>Esc</kbd></dt><dd>Stop reading aloud, close the guide</dd>
     <dt><kbd>T</kbd></dt><dd>Readings table</dd>
+    <dt><kbd>B</kbd></dt><dd>Download the score in braille music (BRF, for embossers and braille displays)</dd>
     <dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Scientific maps: zoom in, zoom out, whole map (also the mouse wheel; drag to move)</dd>
     <dt><kbd>V</kbd></dt><dd>Voice control on / off: say “play”, “pause”, “next”, “where am I”, “search for sea ice”, “go to video”, “violin”, “7.1”, “help” or “stop voice control”</dd>
     <dt><kbd>?</kbd></dt><dd>This help</dd>
@@ -583,6 +585,7 @@
 <script src="src/js/core/image.js"></script>
 <script src="src/js/core/video.js"></script>
 <script src="src/js/core/score.js"></script>
+<script src="src/js/core/braille.js"></script>
 <script src="src/js/core/feeds.js"></script>
 <script src="src/js/core/eic.js"></script>
 <script src="src/js/core/eic-search.js"></script>
@@ -596,6 +599,8 @@
 <script src="src/js/core/science.js"></script>
 <script src="src/js/core/sci-source.js"></script>
 <script src="src/js/core/sunlight.js"></script>
+<script src="src/js/core/svs.js"></script>
+<script src="src/js/core/gibs.js"></script>
 <script src="src/js/core/plan.js"></script>
 <script src="src/js/core/story.js"></script>
 <script src="src/js/core/spotlight.js"></script>

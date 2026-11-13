@@ -188,6 +188,14 @@
     // score
     $('fullScoreBtn').onclick = () => B.scoreView.open(app.plan, app.state.position);
     $('scorePngBtn').onclick = () => B.scoreView.downloadPng(app.plan, app.state.position);
+    const braille = () => {
+      const b = B.scoreView.downloadBraille(app.plan);
+      const msg = `Braille music saved: ${b.pages} page${b.pages > 1 ? 's' : ''} of BRF, one eighth note per reading, for an embosser or a braille display.`;
+      B.dom.announce(msg);
+      return msg;
+    };
+    $('scoreBrailleBtn').onclick = () => B.dom.toast(braille(), 5000);
+    $('exportBraille').onclick = () => ($('exportStatus').textContent = braille());
     $('scoreVoices').onchange = () => B.scoreView.paper(app.plan, app.state.position, false);
     $('scorePrev').onclick = () => B.scoreView.turn(app.plan, app.state.position, -1);
     $('scoreNext').onclick = () => B.scoreView.turn(app.plan, app.state.position, 1);

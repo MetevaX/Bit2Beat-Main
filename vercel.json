@@ -1,6 +1,10 @@
 {
   "functions": {
     "api/search.js": { "maxDuration": 60 },
-    "api/voice.js": { "maxDuration": 30 }
-  }
+    "api/voice.js": { "maxDuration": 30 },
+    "api/eic-gallery.js": { "maxDuration": 60 }
+  },
+  "rewrites": [
+    { "source": "/svs/:path*", "destination": "https://svs.gsfc.nasa.gov/:path*" }
+  ]
 }

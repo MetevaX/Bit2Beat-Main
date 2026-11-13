@@ -56,7 +56,7 @@
     // Earth Information Center pick: "id~place~maps" (place = world | lat,lon | lat,lon,Name)
     if (has('eic')) {
       const [id, place, steps] = q.get('eic').split('~');
-      if (/^[\w.-]{1,120}$/.test(id || '')) out.eic = { id, place: (place || 'world').slice(0, 80), ...(num(steps, 1, 200) ? { steps: num(steps, 1, 200) | 0 } : {}) };
+      if (/^[\w.:-]{1,120}$/.test(id || '')) out.eic = { id, place: (place || 'world').slice(0, 80), ...(num(steps, 1, 200) ? { steps: num(steps, 1, 200) | 0 } : {}) };
     }
     if (has('place')) {
       const [lat, lon, year] = q.get('place').split(',').map(Number);
@@ -75,7 +75,7 @@
     return out;
   }
 
-  const DEFAULT_CHOICE = { data: 'gistemp', earth: 'events', image: 'eic', video: 'gedi' };
+  const DEFAULT_CHOICE = { data: 'gistemp', earth: 'events', image: 'nasa:gedi', video: 'gedi' };
 
   /** Build the query string for the current state. */
   function query(app, page = 'studio') {

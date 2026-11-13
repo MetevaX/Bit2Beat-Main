@@ -160,6 +160,24 @@
     download(new Blob([fullAbc(plan)], { type: 'text/plain;charset=utf-8' }), slug(plan.source.name) + '.abc');
   }
 
+  /** The whole score as braille music (BRF for embossers and braille displays). */
+  function brailleOf(plan) {
+    const m = B.music;
+    const mood = `${m.KEYS[plan.settings.key] || 'C'} ${m.SCALES[plan.settings.scale]?.name || plan.settings.scale}`;
+    return B.braille.score({
+      title: plan.source.name,
+      subtitle: `Bit2Beat - ${mood} - ${plan.count} readings`,
+      tempo: plan.settings.tempo,
+      flats: flatsFor(plan),
+      voices: voices(plan).map((v) => ({ name: `${v.c.name}${v.c.unit ? ' in ' + v.c.unit : ''}`, midis: v.c.midi })),
+    });
+  }
+  function downloadBraille(plan) {
+    const b = brailleOf(plan);
+    download(new Blob([b.brf], { type: 'text/plain;charset=us-ascii' }), slug(plan.source.name) + '-braille-music.brf');
+    return b;
+  }
+
   /** Render (up to 64 steps of) the score off-screen and save it as a PNG. */
   function downloadPng(plan, pos) {
     const start = Math.floor(pos / 64) * 64;
@@ -219,5 +237,5 @@
     paperKey = '';
   };
 
-  B.scoreView = { preview, open, paper, turn, downloadAbc, downloadPng, fullAbc, invalidate };
+  B.scoreView = { preview, open, paper, turn, downloadAbc, downloadPng, downloadBraille, brailleOf, fullAbc, invalidate };
 })(typeof self !== 'undefined' ? self : this);

@@ -1,12 +1,13 @@
 /**
  * Bit2Beat ui · one search for the NASA Earth Information Center, above the Image, Video and
  * Data tabs.
- *   Keyword search (default): results appear as you type, from the catalogue's titles and
- *   descriptions (plus everyday words: swamp → wetland …). Works without any AI.
- *   AI mode (Gemini): the question in your own words goes to api/search.js, where the key stays on
- *   the server; Gemini picks the data sets and the place. It only answers Earth-data searches.
- * Choosing a result plays it in the tab that is open: Image draws its newest map, Video makes a
- * time-lapse, Data plays one note per map.
+ *   Keyword search: results appear as you type, from the catalogue's titles, descriptions and
+ *   keywords, with word stems, one-letter typing mistakes and everyday words (swamp → wetland …)
+ *   (core/eic-search.js rank). No AI, works offline for what is already loaded.
+ * Image and Video search the EIC content database (NASA's SVS gallery made for the Earth
+ * Information Center; the challenge's own data sets are presets in the menus and never appear
+ * here); Data searches the EIC data API (earth.gov), where every map is real numbers.
+ * Choosing a result plays it in the tab that is open.
  */
 (function (root) {
   'use strict';
@@ -16,14 +17,14 @@
   const STEPS = { data: [24, 60, 120], video: [24, 48, 96] };
   const DEFAULT_STEPS = { data: 60, video: 24 };
   const DENSITY = { day: 'daily', month: 'monthly', year: 'yearly' };
-  // more ideas for the suggestions while typing (the first six are also the "Try:" buttons)
-  const MORE_IDEAS = ['Carbon dioxide over the Amazon', 'Methane from rice fields', 'Fossil fuel emissions in cities', 'Fire emissions in Australia', 'Population in India', 'Land carbon flux', 'Wetland methane in Siberia', 'Greenhouse gases over the whole world'];
-  const HELLO = 'Results and suggestions appear as you type. Turn on Gemini to ask in your own words.';
+  const HELLO = 'Results and suggestions appear as you type.';
+  const WHAT = { image: ['picture', 'pictures'], video: ['video', 'videos'], data: ['data set', 'data sets'] };
+  const what = (m, n) => (WHAT[m] || WHAT.data)[n === 1 ? 0 : 1];
+  const PLACEHOLDER = { image: 'Type a subject, e.g. sea temperature, rain, wildfires', video: 'Type a subject, e.g. hurricanes, ocean currents, sea ice', data: 'Type a subject, e.g. carbon dioxide, methane, fire' };
 
   function init(app) {
     const S = app.state;
     const box = $('eicSearch');
-    let ai = !!storage.get('b2b-ai-search', false);
     let results = []; // [{ id, why }]
     let token = 0;
     let typing = 0;
@@ -49,7 +50,11 @@
       const m = mode();
       box.hidden = !m;
       if (!m) return;
-      const steps = STEPS[m];
+      $('searchInput').placeholder = PLACEHOLDER[m];
+      // the content database (Image, Video) has whole pictures and videos: no area or number of maps
+      const gal = B.eicView.usesGallery?.(m);
+      $('searchPlace').closest('label').hidden = !!gal;
+      const steps = gal ? null : STEPS[m];
       $('searchStepsField').hidden = !steps;
       if (steps) {
         const keep = +$('searchSteps').value;
@@ -60,21 +65,6 @@
       if (pick?.place && [...$('searchPlace').options].some((o) => o.value === pick.place)) $('searchPlace').value = pick.place;
       mark();
     }
-
-    // ---------------------------------------------------------------- AI mode
-    function syncAi() {
-      $('aiMode').setAttribute('aria-pressed', String(ai));
-      box.classList.toggle('is-ai', ai);
-      $('searchInput').placeholder = ai ? 'Ask in your own words, e.g. methane from wetlands in the Amazon' : 'Type a subject, e.g. carbon dioxide, methane, fire';
-      $('searchBtn').textContent = ai ? 'Ask Gemini' : 'Search';
-    }
-    $('aiMode').onclick = () => {
-      ai = !ai;
-      storage.set('b2b-ai-search', ai);
-      syncAi();
-      say(ai ? 'Gemini is on: write what you want to hear and press Ask Gemini. It only finds Earth data.' : 'Gemini is off: keyword search, results appear as you type.');
-      $('searchInput').focus();
-    };
 
     // ---------------------------------------------------------------- results
     const info = (id) => B.eicView.catalogue().find((c) => c.id === id);
@@ -92,7 +82,7 @@
       $('searchResults').replaceChildren(
         ...results.map((r, k) => {
           const c = info(r.id);
-          const years = `${c.from.slice(0, 4)}–${c.to.slice(0, 4)}${c.density ? ' · ' + (DENSITY[c.density] || c.density) : ''}`;
+          const years = c.svs || c.gibs ? `${c.years || 'NASA SVS'} · ${c.kind}` : `${c.from.slice(0, 4)}–${c.to.slice(0, 4)}${c.density ? ' · ' + (DENSITY[c.density] || c.density) : ''}`;
           const b = el(
             'button',
             { type: 'button', class: 'result', 'data-id': c.id, title: c.text.slice(0, 300) },
@@ -139,58 +129,18 @@
       const found = X.rank(list, q, 6);
       const near = X.detectPlace(q, B.snapshots.PLACES);
       if (near) setPlace(near);
-      show(found, found.length ? `${found.length} data set${found.length > 1 ? 's' : ''} match “${q}”.${ai ? '' : ' Choose one to listen.'}` : quiet ? '' : `Nothing matches “${q}”. Try another word, or turn on Gemini.`);
+      const m = mode();
+      const ideas = (X.IDEAS[m] || []).filter((t) => X.rank(list, t, 1).length).slice(0, 3);
+      show(found, found.length ? `${found.length} ${what(m, found.length)} match${found.length === 1 ? 'es' : ''} “${q}”. Choose one to listen.` : quiet ? '' : `No ${what(m, 2)} match “${q}”.${ideas.length ? ` Try ${ideas.map((t) => `“${t.toLowerCase()}”`).join(', ')}.` : ' Try another word.'}`);
       return found;
-    }
-
-    /** AI mode: Gemini picks the data sets and the place. */
-    async function askGemini(q) {
-      const my = ++token;
-      const list = await catalogue();
-      if (!list || my !== token) return;
-      const quick = await keywords(q, true);
-      say(quick.length ? `${quick.length} keyword match${quick.length > 1 ? 'es' : ''}. Gemini is thinking…` : 'Gemini is thinking…');
-      $('searchBtn').disabled = true;
-      box.classList.add('is-thinking');
-      try {
-        const res = await B.eicView.get('api/search', { method: 'POST', timeout: 65000, body: { q, mode: mode() || 'data', collections: X.compact(list) } });
-        if (my !== token) return;
-        const ans = X.answer(res, list);
-        if (ans.offTopic) return say('AI search only looks for Earth data (air, land, water, climate, people on Earth). Try “carbon dioxide over the Amazon”.');
-        if (ans.place) setPlace(ans.place);
-        if (ans.picks.length) {
-          const who = res.model && res.model !== X.MODEL ? `Gemini (${res.model.replace('gemini-', '').replace('-flash', ' Flash')}, as 3.8 Flash was busy)` : 'Gemini';
-          // Gemini's picks first, then the keyword matches it did not pick (marked), up to 6
-          const ids = new Set(ans.picks.map((p) => p.id));
-          const more = quick.filter((r) => !ids.has(r.id)).slice(0, Math.max(0, 6 - ans.picks.length)).map((r) => ({ ...r, why: r.why || 'Keyword match' }));
-          show([...ans.picks, ...more], `${ans.summary ? ans.summary + ' ' : ''}${who} picked ${ans.picks.length} data set${ans.picks.length > 1 ? 's' : ''}${ans.place !== 'world' ? ` for ${ans.place.name}` : ''}. Choose one to listen.`);
-          announce(`${ans.picks.length} results. First: ${info(ans.picks[0].id)?.title}.`);
-        } else say(quick.length ? 'Gemini found nothing better; these are the keyword matches.' : `Nothing in the catalogue matches “${q}”. Try other words, like carbon, methane, fire or population.`);
-        alsoTry(ans.alsoTry);
-      } catch (e) {
-        if (my !== token) return;
-        const why = /404|405|not set up|Failed to fetch|network/i.test(e.message) ? 'AI search is not available here (it works on bit2beat.vercel.app)' : /429|Too many/.test(e.message) ? 'too many AI searches: wait a minute' : e.message;
-        say(quick.length ? `Showing keyword matches (${why}).` : `No keyword matches, and ${why}. Try other words.`);
-      } finally {
-        if (my === token) {
-          $('searchBtn').disabled = false;
-          box.classList.remove('is-thinking');
-        }
-      }
-    }
-
-    /** Gemini's "also try" ideas, as chips under the results. */
-    function alsoTry(list = []) {
-      if (!list.length) return;
-      $('searchSuggest').hidden = false;
-      $('searchSuggest').replaceChildren(el('span', { class: 'suggest-label', text: 'Gemini suggests:' }), ...list.map((t) => el('button', { type: 'button', class: 'chip', onclick: () => run(t) }, t)));
     }
 
     // ---------------------------------------------------------------- ideas, clear, typing
     function syncIdeas() {
       const empty = !$('searchInput').value.trim() && !results.length;
       const list = B.eicView.catalogue();
-      const ideas = X.SUGGESTIONS.filter((t) => !list.length || X.rank(list, t, 1).length);
+      const m = mode();
+      const ideas = (X.IDEAS[m] || X.SUGGESTIONS).filter((t) => !list.length || X.rank(list, t, 1).length).slice(0, 7);
       $('searchSuggest').hidden = !empty;
       $('searchSuggest').replaceChildren(
         ...(empty
@@ -199,7 +149,7 @@
               ...ideas.map((t) =>
                 el('button', { type: 'button', class: 'chip', onclick: () => run(t) }, t),
               ),
-              el('button', { type: 'button', class: 'chip chip-quiet', onclick: () => run('') }, 'All data sets'),
+              el('button', { type: 'button', class: 'chip chip-quiet', onclick: () => run('') }, `All ${what(m, 2)}`),
             ]
           : []),
       );
@@ -221,7 +171,11 @@
     function showHints(q) {
       const list = B.eicView.catalogue();
       const f = X.fold(q);
-      const ideas = [...X.SUGGESTIONS, ...MORE_IDEAS].filter((t) => X.fold(t).includes(f) && X.fold(t) !== f).map((t) => ({ kind: 'idea', text: t }));
+      // ideas of this tab that start with (or contain) what is typed and find something here
+      const ideas = (X.IDEAS[mode()] || [])
+        .filter((t) => X.fold(t) !== f && (X.fold(t).startsWith(f) || X.fold(t).includes(' ' + f) || X.fold(t).includes(f)) && X.rank(list, t, 1).length)
+        .sort((p, q) => X.fold(q).startsWith(f) - X.fold(p).startsWith(f))
+        .map((t) => ({ kind: 'idea', text: t }));
       const sets = (list.length ? X.rank(list, q, 5) : []).map((r) => ({ kind: 'set', id: r.id, text: info(r.id).title }));
       hints = [...ideas.slice(0, 3), ...sets].slice(0, 6);
       hintAt = -1;
@@ -263,10 +217,10 @@
       $('searchInput').value = q;
       $('searchClear').hidden = !q;
       if (!q) return listAll();
-      return ai ? askGemini(q) : keywords(q);
+      return keywords(q);
     }
     function listAll() {
-      return catalogue().then((list) => list && show(list.map((c) => ({ id: c.id })), `${list.length} data sets, A to Z. Type to narrow them.`));
+      return catalogue().then((list) => list && show([...list].sort((p, q) => p.title.localeCompare(q.title)).map((c) => ({ id: c.id })), `${list.length} ${what(mode(), list.length)}, A to Z. Type to narrow them.`));
     }
     function clear() {
       ++token;
@@ -287,10 +241,10 @@
       $('searchClear').hidden = !q;
       clearTimeout(typing);
       if (!q) return closeHints(), show([], HELLO);
-      // keyword mode: results as you type; AI mode waits for Ask Gemini. Both show suggestions.
+      // results and suggestions as you type
       typing = setTimeout(() => {
         showHints(q);
-        if (!ai && q.length >= 2) keywords(q, true);
+        if (q.length >= 2) keywords(q, true);
       }, 180);
     });
     $('searchInput').addEventListener('keydown', (e) => {
@@ -319,14 +273,26 @@
     $('searchPlace').onchange = replay;
     $('searchSteps').onchange = replay;
     root.addEventListener('b2b:source', syncMode);
-    root.addEventListener('b2b:mode', syncMode);
+    root.addEventListener('b2b:mode', () => {
+      syncMode();
+      // Image and Video search NASA's gallery, Data the data API: search again in the new one
+      if (!mode()) return;
+      const m = mode();
+      B.eicView
+        .fill()
+        .then(() => {
+          if (mode() !== m) return; // another tab was chosen meanwhile
+          const q = X.clean($('searchInput').value); // read now: voice may have typed meanwhile
+          return q ? keywords(q, true) : results.length ? show([], HELLO) : syncIdeas();
+        })
+        .catch(() => {});
+    });
     root.addEventListener('b2b:catalogue', syncIdeas);
     // open the catalogue in the background once the page is idle (search is then instant)
     setTimeout(() => mode() && B.eicView.fill().catch(() => {}), 1500);
-    syncAi();
     syncMode();
     syncIdeas();
-    B.search = Object.assign(B.search || {}, { run, choose, clear, results: () => results, ai: () => ai });
+    B.search = Object.assign(B.search || {}, { run, choose, clear, results: () => results, info, mode });
   }
 
   B.search = { init };

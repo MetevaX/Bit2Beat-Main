@@ -357,13 +357,13 @@ test('image: background is left out and colour keys read data from a picture', (
 test('NASA presets: offline video assets, measured channels, CSV and event plans', () => {
   const media = require('../src/js/data/nasa-media.js');
   const vm = require('node:vm');
-  const B = { dom: { storage: { get: () => null } }, feeds, presets, nasaMedia: media, nasaKeys: require('../src/js/data/nasa-keys.js') };
+  const B = { dom: { storage: { get: () => null } }, feeds, presets, nasaMedia: media, nasaKeys: require('../src/js/data/nasa-keys.js'), svs: require('../src/js/core/svs.js') };
   const context = { self: { Bit2Beat: B }, URLSearchParams };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'src/js/ui/sources.js'), 'utf8'), context);
   vm.runInNewContext(fs.readFileSync(path.join(root, 'src/js/ui/url-state.js'), 'utf8'), context);
   assert.equal(B.urlState.read('?mode=video&src=co2').mode, 'video');
   assert.equal(B.urlState.DEFAULT_CHOICE.video, 'gedi');
-  for (const [id] of B.sources.VIDEO_MENU) {
+  for (const [id] of B.sources.VIDEO_MENU.filter(([k]) => !k.startsWith('svs:'))) {
     const source = B.sources.videoPreset(id);
     assert.equal(source.labels.length, require('../src/js/core/video.js').stepsFor(source.duration), 'two samples per second');
     assert.equal(source.times.length, source.labels.length);
@@ -1023,4 +1023,132 @@ test('Gemini: a slow or busy model is skipped, then every other Flash model the 
   } finally {
     global.fetch = real;
   }
+});
+
+test('EIC content database: gallery walk, playable media, presets kept out of search', async () => {
+  const svs = require('../src/js/core/svs.js');
+  const m = (url, media_type, width, height) => ({ url: `http://svs.gsfc.nasa.gov/vis/${url}`, media_type, width, height });
+  const pages = {
+    40467: { media_groups: [{ title: 'EIC Dashboards', items: [{ type: 'gallery_page', instance: { id: 9, title: 'Sea level' } }] }, { title: 'EIC Beauty Pieces', items: [{ type: 'media_group', instance: m('a000000/a005300/a005313/x_print.jpg', 'Image', 1024, 288) }] }] },
+    9: { media_groups: [{ title: 'Visualizations', items: [{ type: 'details_page', instance: { id: 777 } }] }] },
+    777: { id: 777, title: 'Sea level rise', release_date: '2024-05-01', description: 'Oceans <b>rise</b>. || files', keywords: [{ name: 'Oceans' }, { name: 'Hyperwall' }], main_credits: { 'Visualizations by': [{ name: 'A. Person' }] }, media_groups: [{ items: [m('a000000/a000700/a000777/sl_thm.png', 'Image', 80, 40), m('a000000/a000700/a000777/sl_print.jpg', 'Image', 1024, 576), m('a000000/a000700/a000777/sl_2160p30_h265.mp4', 'Movie', 3840, 2160), m('a000000/a000700/a000777/sl_1080p30.mp4', 'Movie', 1920, 1080), m('a000000/a000700/a000777/sl_4k.mp4', 'Movie', 3840, 2160)].map((instance) => ({ instance })) }] },
+    5313: { id: 5313, title: 'Night lights', release_date: '2024-06-14', media_groups: [{ items: [{ instance: m('a000000/a005300/a005313/x_print.jpg', 'Image', 1024, 288) }] }] },
+  };
+  const list = await svs.crawl(async (id) => pages[id] || Promise.reject(new Error('404')));
+  assert.deepEqual(list.map((e) => e.id), [777, 5313]);
+  const sl = list[0];
+  assert.deepEqual([sl.t, sl.y, sl.d, sl.k, sl.g, sl.c], ['Sea level rise', '2024', 'Oceans rise .', ['Oceans'], 'Sea level › Visualizations', 'A. Person']);
+  assert.equal(sl.s, 'a000000/a000700/a000777/sl_print.jpg', 'a print-size still, never the thumbnail');
+  assert.equal(sl.v, 'a000000/a000700/a000777/sl_1080p30.mp4', 'the smallest video a browser plays (no H.265)');
+  const cat = svs.catalogue(list);
+  assert.deepEqual(cat.map((c) => c.id), ['svs:777'], 'presets (night lights is one) never appear in search');
+  assert.equal(svs.PRESETS.length, 9, 'the nine Earth data sets of the challenge');
+  assert.ok(svs.PRESETS.every((p) => p.bundled || p.still), 'every preset has a picture');
+  assert.equal(svs.item('svs:5313').video, '', 'night lights exists only as an H.265 video: offered as a picture');
+  assert.equal(svs.media('a/b.jpg'), 'svs/vis/a/b.jpg', 'pictures and videos come through the site’s own address');
+  const vercel = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
+  assert.ok(vercel.rewrites.some((r) => r.source === '/svs/:path*' && r.destination === 'https://svs.gsfc.nasa.gov/:path*'));
+  // the server function: crawls once and answers with the short list
+  const real = global.fetch;
+  global.fetch = async (url) => {
+    const id = +String(url).split('/api/')[1];
+    return pages[id] ? { ok: true, json: async () => pages[id] } : { ok: false, status: 404, json: async () => ({}) };
+  };
+  try {
+    const out = { status: 0, json: null, headers: {} };
+    const res = { setHeader: (k, v) => (out.headers[k] = v), status: (c) => ((out.status = c), res), json: (j) => ((out.json = j), res) };
+    await require('../api/eic-gallery.js')({ method: 'GET', headers: {} }, res);
+    assert.equal(out.status, 200);
+    assert.equal(out.json.items.length, 2);
+    assert.match(out.headers['Cache-Control'], /s-maxage=86400/);
+  } finally {
+    global.fetch = real;
+  }
+});
+
+test('NASA satellite images (GIBS) for the Image tab: whole-world WMS pictures, dates, no presets', () => {
+  const G = require('../src/js/core/gibs.js');
+  const now = Date.parse('2026-11-13T12:00:00Z');
+  const list = G.catalogue(now);
+  assert.ok(list.length >= 20, 'many layers');
+  assert.equal(new Set(list.map((c) => c.id)).size, list.length, 'unique ids');
+  assert.ok(list.every((c) => c.id.startsWith('gibs:') && c.kind === 'satellite image' && c.title && c.text));
+  assert.ok(!G.LAYERS.some((l) => /CorrectedReflectance_TrueColor$|BlackMarble/i.test(l.layer)), 'true colour and Black Marble are presets, not search');
+  const sst = G.find('gibs:sst');
+  const u = new URL(G.url(sst, { now }));
+  assert.equal(u.origin + u.pathname, G.WMS);
+  assert.equal(u.searchParams.get('TIME'), '2026-11-10', 'daily layers ask for a day already covered');
+  assert.equal(u.searchParams.get('BBOX'), '-90,-180,90,180');
+  assert.equal(u.searchParams.get('WIDTH'), '1440');
+  assert.equal(u.searchParams.get('HEIGHT'), '720');
+  assert.equal(new URL(G.url(G.find('seaice'), { now })).searchParams.get('TIME'), '2025-03-01', 'a fixed date');
+  assert.equal(new URL(G.url(G.find('population'), { now })).searchParams.get('TIME'), null, 'fixed layers use their own newest');
+  assert.equal(G.find('nope'), null);
+});
+
+test('search without AI: typos, word forms, synonyms, ideas per tab, different results per tab', () => {
+  const X = require('../src/js/core/eic-search.js');
+  const G = require('../src/js/core/gibs.js');
+  const images = G.catalogue();
+  const top = (q) => X.rank(images, q, 3)[0]?.id;
+  assert.equal(top('sea surface temprature'), 'gibs:sst', 'a typo still finds it');
+  assert.equal(top('wildfire'), 'gibs:fires');
+  assert.equal(top('burning forests'), 'gibs:fires');
+  assert.equal(top('volcanoes'), 'gibs:so2');
+  assert.equal(top('plankton'), 'gibs:chlorophyll');
+  assert.equal(top('sea ice'), 'gibs:seaice', 'a two-word name is one thing');
+  assert.equal(X.stem('storms'), X.stem('storm'));
+  assert.ok(X.near('temprature', 'temperature') && X.near('rian', 'rain') && !X.near('rain', 'rail ways'));
+  for (const tab of ['image', 'video', 'data']) assert.ok(X.IDEAS[tab].length >= 8, `ideas for ${tab}`);
+  assert.notDeepEqual(X.IDEAS.image, X.IDEAS.video, 'each tab has its own ideas');
+  const videos = [{ id: 'svs:1', title: 'Hurricane season 2024', text: 'storms over the Atlantic', kind: 'video' }];
+  assert.equal(X.rank(videos, 'hurricanes')[0].id, 'svs:1');
+  assert.equal(X.rank(images, 'hurricanes').every((r) => r.id.startsWith('gibs:')), true, 'the Image tab only finds pictures');
+  const code = fs.readFileSync(path.join(root, 'src/js/ui/search.js'), 'utf8');
+  assert.ok(!/api\/search|askGemini|aiMode|Gemini/.test(code), 'the search box no longer uses AI');
+  assert.ok(!fs.readFileSync(path.join(root, 'index.html'), 'utf8').includes('id="aiMode"'));
+});
+
+test('braille music: notes, octaves, rests, accidentals, bars and a BRF file for embossers', () => {
+  const br = require('../src/js/core/braille.js');
+  assert.equal(br.ASCII.length, 64, 'Braille ASCII has 64 cells');
+  assert.equal(br.toUnicode([br.cell(1, 2, 4, 5)]), '⠛');
+  const r = br.score({ title: 'Test', tempo: 120, voices: [{ name: 'Sea ice', midis: [60, 62, 64, null, 72, 48, 61, 61] }] });
+  const music = r.unicode.split('\n').find((l) => l.startsWith('⠼⠙⠲'));
+  assert.ok(music, 'starts with the 4/4 time signature');
+  assert.match(music, /^⠼⠙⠲⠀⠐⠙⠑⠋⠭/, 'first note has its octave mark; steps and a rest follow');
+  assert.ok(music.includes('⠨⠙'), 'an octave leap up gets an octave mark');
+  assert.ok(music.includes('⠸⠙'), 'two octaves down gets an octave mark');
+  assert.ok(music.includes('⠩⠐⠙⠙'), 'the sharp lasts to the end of the bar');
+  assert.ok(music.endsWith('⠣⠅'), 'ends with the final double bar');
+  const silent = br.score({ title: 'Quiet', voices: [{ name: 'x', midis: Array(8).fill(null) }] });
+  assert.ok(silent.unicode.includes('⠍'), 'a silent bar is a whole rest');
+  const long = br.score({ title: 'Long', voices: [{ name: 'Temperature in degrees', midis: Array.from({ length: 400 }, (_, i) => 55 + ((i * 7) % 20)) }] });
+  const lines = long.brf.split('\n').map((l) => l.replace(/[\f\r]/g, ''));
+  assert.ok(lines.every((l) => l.length <= 40), 'BRF lines are at most 40 cells');
+  assert.ok(long.pages >= 2 && long.brf.includes('\f'), 'pages are split with form feeds');
+  assert.ok(/^[\x20-\x5f\r\n\f]*$/.test(long.brf), 'BRF is plain braille ASCII');
+});
+
+test('voice control: explain the data, play search results by number or by name', () => {
+  const V = require('../src/js/core/voice-commands.js');
+  const said = (t) => V.parse(t);
+  assert.deepEqual(said('explain'), { id: 'explain' });
+  assert.deepEqual(said('what am I hearing'), { id: 'explain' });
+  assert.deepEqual(said('result 2'), { id: 'result', arg: '2' });
+  assert.deepEqual(said('play the first one'), { id: 'result', arg: '1' });
+  assert.deepEqual(said('number three'), { id: 'result', arg: '3' });
+  assert.deepEqual(said('play hurricanes'), { id: 'play', arg: 'hurricanes' });
+  assert.deepEqual(said('listen to sea ice'), { id: 'play', arg: 'sea ice' });
+  assert.deepEqual(said('play it again'), { id: 'play' });
+  assert.deepEqual(said('play next'), { id: 'next' });
+  assert.deepEqual(said('play the guitar'), { id: 'instrument', arg: 'guitar' });
+  assert.deepEqual(said('open help'), { id: 'help' });
+  assert.equal(V.answer({ id: 'result', arg: '3' }).arg, '3');
+  assert.equal(V.answer({ id: 'result', arg: '99' }).id, 'none');
+  assert.match(V.helpText(), /explain/);
+  const ui = fs.readFileSync(path.join(root, 'src/js/ui/voice.js'), 'utf8');
+  assert.match(ui, /case 'explain'/);
+  assert.match(ui, /case 'result'/);
+  assert.match(ui, /readResults/);
 });
