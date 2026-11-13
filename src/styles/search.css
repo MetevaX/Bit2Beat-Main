@@ -725,3 +725,8 @@ body.pointer-mode main {
 #sourceCanvas.is-panning {
   cursor: grabbing;
 }
+/* the red dot grows with the sound the microphone hears */
+.voice-bar .voice-dot {
+  transform: scale(calc(0.8 + var(--level, 0) * 0.9));
+  transition: transform 0.08s linear;
+}

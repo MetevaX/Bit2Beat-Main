@@ -965,7 +965,10 @@ test('voice control: the grammar, and Gemini may only answer with known commands
   assert.deepEqual(said('switch to violin'), { id: 'instrument', arg: 'violin' });
   assert.deepEqual(said('where am I'), { id: 'where' });
   assert.equal(said('tell me a joke'), null);
-  assert.deepEqual(V.answer('{"id":"faster","reply":"Speeding up."}'), { id: 'faster', reply: 'Speeding up.' });
+  assert.deepEqual(V.answer('{"id":"faster","reply":"Speeding up."}'), { id: 'faster', reply: 'Speeding up.', heard: '' });
+  assert.deepEqual(V.answer({ heard: 'شغل', id: 'play' }), { id: 'play', reply: '', heard: 'شغل' }, 'what was heard comes back, in any language');
+  const audioReq = V.prompt('', { data: 'UklGRgAAAA' });
+  assert.equal(audioReq.contents[0].parts[1].inline_data.mime_type, 'audio/wav', 'a recording goes to Gemini as WAV');
   assert.equal(V.answer({ id: 'tab', arg: 'kitchen' }).id, 'none', 'unknown arguments are refused');
   assert.equal(V.answer({ id: 'deleteEverything' }).id, 'none', 'unknown commands are refused');
   assert.equal(V.answer({ id: 'search', arg: 'heat in Cairo' }).id, 'none');

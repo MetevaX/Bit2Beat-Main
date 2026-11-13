@@ -136,7 +136,15 @@
     };
     $('exportFormat').onchange = describe;
     $('exportBtn').onclick = () => {
-      $('exportFormat').value = B.exporter.FORMATS[app.state.audio.output] ? app.state.audio.output : 'stereo';
+      // surround and Atmos (ADM) masters are for scientific maps only
+      const sci = !!app.src?.science;
+      [...$('exportFormat').options].forEach((o) => {
+        if (!['5.1', '7.1', '7.1.4', 'adm'].includes(o.value)) return;
+        o.dataset.name ||= o.textContent;
+        o.disabled = !sci;
+        o.textContent = sci ? o.dataset.name : `${o.dataset.name} (scientific maps only)`;
+      });
+      $('exportFormat').value = B.exporter.FORMATS[app.state.audio.output] && !$('exportFormat').querySelector(`option[value="${app.state.audio.output}"]`)?.disabled ? app.state.audio.output : 'stereo';
       $('exportStatus').textContent = '';
       describe();
       $('exportDialog').showModal();

@@ -5,10 +5,12 @@
  * five seconds to answer (Enter = yes, Escape = no; it is read by screen readers and, where the
  * browser allows, spoken aloud). V turns voice control on and off at any time.
  *
- * Phrases are understood on the page first (core/voice-commands.js: play, pause, next, search for
- * …, go to video, violin, 7.1, help, stop voice control …). A phrase the page does not know goes
- * to Gemini through our server (api/voice.js), which may only answer with one of those same
- * commands. Every action is confirmed out loud.
+ * Listening: the microphone is heard by ui/voice-ear.js, and each phrase goes (as a short WAV) to
+ * Gemini through our server (api/voice.js), which writes it out — any language or accent — and
+ * may only answer with one of Bit2Beat's own commands (core/voice-commands.js: play, pause, next,
+ * search for …, go to video, violin, help, stop voice control …). This works in every browser.
+ * Where the server cannot be reached (offline, or the file opened from disk), the browser's own
+ * speech recognition is used instead when it has one. Every action is confirmed out loud.
  */
 (function (root) {
   'use strict';
@@ -29,40 +31,57 @@
     function say(text, { quiet = false } = {}) {
       last = text;
       $('voiceHeard').textContent = text;
-      if (!('speechSynthesis' in root) || quiet) return announce(text);
+      if (!('speechSynthesis' in root) || quiet) {
+        announce(text);
+        return setTimeout(listen, 300);
+      }
       speaking = true;
+      ear?.pause(true); // do not hear ourselves
       try {
-        rec?.abort(); // do not hear ourselves
+        rec?.abort();
       } catch {}
       root.speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.rate = 1.05;
       u.lang = 'en-US';
-      u.onend = u.onerror = () => {
+      let done = false;
+      const end = () => {
+        if (done) return;
+        done = true;
         speaking = false;
         listen();
       };
+      u.onend = u.onerror = end;
+      // some systems (Linux without speech voices) never say "ended": listen again anyway
+      setTimeout(end, 1500 + text.length * 75);
       root.speechSynthesis.speak(u);
     }
 
     // ---------------------------------------------------------------- listening
+    let ear = null; // the microphone + Gemini (ui/voice-ear.js)
+    let busy = false; // a phrase is being understood
+    const online = () => navigator.onLine && /^https?:$/.test(location.protocol);
     function listen() {
-      if (!on || speaking || !rec) return;
+      if (!on || speaking || busy) return;
+      if (ear) return ear.pause(false);
+      if (!rec) return;
       try {
         rec.start();
       } catch {
         /* already listening */
       }
     }
+    const status = (t) => ($('voiceHeard').textContent = t);
+    function level(v) {
+      $('voiceBar').style.setProperty('--level', v.toFixed(2));
+    }
 
-    function start() {
-      if (!Rec) {
-        toast('This browser cannot listen to speech. Voice control works in Chrome, Edge and Safari.', 6000);
-        return false;
-      }
+    /** The browser's own speech recognition (Chrome, Edge, Safari), used when Gemini cannot be reached. */
+    function startNative() {
+      if (!Rec) return false;
       if (!rec) {
         rec = new Rec();
-        rec.lang = 'en-US';
+        rec.lang = navigator.language || 'en-US';
         rec.continuous = false;
         rec.interimResults = false;
         rec.maxAlternatives = 3;
@@ -75,22 +94,88 @@
           if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
             stop(false);
             toast('The microphone is blocked for this site. Allow it in the browser’s address bar to use voice control.', 7000);
-          } else if (e.error === 'network') $('voiceHeard').textContent = 'Voice control needs an internet connection in this browser.';
+          } else if (e.error === 'network') status('This browser’s speech service cannot be reached. Voice control needs the internet.');
         };
         rec.onend = () => setTimeout(listen, 250); // keep listening until it is turned off
       }
+      listen();
+      return true;
+    }
+
+    /** One phrase from the ear: Gemini writes it out and picks the command. */
+    let lastSent = 0;
+    async function phrase(b64, seconds) {
+      if (!on || busy || Date.now() - lastSent < 900) return;
+      busy = true;
+      lastSent = Date.now();
+      ear?.pause(true);
+      status(`Heard ${seconds.toFixed(1)} s · understanding…`);
+      try {
+        const r = await fetch('api/voice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ audio: b64 }) });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw Object.assign(new Error(j.error || `The voice service answered ${r.status}.`), { status: r.status });
+        busy = false;
+        if (j.id && j.id !== 'none') return run({ id: j.id, arg: j.arg }, j.heard || '', j.reply);
+        const local = j.heard && V.parse(j.heard);
+        if (local) return run(local, j.heard);
+        if (!j.heard) {
+          status('Listening… say “help” for the commands.'); // only noise or music
+          return listen();
+        }
+        return say(j.reply || `Sorry, I did not understand “${j.heard}”. Say help for the commands.`);
+      } catch (e) {
+        busy = false;
+        if ([404, 405, 503].includes(e.status) || e instanceof TypeError) {
+          // no voice server here (opened from disk, or offline): the browser's own recogniser, if any
+          ear?.stop();
+          ear = null;
+          if (startNative()) return say('Using this browser’s own speech recognition.');
+          stop(false);
+          return toast('Voice control needs the internet (it works on bit2beat.vercel.app).', 6000);
+        }
+        if (e.status === 429) return say('Too many voice commands in a minute. Please wait a little.');
+        say('Sorry, the voice service did not answer. Please try again.');
+      }
+    }
+
+    async function start() {
       on = true;
       remember({ asked: true, on: true });
       $('voiceBtn').setAttribute('aria-pressed', 'true');
       $('voiceBar').hidden = false;
       document.body.classList.add('voice-on');
-      say('Voice control is on. Say help to hear what you can say.');
-      return true;
+      if (online() && B.voiceEar) {
+        try {
+          ear = B.voiceEar.create({ onPhrase: phrase, onLevel: level });
+          await ear.start();
+          ear.pause(true); // until the welcome has been said
+          say('Voice control is on. Say help to hear what you can say.');
+          return true;
+        } catch (e) {
+          ear?.stop();
+          ear = null;
+          if (/denied|not allowed|permission/i.test(e.message + e.name)) {
+            stop(false);
+            toast('The microphone is blocked for this site. Allow it (the microphone icon in the address bar), then press V.', 7000);
+            return false;
+          }
+        }
+      }
+      if (startNative()) {
+        say('Voice control is on. Say help to hear what you can say.');
+        return true;
+      }
+      stop(false);
+      toast('Voice control needs a microphone and the internet (it works on bit2beat.vercel.app).', 6000);
+      return false;
     }
 
     function stop(spoken = true) {
       on = false;
+      busy = false;
       remember({ asked: true, on: false });
+      ear?.stop();
+      ear = null;
       try {
         rec?.abort();
       } catch {}
@@ -194,6 +279,7 @@
           click('autoTuneBtn');
           return say($('autoTuneNote').textContent || 'Smart Tuning done.');
         case 'output':
+          if (['5.1', '7.1', '7.1.4'].includes(V.OUTPUTS[arg]) && !app.src?.science) return say('Surround sound is for scientific maps. Open a NetCDF, HDF5 or GeoTIFF file first, or Sunlight on Earth in the Image tab.');
           setValue('output', V.OUTPUTS[arg]);
           return say(`${{ stereo: 'Stereo', binaural: 'Headphone 3D', '5.1': '5.1 surround', '7.1': '7.1 surround', '7.1.4': '7.1.4 with height' }[V.OUTPUTS[arg]]}.`);
         case 'drums':
@@ -285,7 +371,7 @@
     });
 
     const saved = storage.get(KEY, {});
-    if (!Rec) $('voiceBtn').title = 'Voice control works in Chrome, Edge and Safari.';
+    if (!navigator.mediaDevices?.getUserMedia && !Rec) $('voiceBtn').title = 'Voice control needs a microphone.';
     else if (!saved.asked) setTimeout(ask, 600);
     else if (saved.on) {
       // it was on last time: offer it again with one key, without opening the microphone by itself

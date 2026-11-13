@@ -280,7 +280,12 @@
     });
     // space & tone
     $('output').onchange = (e) => {
+      if (['5.1', '7.1', '7.1.4'].includes(e.target.value) && !app.src?.science) {
+        e.target.value = A.output;
+        return toast('5.1, 7.1 and 7.1.4 are for scientific maps: open a NetCDF, HDF5 or GeoTIFF file (Upload) or “Sunlight on Earth” in the Image tab.', 6000);
+      }
       A.output = e.target.value;
+      A.wantSurround = null;
       app.persist();
       app.player.refreshRouting();
       speakerTests();
@@ -322,6 +327,40 @@
         : 'Stereo: left and right speakers.';
     }
     speakerTests();
+
+    /**
+     * 5.1, 7.1 and 7.1.4 are for scientific maps (NetCDF, HDF5, GeoTIFF and the built-in map):
+     * places on the map then sound where they are around you. Other sources use stereo or
+     * headphone 3D; the surround choice comes back when a scientific map is opened again.
+     */
+    const SURROUND = ['5.1', '7.1', '7.1.4'];
+    function syncOutputs() {
+      const sci = !!app.src?.science;
+      [...$('output').options].forEach((o) => {
+        if (!SURROUND.includes(o.value)) return;
+        o.dataset.name ||= o.textContent;
+        o.disabled = !sci;
+        o.textContent = sci ? o.dataset.name : `${o.dataset.name} (scientific maps only)`;
+      });
+      let changed = false;
+      if (!sci && SURROUND.includes(A.output)) {
+        A.wantSurround = A.output;
+        A.output = 'stereo';
+        changed = true;
+      } else if (sci && A.wantSurround && A.output === 'stereo') {
+        A.output = A.wantSurround;
+        A.wantSurround = null;
+        changed = true;
+        toast(`${A.output} surround is back for this map.`, 3500);
+      }
+      $('output').value = A.output;
+      if (changed) {
+        app.persist();
+        app.player.refreshRouting();
+        speakerTests();
+      }
+    }
+    root.addEventListener('b2b:source', syncOutputs);
     const eqInput = (band) => (e) => {
       A.eq[band] = +e.target.value;
       $('eq' + band[0].toUpperCase() + band.slice(1) + 'Out').textContent = (A.eq[band] > 0 ? '+' : '') + A.eq[band] + ' dB';

@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.0 — 13 November 2026
+- **Voice control hears you in every browser.** It no longer depends on the browser's own speech recognition (missing in Firefox, blocked in Brave and in some Linux and desktop-app browsers, and weak with accents). Bit2Beat now listens to the microphone itself, cuts out each phrase when you stop speaking, and sends it as a short sound clip (16 kHz, about 32 kB a second) to Gemini through `api/voice.js`, which writes out what you said — **in English, Arabic or any language, with any accent** — and picks one of Bit2Beat's own commands. Noise and music are ignored. The red dot in the voice bar grows with the sound the microphone hears, and the bar shows what was heard. When the server cannot be reached, the browser's own recognition is used if it has one.
+- **5.1, 7.1 and 7.1.4 are for scientific maps only** (NetCDF, HDF5, GeoTIFF files, the Earth Information Center map and *Sunlight on Earth*), where every place sounds where it is around you. Other sources play in stereo or headphone 3D; the surround outputs (and the 5.1/7.1/7.1.4 and ADM exports) are shown as “scientific maps only”, and your surround choice comes back by itself when a map opens again.
+
 ## 3.1.0 — 13 November 2026
 - **Zoom on scientific maps** (NetCDF, HDF5, GeoTIFF, the Earth Information Center map and *Sunlight on Earth*): **+ / −** buttons and keys, **0** or *Whole map* to go back, the **mouse wheel** zooms around the pointer and **dragging** moves a zoomed map. Zooming reads only the part on screen again from the file, in full detail (across the date line too, and from the right GeoTIFF overview), so a 5 GB file stays quick. The sweep, the read-out, the spot, the time-lapse and the place names follow the zoomed area.
 - **Smaller downloads and less memory:**
