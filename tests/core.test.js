@@ -362,8 +362,21 @@ test('NASA presets: offline video assets, measured channels, CSV and event plans
   vm.runInNewContext(fs.readFileSync(path.join(root, 'src/js/ui/sources.js'), 'utf8'), context);
   vm.runInNewContext(fs.readFileSync(path.join(root, 'src/js/ui/url-state.js'), 'utf8'), context);
   assert.equal(B.urlState.read('?mode=video&src=co2').mode, 'video');
-  assert.equal(B.urlState.DEFAULT_CHOICE.video, 'gedi');
-  for (const [id] of B.sources.VIDEO_MENU.filter(([k]) => !k.startsWith('svs:'))) {
+  assert.equal(B.urlState.DEFAULT_CHOICE.video, 'svs:3912');
+  assert.equal(B.urlState.DEFAULT_CHOICE.image, 'svs:3912');
+  assert.ok(!B.sources.VIDEO_MENU.some(([k]) => k === 'gedi' || k === 'co2'), 'GEDI and CO₂ only play in the story');
+  assert.ok(!B.sources.IMAGE_MENU.flat(2).includes('nasa:gedi'));
+  // the challenge's data sets are bundled: a picture each, and a clip with its analysis for the videos
+  const clips = require('../src/js/data/svs-clips.js');
+  for (const p of B.svs.PRESETS.filter((x) => !x.bundled)) {
+    assert.ok(fs.statSync(path.join(root, B.svs.localStill(p.id))).size > 20000, `picture of ${p.id} bundled`);
+    if (!p.video) continue;
+    assert.ok(B.sources.VIDEO_MENU.some(([k]) => k === `svs:${p.id}`));
+    assert.ok(fs.statSync(path.join(root, B.svs.localVideo(p.id))).size > 100000, `clip of ${p.id} bundled`);
+    const c = clips[p.id];
+    assert.ok(c && c.labels.length >= 40 && c.channels.length === 3 && c.channels.every((ch) => ch.values.length === c.labels.length), `analysis of ${p.id}`);
+  }
+  for (const id of ['gedi', 'co2']) {
     const source = B.sources.videoPreset(id);
     assert.equal(source.labels.length, require('../src/js/core/video.js').stepsFor(source.duration), 'two samples per second');
     assert.equal(source.times.length, source.labels.length);
@@ -393,6 +406,8 @@ test('NASA presets: offline video assets, measured channels, CSV and event plans
   const built = fs.readFileSync(path.join(root, 'dist/Bit2Beat-Studio.html'), 'utf8');
   assert.match(built, /gediVideo.*data:video\/mp4;base64,/);
   assert.match(built, /co2Video.*data:video\/mp4;base64,/);
+  assert.match(built, /svs3912Video.*data:video\/mp4;base64,/);
+  assert.match(built, /svs5313Image.*data:image\/jpeg;base64,/);
 });
 
 test('story: every chapter plays a real source and its facts come from the numbers heard', () => {
@@ -1020,6 +1035,19 @@ test('Gemini: a slow or busy model is skipped, then every other Flash model the 
     assert.equal(b.model, 'gemini-2.5-flash', 'when the usual models are busy, another Flash model from the key’s list answers');
     global.fetch = async () => err(403, 'API key not valid');
     await assert.rejects(G.ask('k', req, { budget: 5000, perTry: 200 }), /403/, 'a refused key stops at once');
+    // a model that failed lately is asked last; hedging asks the next one while the first is slow
+    G._sick.clear();
+    G._sick.set('gemini-3.8-flash', Date.now());
+    const asked = [];
+    global.fetch = async (u) => (asked.push(u.match(/models\/([^:]+)/)[1]), ok('C'));
+    assert.equal((await G.ask('k', req, { budget: 5000, perTry: 500 })).model, 'gemini-3.6-flash');
+    assert.equal(asked[0], 'gemini-3.6-flash', 'the busy model is not asked first');
+    G._sick.clear();
+    global.fetch = async (u, o) => (/3\.8-flash:/.test(u) ? new Promise((r) => setTimeout(() => r(ok('slow')), 1500)) : ok('fast'));
+    const t0 = Date.now();
+    const h = await G.ask('k', req, { budget: 5000, perTry: 4000, hedge: 100 });
+    assert.equal(h.model, 'gemini-3.6-flash', 'the hedge answers first');
+    assert.ok(Date.now() - t0 < 1000);
   } finally {
     global.fetch = real;
   }

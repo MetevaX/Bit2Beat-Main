@@ -14,8 +14,10 @@
     ['events', 'Natural events and earthquakes (NASA EONET + USGS)'],
     ['sample:events', 'Natural events and earthquakes · offline sample'],
   ];
-  // the Space Apps challenge's data sets (core/svs.js): GEDI and CO₂ are bundled, the others load from NASA
-  const VIDEO_MENU = [['gedi', 'NASA EIC · GEDI forest height'], ['co2', 'NASA EIC · Global carbon dioxide'], ...B.svs.PRESETS.filter((p) => !p.bundled && p.video).map((p) => [`svs:${p.id}`, `NASA EIC · ${p.name}`])];
+  // the Space Apps challenge's data sets (core/svs.js), bundled with the app: they work offline.
+  // GEDI and CO₂ (the first bundled videos) play only in Bitty's story.
+  const VIDEO_MENU = B.svs.PRESETS.filter((p) => !p.bundled && p.video).map((p) => [`svs:${p.id}`, p.name]);
+  const STORY_VIDEOS = { gedi: 'GEDI forest height (Bitty’s story)', co2: 'Global carbon dioxide (Bitty’s story)' };
   function earthSample(id) {
     const source = B.feeds.offline[id.slice(7)]();
     source.name += ' · sample';
@@ -31,8 +33,7 @@
     return source;
   }
   const IMAGE_MENU = [
-    ['NASA EIC · works offline', [['nasa:gedi', 'GEDI forest height'], ['nasa:co2', 'Global carbon dioxide']]],
-    ['NASA EIC · Space Apps challenge data', B.svs.PRESETS.filter((p) => !p.bundled && p.still).map((p) => [`svs:${p.id}`, p.name])],
+    ['Space Apps challenge data (works offline)', B.svs.PRESETS.filter((p) => !p.bundled && p.still).map((p) => [`svs:${p.id}`, p.name])],
     ['Live NASA satellite view', [['sat:world', 'Whole Earth today (VIIRS NOAA-20)'], ['sat:lights', 'Earth at night, city lights (VIIRS Black Marble)'], ['sat:amazon', 'Amazon rainforest (MODIS)'], ['sat:himalaya', 'Himalaya and Tibetan Plateau (MODIS)'], ['sat:greenland', 'Greenland ice sheet (MODIS)'], ['sat:sahara', 'Western Sahara desert (MODIS)']]],
     ['Works offline', [['sci:sunlight', 'Sunlight on Earth, 21 June (worked out from astronomy)'], ['map:world', 'World relief map'], ['gen:storm', 'Storm spiral (generated illustration)'], ['gen:aurora', 'Aurora (generated illustration)']]],
   ];
@@ -280,7 +281,11 @@
       if (state.choice.data === 'power') add(sel, ['power', src?.name || 'NASA POWER data']);
       if (state.choice.data === 'eic') add(sel, ['eic', src?.name || 'NASA Earth Information Center data']);
     } else if (state.mode === 'video') {
-      B.sources.VIDEO_MENU.forEach((it) => add(sel, it));
+      const og = document.createElement('optgroup');
+      og.label = 'Space Apps challenge data (works offline)';
+      B.sources.VIDEO_MENU.forEach((it) => add(og, it));
+      sel.append(og);
+      if (STORY_VIDEOS[state.choice.video]) add(sel, [state.choice.video, STORY_VIDEOS[state.choice.video]]);
       if (uploads.video) add(sel, ['upload', 'Your video: ' + uploads.video.name]);
       if (state.choice.video === 'custom') add(sel, ['custom', src?.name || 'Saved video analysis']);
       if (state.choice.video === 'eic') add(sel, ['eic', B.eicView?.video?.name || 'NASA Earth Information Center time-lapse']);
@@ -298,6 +303,7 @@
       });
       if (uploads.image) add(sel, ['upload', (uploads.image.meta.science ? 'Your map: ' : 'Your picture: ') + uploads.image.meta.name]);
       if (state.choice.image === 'eic') add(sel, ['eic', B.eicView?.image?.meta.name || 'NASA Earth Information Center map']);
+      if (/^nasa:/.test(state.choice.image)) add(sel, [state.choice.image, (B.nasaMedia[state.choice.image.slice(5)]?.source.name || 'NASA picture') + ' (Bitty’s story)']);
     }
     sel.value = state.choice[state.mode];
   }

@@ -86,65 +86,99 @@ function quick(request) {
   return g.thinkingConfig ? { ...request, generationConfig: { ...g, thinkingConfig: { thinkingLevel: 'low' } } } : request;
 }
 
+// models that failed lately (busy, slow or missing) on this server instance are asked last
+const sick = new Map(); // model → when it last failed
+const SICK_MS = 10 * 60e3;
+const healthyFirst = (list) => {
+  const now = Date.now();
+  const bad = (m) => (now - (sick.get(m) || -Infinity) < SICK_MS ? 1 : 0);
+  return [...list].sort((a, b) => bad(a) - bad(b)); // stable: the usual order otherwise
+};
+
+/** One request to one model. Never throws: { ok, text, model, note, last, ms, fatal }. */
+async function attempt(key, model, request, ms, ctl) {
+  const t0 = Date.now();
+  let body = request;
+  const timer = setTimeout(() => ctl.abort(), ms);
+  try {
+    for (let again = 0; again < 2; again++) {
+      const r = await fetch(`${API}/models/${model}:generateContent`, { method: 'POST', signal: ctl.signal, headers: { 'content-type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(body) });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok) return { ok: true, text: textOf(j), model, note: 'ok', ms: Date.now() - t0 };
+      const msg = String(j?.error?.message || '').slice(0, 160);
+      const last = `Gemini (${model}) answered ${r.status}${msg ? ': ' + msg : ''}`;
+      if (r.status === 400 && /think/i.test(msg) && !again) {
+        body = plain(body); // this model does not take the thinking setting: ask once more without it
+        continue;
+      }
+      return { ok: false, model, note: String(r.status), last, ms: Date.now() - t0, fatal: [401, 403].includes(r.status) };
+    }
+  } catch (e) {
+    const slow = e?.name === 'AbortError';
+    return { ok: false, model, note: slow ? 'timeout' : 'network', last: slow ? `Gemini (${model}) took too long.` : 'Could not reach Gemini.', ms: Date.now() - t0 };
+  } finally {
+    clearTimeout(timer);
+  }
+  return { ok: false, model, note: '400', last: `Gemini (${model}) did not accept the request.`, ms: Date.now() - t0 };
+}
+
 /**
- * Ask Gemini 3.8 Flash; if it is busy, slow or missing, the next Flash models are asked in turn
+ * Ask Gemini 3.8 Flash; if it is busy, slow or missing, the next Flash models are asked
  * (FALLBACK in core/eic-search.js, then every other Flash model this key can use, newest first),
- * each for at most `perTry` ms, until `budget` ms have gone.
+ * each for at most `perTry` ms, until `budget` ms have gone. Models that failed in the last
+ * minutes are asked last. With `hedge` (ms), the next model is also asked when the first has
+ * not answered by then, and the first good answer wins (a spoken command must be quick).
  * Returns { text, model, tried } or throws Error(message) with .tried = [{ model, result, ms }].
  */
-async function ask(key, request, { budget = 55000, perTry = 15000 } = {}) {
+async function ask(key, request, { budget = 55000, perTry = 15000, hedge = 0 } = {}) {
   const deadline = Date.now() + budget;
-  const order = [MODEL, ...FALLBACK];
+  const order = healthyFirst([MODEL, ...FALLBACK]);
   const tried = [];
+  const running = new Set(); // { promise, ctl }
+  let next = 0;
   let more = false;
   let last = 'Could not reach Gemini.';
-  for (let k = 0; k < order.length; k++) {
-    const model = order[k];
-    const left = deadline - Date.now();
-    if (left < 2500) break;
-    let body = k ? quick(request) : request;
-    for (let again = 0; again < 2; again++) {
-      const ctl = new AbortController();
-      const t0 = Date.now();
-      const timer = setTimeout(() => ctl.abort(), Math.min(perTry, left));
-      let note = '';
-      try {
-        const r = await fetch(`${API}/models/${model}:generateContent`, { method: 'POST', signal: ctl.signal, headers: { 'content-type': 'application/json', 'x-goog-api-key': key }, body: JSON.stringify(body) });
-        const j = await r.json().catch(() => ({}));
-        if (r.ok) {
-          tried.push({ model, result: 'ok', ms: Date.now() - t0 });
-          return { text: textOf(j), model, tried };
-        }
-        const msg = String(j?.error?.message || '').slice(0, 160);
-        note = `${r.status}`;
-        last = `Gemini (${model}) answered ${r.status}${msg ? ': ' + msg : ''}`;
-        if (r.status === 400 && /think/i.test(msg) && !again) {
-          body = plain(body); // this model does not take the thinking setting: ask once more without it
-          tried.push({ model, result: note, ms: Date.now() - t0 });
-          continue;
-        }
-        if ([400, 401, 403].includes(r.status) && !/think/i.test(msg)) {
-          tried.push({ model, result: note, ms: Date.now() - t0 });
-          if (r.status !== 400) throw Object.assign(new Error(last), { tried }); // the key itself is refused
-        }
-      } catch (e) {
-        if (e.tried) throw e;
-        note = e?.name === 'AbortError' ? 'timeout' : 'network';
-        last = e?.name === 'AbortError' ? `Gemini (${model}) took too long.` : 'Could not reach Gemini.';
-      } finally {
-        clearTimeout(timer);
-      }
-      if (!tried.length || tried[tried.length - 1].model !== model || tried[tried.length - 1].result !== note) tried.push({ model, result: note, ms: Date.now() - t0 });
-      break;
-    }
-    // the usual models are busy: add every other Flash model this key can use
-    if (k === order.length - 1 && !more) {
-      more = true;
+  const launch = () => {
+    const k = next++;
+    const ctl = new AbortController();
+    const job = { ctl };
+    job.promise = attempt(key, order[k], k ? quick(request) : request, Math.max(1000, Math.min(perTry, deadline - Date.now())), ctl).then((r) => ({ r, job }));
+    running.add(job);
+  };
+  const stopAll = () => running.forEach((j) => j.ctl.abort());
+  for (;;) {
+    if (next >= order.length && !more) {
+      more = true; // the usual models are busy: add every other Flash model this key can use
       for (const m of await flashModels(key)) if (!order.includes(m)) order.push(m);
       order.splice(8); // at most 8 models in one request
     }
+    if (!running.size) {
+      if (next >= order.length || deadline - Date.now() < 2500) break;
+      launch();
+    }
+    const wait = hedge && running.size < 2 && next < order.length ? new Promise((r) => setTimeout(() => r(null), hedge)) : null;
+    const done = await Promise.race([...[...running].map((j) => j.promise), ...(wait ? [wait] : [])]);
+    if (!done) {
+      if (deadline - Date.now() >= 2500) launch(); // still waiting: ask the next model too
+      continue;
+    }
+    running.delete(done.job);
+    const r = done.r;
+    tried.push({ model: r.model, result: r.note, ms: r.ms });
+    if (r.ok) {
+      sick.delete(r.model);
+      stopAll();
+      return { text: r.text, model: r.model, tried };
+    }
+    last = r.last;
+    if (r.fatal) {
+      stopAll();
+      throw Object.assign(new Error(last), { tried }); // the key itself is refused
+    }
+    if (r.note !== '400') sick.set(r.model, Date.now());
   }
+  stopAll();
   throw Object.assign(new Error(last), { tried });
 }
 
-module.exports = { guard, ask, textOf, flashModels };
+module.exports = { guard, ask, textOf, flashModels, _sick: sick };

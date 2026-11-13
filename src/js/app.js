@@ -43,8 +43,8 @@
     const valid = {
       data: [...B.presets.DATA_MENU.flatMap(([, items]) => items.map((it) => it[0])), 'power', 'eic'],
       earth: [...B.sources.EARTH_MENU.map((it) => it[0]), 'eonet', 'quakes', 'sample:eonet', 'sample:quakes'],
-      video: [...B.sources.VIDEO_MENU.map((it) => it[0]), 'eic'],
-      image: [...B.sources.IMAGE_MENU.flatMap(([, items]) => items.map((it) => it[0])), 'eic'],
+      video: [...B.sources.VIDEO_MENU.map((it) => it[0]), 'eic', 'gedi', 'co2'],
+      image: [...B.sources.IMAGE_MENU.flatMap(([, items]) => items.map((it) => it[0])), 'eic', 'nasa:gedi', 'nasa:co2'],
     };
     if (valid[state.mode].includes(fromUrl.choice)) state.choice[state.mode] = fromUrl.choice;
   }
@@ -315,7 +315,7 @@
         if (id === 'custom') return;
         if (id === 'upload' && uploads.video) return setSource(uploads.video);
         if (id.startsWith('svs:')) return B.eicView.presetVideo(id).then((s) => s && token === loadToken && setSource(s));
-        if (id === 'eic') return B.eicView.video ? setSource(B.eicView.video) : B.eicView.loadVideo(state.eicVideo || {}).then((s) => s || app.choose('video', 'gedi'));
+        if (id === 'eic') return B.eicView.video ? setSource(B.eicView.video) : B.eicView.loadVideo(state.eicVideo || {}).then((s) => s || app.choose('video', 'svs:3912'));
         return setSource(B.sources.videoPreset(id));
       }
       if (state.mode === 'earth') {
@@ -326,7 +326,7 @@
       // image
       let res;
       if (id === 'upload' && uploads.image) res = uploads.image;
-      else if (id === 'eic') return B.eicView.image ? app.useImage(B.eicView.image) : B.eicView.loadImage(state.eicImage || {}).then((r) => r || app.choose('image', 'nasa:gedi'));
+      else if (id === 'eic') return B.eicView.image ? app.useImage(B.eicView.image) : B.eicView.loadImage(state.eicImage || {}).then((r) => r || app.choose('image', 'svs:3912'));
       else if (id.startsWith('sci:')) res = await sciView.builtIn(id);
       else if (id.startsWith('svs:')) res = await B.eicView.presetStill(id);
       else {

@@ -6,16 +6,18 @@ Bit2Beat plays any list of numbers over time. There are four ways to bring new d
 
 The [Earth Information Center](https://earth.gov/) shares its data sets through an open API (no key, no sign-in). Use the search above the Image, Video and Data tabs:
 
-1. type a subject and a place in your own words, or nothing to list every data set of the live catalogue that changes over time (about 30 today, more as the centre adds them);
-2. Gemini picks the best data sets and the place; the **Area** menu can also be set by hand (the whole world or a place);
+1. type a subject (results appear as you type), or nothing to list every data set of the live catalogue that changes over time (about 30 today, more as the centre adds them);
+2. a place named in the words sets the **Area** menu, which can also be set by hand (the whole world or a place);
 3. in Data and Video, choose how many maps: the latest 24, 60 or 120 (Data) or 24, 48 or 96 (Video);
 4. choose a result. **Data**: each note is one map; the first channel is the average, the second (muted) the highest value; data sets with several layers per date (for example GEOS CO₂, CH₄ and CO) get one channel per layer. **Image**: the newest map, for the whole world or a 32° × 20° window around the place, drawn in the data set's own colours; *Colour key* reads the values back out of the picture. **Video**: one picture and one note per map.
 
 When the centre publishes a new data set, search finds it by itself.
 
-### AI search (Gemini) on your own server
+In the Image tab, **File type → GeoTIFF (.tif)** lists the same data sets as GeoTIFF files: the newest map opens as a scientific map of real values (layers, zoom, surround sound).
 
-In **AI mode** search ranks results with Gemini 3.8 Flash through `api/search.js`, a Vercel serverless function. The API key is never in the page or in Git: in Vercel open the project → **Settings → Environment Variables**, add `GEMINI_API_KEY` with your key (Production and Preview), save, then redeploy. Without the variable, search still works by keyword and says AI search is not available.
+### Gemini on your own server (voice control)
+
+Search needs no AI. Voice control (`api/voice.js`) asks Gemini to understand a spoken phrase in any language. The API key is never in the page or in Git: in Vercel open the project → **Settings → Environment Variables**, add `GEMINI_API_KEY` with your key (Production and Preview), save, then redeploy. Without the variable, voice control uses the browser's own speech recognition where it has one. (`api/search.js`, the AI search of 3.0–3.3, is kept for developers but the page no longer calls it.)
 
 ## 2. Another catalogue (no code)
 

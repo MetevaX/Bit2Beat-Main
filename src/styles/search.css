@@ -566,9 +566,6 @@ body.pointer-mode main {
 }
 
 /* ---------------------------------------------------------------- voice control */
-.topbar .voice-btn {
-  margin-left: 6px;
-}
 .topbar .voice-btn[aria-pressed='true'] {
   background: var(--amber);
   border-color: var(--amber);
@@ -679,10 +676,6 @@ body.pointer-mode main {
   }
 }
 @media (max-width: 760px) {
-  .topbar .voice-btn {
-    order: 4;
-    margin: 0 0 6px 6px;
-  }
   .topbar .voice-btn span {
     position: absolute;
     width: 1px;

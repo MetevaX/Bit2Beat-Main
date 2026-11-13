@@ -89,7 +89,7 @@
       s.details.forEach((d) => counts.set(region(d), (counts.get(region(d)) || 0) + 1));
       const top = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 3);
       out.push(`Most active: ${top.map(([r, n]) => `${r} (${n})`).join(', ')}.`);
-      out.push('Further north plays higher, bigger quakes play louder, deeper ones sit lower in 3D sound.');
+      out.push('Further north plays higher (a bigger circle is a higher note), stronger quakes play louder, deeper ones sit lower in 3D sound.');
     } else {
       out.push(`${s.labels.length} ${s.feed === 'events' ? 'natural events and earthquakes' : 'natural events'} from ${span}, played west to east.`);
       out.push(s.channels.map((c) => `${c.name}: ${c.values.filter((v) => v != null).length}`).join(' · ') + '.');
@@ -98,7 +98,7 @@
         const i = sizes.indexOf(Math.max(...sizes));
         if (c.sizeUnit && i >= 0 && sizes[i] > -Infinity) out.push(`Largest ${c.name.toLowerCase()}: ${s.details[i]}.`);
       });
-      out.push(`Each kind of event has its own instrument${s.feed === 'events' ? ' (earthquakes are the electric piano)' : ''}. Further north plays higher; bigger events play louder.`);
+      out.push(`Each kind of event has its own instrument${s.feed === 'events' ? ' (earthquakes are the electric piano)' : ''}. Further north plays higher, and a bigger circle is a higher note; bigger events play louder.`);
     }
     if (p.settings.spacing === 'time') out.push('Map distance is on: gaps in the sound follow the real gaps between events on the map.');
     return out;

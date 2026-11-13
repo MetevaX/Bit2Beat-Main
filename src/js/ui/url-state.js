@@ -75,7 +75,7 @@
     return out;
   }
 
-  const DEFAULT_CHOICE = { data: 'gistemp', earth: 'events', image: 'nasa:gedi', video: 'gedi' };
+  const DEFAULT_CHOICE = { data: 'gistemp', earth: 'events', image: 'svs:3912', video: 'svs:3912' };
 
   /** Build the query string for the current state. */
   function query(app, page = 'studio') {

@@ -63,10 +63,9 @@ main {
 /* section labels: small capitals */
 .card-head h2:not(#sourceName),
 .disclosure > summary h2 {
-  font-size: 0.74rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--muted);
   display: flex;
   align-items: center;
@@ -117,9 +116,8 @@ main {
   color: rgba(246, 241, 231, 0.72);
 }
 .now .now-step {
-  font-size: 0.74rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
 }
 .now .now-note strong {
   font-size: 2rem;

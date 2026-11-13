@@ -20,8 +20,8 @@ module.exports = async function handler(req, res) {
   if (audio && (audio.length > MAX_AUDIO || !/^[A-Za-z0-9+/]+=*$/.test(audio.slice(0, 2000)) || !audio.startsWith('UklGR'))) return res.status(400).json({ error: 'The recording should be a short WAV.' });
   if (!audio && !said) return res.status(400).json({ error: 'Nothing was heard.' });
   try {
-    // a spoken command must be quick: each model gets 7 s, then the next one is asked
-    const { text, model, tried } = await ask(g.key, V.prompt(said, audio ? { data: audio } : null), { budget: 26000, perTry: 7000 });
+    // a spoken command must be quick: after 3 s the next model is asked too; the first answer wins
+    const { text, model, tried } = await ask(g.key, V.prompt(said, audio ? { data: audio } : null), { budget: 22000, perTry: 9000, hedge: 3000 });
     return res.status(200).json({ ...V.answer(text), model, tried });
   } catch (e) {
     return res.status(502).json({ error: e.message, tried: e.tried || [] });

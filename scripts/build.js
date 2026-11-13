@@ -26,6 +26,11 @@ html = html.replace(/(src|href)="(assets\/[^"]+)"/g, (_, attr, rel) => `${attr}=
 // Scripts, plus the world map for code that loads it at run time
 const bundled = { worldMap: dataUri('assets/img/world-map.jpg') };
 for (const key of ['gedi', 'co2']) { bundled[key + 'Video'] = dataUri(`assets/nasa/${key}.mp4`); bundled[key + 'Image'] = dataUri(`assets/nasa/${key}.jpg`); }
+// the Space Apps challenge presets (core/svs.js): picture and, for videos, the short clip
+for (const f of fs.readdirSync(path.join(root, 'assets/nasa'))) {
+  const m = f.match(/^svs-(\d+)\.(jpg|mp4)$/);
+  if (m) bundled[`svs${m[1]}${m[2] === 'jpg' ? 'Image' : 'Video'}`] = dataUri(`assets/nasa/${f}`);
+}
 const assets = `<script>(self.Bit2Beat = self.Bit2Beat || {}).assets = ${JSON.stringify(bundled)};</script>\n`;
 let first = true;
 html = html.replace(/<script src="([^"]+)"><\/script>\n?/g, (_, src) => {

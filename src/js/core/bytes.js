@@ -51,6 +51,31 @@
   /** Reader over bytes already in memory. */
   const bufferReader = (u8, name = '') => Object.assign(cached(u8.length, async (o, n) => u8.subarray(o, o + n)), { name });
 
+  /**
+   * Reader over a file on the web: only the parts asked for are downloaded (HTTP range requests),
+   * so a large GeoTIFF, NetCDF or HDF5 file opens without downloading it whole.
+   */
+  async function urlReader(url, { name = '', signal, fetchFn = fetch } = {}) {
+    const head = await fetchFn(url, { headers: { Range: 'bytes=0-0' }, signal });
+    if (!head.ok) throw new Error(`the file could not be reached (${head.status})`);
+    const total = +String(head.headers.get('content-range') || '').split('/')[1];
+    if (head.status !== 206 || !total) {
+      // no ranges: small files are read whole, large ones are refused
+      const n = +head.headers.get('content-length');
+      if (n > 80 * 1024 * 1024) throw new Error('the server sends this large file only whole; download it and open it from your device');
+      return bufferReader(new Uint8Array(await head.arrayBuffer()), name);
+    }
+    await head.arrayBuffer().catch(() => {});
+    return Object.assign(
+      cached(total, async (o, n) => {
+        const r = await fetchFn(url, { headers: { Range: `bytes=${o}-${o + n - 1}` }, signal });
+        if (r.status !== 206) throw new Error(`the file stopped answering (${r.status})`);
+        return new Uint8Array(await r.arrayBuffer());
+      }),
+      { name },
+    );
+  }
+
   /** zlib / deflate decompression. `format`: 'deflate' (zlib wrapper) or 'deflate-raw'. */
   async function inflate(bytes, format = 'deflate') {
     if (typeof DecompressionStream === 'undefined') throw new Error('This browser cannot unpack compressed data. Use a current version of Chrome, Edge, Firefox or Safari.');
@@ -136,5 +161,5 @@
     return out;
   }
 
-  return { PAGE, fileReader, bufferReader, inflate, lzw, packbits };
+  return { PAGE, fileReader, bufferReader, urlReader, inflate, lzw, packbits };
 });

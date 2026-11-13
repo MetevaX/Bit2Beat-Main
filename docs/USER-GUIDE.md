@@ -99,27 +99,29 @@ Each chapter shows:
 | **Source card** | The chart, map or picture you are hearing, its source line (where the numbers come from and when), and options for that tab. Hover to read a value; click to hear that step. |
 | **Now playing** (navy panel) | The current step, its note and frequency, the reading behind it and live sound bars. |
 | **Sound** | Instrument, scale, key, range and tempo. **Smart Tuning** picks them from the shape of the data. |
-| **Upload** (in the top bar, next to About the team) | One button for every file: data, picture or video. Bit2Beat looks at the file and opens the right tab. |
+| **Upload** (in the top bar, next to About the team) | One button for every file: data, picture, video or scientific file (GeoTIFF, NetCDF, HDF5). Bit2Beat looks at the file and opens the right tab. |
+| **Voice** (top right, next to Accessibility) | Voice control (`V`): say *play*, *explain*, *search for sea ice*, *result 2*, *help*… |
 | **Channels** | One row per data series: volume, instrument, **M**ute, **S**olo and **⇅** (flip pitch direction). |
 | **Listening aids** | Shared pitch scale, ticks on sudden jumps, reference tone. |
 | **Space & tone** | Output (stereo or binaural for headphones), movement, room and equaliser, and **Reset**. |
 | **Melody** | Every note over time; the amber line is the playhead. |
 | **What the data says** | Trend, highs and lows, sudden jumps, in plain sentences. **Read aloud** speaks them; press again to stop. |
-| **Score** | Live sheet music of the lead channel; **Full score** shows every channel; **PNG** downloads it. |
+| **Score** | Live sheet music of the lead channel; **Full score** shows every channel; **PNG** downloads it; **Braille** (`B`) saves it in braille music code (BRF) for an embosser or braille display. |
 | **Bitty’s card** | Bitty with short notes from the NASA Image and Video Library that follow what you are playing, a tip the first time you open a tab, and **Guide**. |
 | **Guide** (top bar) | Bitty’s guide menu (`G`). |
 | **Player bar** | Restart, Play/Pause, Repeat, position, volume, **Record**, **Readings** table and **Export**. |
 
 ## Searching the Earth Information Center
 
-Above the Image, Video and Data tabs is one search for the whole NASA Earth Information Center catalogue.
+Above the Image, Video and Data tabs is one search for the NASA Earth Information Center. Each tab finds its own kind of thing: **Image** finds pictures (the EIC gallery and 26 NASA satellite images of the whole Earth), **Video** finds videos (the EIC gallery), **Data** finds data sets (the EIC data API). The challenge's own data sets are in the menus, not in search.
 
-- **Keyword search** (the default): type a subject such as *carbon dioxide*, *methane* or *fire*; results appear as you type. Everyday words work too (*swamp* finds wetlands, *trees* finds forest growth). While you type, **suggestions** open under the box (search ideas, and data sets marked *Play* that start at once; `↑` `↓` `Enter` pick one). The **Try:** ideas under the box run a search in one click; **All data sets** lists everything. **Clear results** (above the results), **Clear** in the box or `Esc` removes the results and the words.
-- **Gemini** (the sparkle button at the top right; amber when on): write what you want to hear in your own words, for example *methane from wetlands in the Amazon*, and press **Ask Gemini**. Gemini picks the best data sets and finds the place (its latitude and longitude, even if it is not one of the 18 places); the **Area** menu shows it. It only searches for Earth data: other questions get a polite “only Earth data” answer.
+- **Search**: type a subject such as *carbon dioxide*, *methane* or *fire*; results appear as you type. Typing mistakes (*temprature*) and word forms (*storms*, *forests*) are understood. Everyday words work too (*swamp* finds wetlands, *trees* finds forest growth). While you type, **suggestions** open under the box (search ideas, and data sets marked *Play* that start at once; `↑` `↓` `Enter` pick one). The **Try:** ideas under the box run a search in one click; **All data sets** lists everything. **Clear results** (above the results), **Clear** in the box or `Esc` removes the results and the words.
+- **File type** (Image tab): *Pictures*, or scientific files: **GeoTIFF (.tif)**, **NetCDF (.nc)** or **HDF5 (.h5)**. GeoTIFF lists every EIC data set (its newest map comes as a GeoTIFF of real values) and the gallery's own .tif files. A scientific file opens with *What's inside*: layers, zoom, one spot over time, time-lapse and surround sound; it is read from NASA in parts, so large files open quickly.
+- **By voice**: say *search for hurricanes*; the results are read out with numbers; say *result 2*, *the first one* or *play ozone* to play one.
 
-Choose a result to hear it in the tab that is open: **Image** draws its newest map, **Video** makes a time-lapse of the latest 24, 48 or 96 maps, **Data** plays one note per map (24, 60 or 120). Changing the area or the number of maps replays it. **Reload** (next to the menu) loads the current source again with the newest data.
+Choose a result to hear it in the tab that is open: **Image** plays the picture, **Video** plays the video (it follows the music), **Data** plays one note per map (24, 60 or 120). Changing the area or the number of maps replays it. **Reload** (next to the menu) loads the current source again with the newest data.
 
-AI mode needs the online version (bit2beat.vercel.app); keyword search also works in the single file. **Use another catalogue** searches any other STAC catalogue, such as NASA VEDA.
+Search needs the internet the first time (the lists are then kept in the browser). **Use another catalogue** searches any other STAC catalogue, such as NASA VEDA.
 
 ## Data tab
 

@@ -94,6 +94,24 @@
       });
     }
 
+    /** A scientific file on the web (NASA's gallery): read in parts, like a file from the device. */
+    async function openUrl(url, { name, fileName, origin }) {
+      return reading('Opening NASA’s file…', async (signal, progress) => {
+        const reader = await B.bytes.urlReader(url, { name: fileName }); // no signal: later zooms read this file again
+        const f = await science.open(reader, { signal, progress });
+        if (f.photo) {
+          const res = await photo(f, { name: fileName }, signal);
+          res.meta.name = name;
+          res.meta.origin = origin;
+          return res;
+        }
+        const sci = { file: f, fileName, size: reader.size, mode: 'sweep', varId: f.variables[0].id, t: 0, layer: 0, spot: null, info: null };
+        const res = { canvas: null, meta: { name, origin: { ...origin, note: `${origin.note ? origin.note + ' ' : ''}${f.format}, read from NASA in parts.` }, science: sci, noBackground: true } };
+        await loadVariable(res, sci.varId, signal, progress);
+        return res;
+      });
+    }
+
     /**
      * A GeoTIFF already in memory (the Earth Information Center's real values): an image resource.
      * fetchBox(bbox) → Uint8Array fetches a part of the map again in detail when you zoom in.
@@ -265,7 +283,7 @@
         sci.lapse.shown = -1;
       } else built = sciSource.sweep(sci.grid, { path: image.scan, steps: image.steps, label, units: v.units });
       const src = {
-        name: `${res.meta.name} · ${label}`,
+        name: res.meta.name.includes(label) ? res.meta.name : `${res.meta.name} · ${label}`,
         kind: 'image',
         view: 'image',
         canvas,
@@ -570,7 +588,7 @@
       e.preventDefault();
     });
 
-    return { detect, open, builtIn, fromBytes, source, sync, readout, pickSpot, gridAt, zoomed, wasDragged: () => dragged, cancel: () => job?.abort() };
+    return { detect, open, openUrl, builtIn, fromBytes, source, sync, readout, pickSpot, gridAt, zoomed, wasDragged: () => dragged, cancel: () => job?.abort() };
   }
 
   B.scienceView = { init };

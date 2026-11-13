@@ -303,9 +303,21 @@
     return { x: R.x + ((lon + 180) / 360) * R.w, y: R.y + ((WORLD.north - la) / (WORLD.north - WORLD.south)) * R.h };
   }
 
-  /** 0–1 size of event i (loudness measure, e.g. magnitude), for dot radius. */
+  /** 0–1 size of event i for its dot: how high its note is within its own kind of event, so a
+   *  bigger dot is a higher frequency (two dots of the same channel compare by what you hear). */
+  const pitchSpan = new WeakMap();
   function sizeAt(plan, i) {
-    for (const c of plan.channels) if (c.size && c.size[i] != null) return c.size[i];
+    for (const c of plan.channels) {
+      const m = c.midi?.[i];
+      if (m == null || c.raw?.[i] == null) continue;
+      let span = pitchSpan.get(c);
+      if (!span) {
+        const notes = c.midi.filter((v, k) => v != null && c.raw[k] != null);
+        span = [Math.min(...notes), Math.max(...notes)];
+        pitchSpan.set(c, span);
+      }
+      return span[1] > span[0] ? (m - span[0]) / (span[1] - span[0]) : 0.5;
+    }
     return 0.5;
   }
 
@@ -593,5 +605,5 @@
   }
   const spectrumBusy = () => busy;
 
-  B.draw = { source, pitchRoll, stage, spectrum, spectrumBusy, colorFor, chColor, CATEGORY_COLORS, plotBox, fitRect, projectWorld, WORLD_ASPECT };
+  B.draw = { source, pitchRoll, stage, spectrum, spectrumBusy, colorFor, chColor, CATEGORY_COLORS, plotBox, fitRect, projectWorld, WORLD_ASPECT, sizeAt };
 })(typeof self !== 'undefined' ? self : this);

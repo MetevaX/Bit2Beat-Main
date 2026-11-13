@@ -62,7 +62,7 @@ To build a new kind of source:
 
 ## Publishing
 
-- **Vercel (the live site):** pushing to GitHub redeploys. `api/search.js` is a serverless function for AI search; set `GEMINI_API_KEY` under Project → Settings → Environment Variables (never commit the key). `vercel.json` gives it up to 60 s.
+- **Vercel (the live site):** pushing to GitHub redeploys. `api/voice.js` (voice control) and `api/eic-gallery.js` (the gallery list) are serverless functions; set `GEMINI_API_KEY` under Project → Settings → Environment Variables (never commit the key).
 
 - **GitHub Pages:** Settings → Pages → *Deploy from a branch* → `main` / root. The studio is `index.html`; the single file is at `dist/Bit2Beat-Studio.html`.
 - **Offline:** hand out `dist/Bit2Beat-Studio.html`; it opens by double-click.

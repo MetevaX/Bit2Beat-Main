@@ -39,7 +39,11 @@ Bit2Beat is a static web app: plain HTML, CSS and JavaScript with no framework a
 | `plan.js` | Builds the plan: scaling (shared per unit, log, invert), pitch, loudness (`loudBy`), timing (even or source `times`), 3D positions, drone |
 | `feeds.js` | USGS and NASA EONET (events sorted west → east), both together (`combineEvents`: earthquakes as one more channel), NASA POWER daily data; live fetch + offline builders share one code path |
 | `eic.js` | NASA Earth Information Center (or any STAC + titiler) API: playable data sets, latest maps per date and layer, area statistics, the source; `get` is injected so it is tested offline |
-| `eic-search.js` | Catalogue search: offline keyword ranking (everyday words → catalogue words), place detection, the Gemini request (`prompt`) and the check of its answer (`answer`: only real ids, never Egypt); shared by the page, `api/search.js` and the tests |
+| `eic-search.js` | Catalogue search without AI: word stems, one-typo matches (`near`), everyday words → catalogue words (synonym phrases), place detection and the ideas of each tab (`IDEAS`). The old Gemini request (`prompt`/`answer`) is kept for `api/search.js` |
+| `gibs.js` | 26 NASA GIBS satellite layers of the whole Earth for the Image search: WMS address, date rules (daily layers a few days back) |
+| `svs.js` | The EIC content database (NASA SVS gallery): the challenge presets and their bundled copies, the gallery walk, each page's file types (`typesOf`, `scienceFiles`) |
+| `braille.js` | Braille music code and grade 1 text, laid out as BRF pages (40 × 25 cells) |
+| `bytes.js` | Byte readers for scientific files: a file, bytes in memory, or a file on the web read with HTTP ranges (`urlReader`) |
 | `xlsx.js` | A small Excel writer (stored zip + SpreadsheetML) for the readings |
 | `geo.js` | Equirectangular projection, 1° land mask, swapped-coordinate repair, distances |
 | `image.js` | sRGB → CIE L\* and CIELAB, background detection, colour keys (read data through a colour bar), band statistics, line and radar scans, pointer probe |
@@ -77,7 +81,7 @@ Bit2Beat is a static web app: plain HTML, CSS and JavaScript with no framework a
 | `url-state.js` | Reads and writes the address bar (see below) |
 | `video-view.js` | Keeps the muted video in step with the music (playback rate, drift correction, exact frame when paused) |
 | `keys.js` | Keyboard shortcuts |
-| `search.js` | The Earth Information Center search above Image, Video and Data: keyword results at once, then Gemini via `/api/search`; a result plays in the open tab |
+| `search.js` | The Earth Information Center search above Image, Video and Data: results and suggestions as you type, one catalogue per tab, the file-type filter (Image); a result plays in the open tab |
 | `options.js` | Options under the picture per tab (points, NASA POWER, period, scan, steps); Follow pointer hides the player; Open sits next to Steps in Image |
 | `combo.js` | Every menu: a button and a list that opens below it (above only when there is more room), with search for menus of six or more choices; the hidden `<select>` stays the source of truth |
 | `pages.js` | Studio, Story and About pages (one visible at a time) |
@@ -134,12 +138,18 @@ Unknown or invalid values are ignored, so old links still open.
 
 ## Build
 
-`scripts/build.js` reads `index.html`, inlines every stylesheet and script, embeds the world map, team photos and the NASA EIC videos and stills as data URIs and writes `dist/Bit2Beat-Studio.html` (~2.8 MB). It works from `file://`.
+`scripts/build.js` reads `index.html`, inlines every stylesheet and script, embeds the world map, team photos and the NASA EIC videos and stills (the challenge's seven data sets and the story's two) as data URIs and writes `dist/Bit2Beat-Studio.html`. It works from `file://`.
 
 `scripts/prepare-nasa-media.js` (needs ffmpeg) decodes every frame of the bundled EIC videos and regenerates `src/js/data/nasa-media.js` with the same pure code (`core/video.js`, `core/image.js`) the browser uses for uploads.
 
 `scripts/serve.js` is the development server behind `npm start`; it supports HTTP Range requests so videos can be seeked.
 
-## Server: `api/search.js`
+## Server: `api/`
 
-The only server code: a Vercel serverless function (`POST /api/search`). It receives the question, the tab and the catalogue the page already loaded, asks Gemini 3.8 Flash (`thinkingLevel: high`, JSON answer with a schema) and returns only ids that exist in the catalogue plus the place. The key comes from the `GEMINI_API_KEY` environment variable; a small per-instance limit (12 searches a minute per address) guards against abuse.
+Vercel serverless functions; files starting with `_` are shared code, not routes.
+
+- `api/eic-gallery.js` (`GET`): walks NASA's Earth Information Center gallery (SVS) and sends the short list search uses, with each page's file types. Cached for a day.
+- `api/voice.js` (`POST`): a spoken phrase (a short WAV) or its words → one of Bit2Beat's own commands, through Gemini. The answer is checked against the command list, so the AI can only press the app's own buttons.
+- `api/_gemini.js`: the key (`GEMINI_API_KEY`, environment only), origin check, a per-address limit, and the model order: Gemini 3.8 Flash, then 3.6 and 3.5 Flash, then every other Flash model the key can use. Each model has a time limit; with `hedge` the next model is asked too when the first is slow, and the first good answer wins; models that failed in the last ten minutes are asked last.
+- `api/search.js`: the AI search of 3.0–3.3, kept for developers; the page no longer calls it.
+- `vercel.json` sends `/svs/…` to `svs.gsfc.nasa.gov`, because NASA's site does not let other websites read its files.

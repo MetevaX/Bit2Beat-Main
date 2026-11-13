@@ -19,7 +19,9 @@
   const DENSITY = { day: 'daily', month: 'monthly', year: 'yearly' };
   const HELLO = 'Results and suggestions appear as you type.';
   const WHAT = { image: ['picture', 'pictures'], video: ['video', 'videos'], data: ['data set', 'data sets'] };
-  const what = (m, n) => (WHAT[m] || WHAT.data)[n === 1 ? 0 : 1];
+  const FILES = { tif: ['GeoTIFF file', 'GeoTIFF files'], nc: ['NetCDF file', 'NetCDF files'], h5: ['HDF5 file', 'HDF5 files'] };
+  // the open tab's kind of thing (Image: pictures, or the scientific file type chosen in the filter)
+  const what = (m, n) => (FILES[m] || WHAT[m] || WHAT.data)[n === 1 ? 0 : 1];
   const PLACEHOLDER = { image: 'Type a subject, e.g. sea temperature, rain, wildfires', video: 'Type a subject, e.g. hurricanes, ocean currents, sea ice', data: 'Type a subject, e.g. carbon dioxide, methane, fire' };
 
   function init(app) {
@@ -46,13 +48,30 @@
     };
 
     const mode = () => (['data', 'image', 'video'].includes(S.mode) ? S.mode : null);
+    // File type filter (Image tab): pictures, or scientific files: GeoTIFF (.tif), NetCDF (.nc), HDF5 (.h5)
+    const type = () => (mode() === 'image' ? $('searchType').value : 'any');
+    const kindNow = () => (type() !== 'any' ? type() : mode());
+    function syncTypes() {
+      const n = B.eicView.typeCounts?.() || {};
+      const keep = $('searchType').value || 'any';
+      $('searchType').replaceChildren(
+        new Option('Pictures (.jpg, .png)', 'any'),
+        ...['tif', 'nc', 'h5'].map((t) => {
+          const o = new Option(`${{ tif: 'GeoTIFF (.tif)', nc: 'NetCDF (.nc)', h5: 'HDF5 (.h5, .he5)' }[t]}${n[t] != null ? ' · ' + n[t] : ''}`, t);
+          o.disabled = n[t] === 0 && t !== keep;
+          return o;
+        }),
+      );
+      $('searchType').value = keep;
+    }
     function syncMode() {
       const m = mode();
       box.hidden = !m;
       if (!m) return;
-      $('searchInput').placeholder = PLACEHOLDER[m];
+      $('searchTypeField').hidden = m !== 'image';
+      $('searchInput').placeholder = type() !== 'any' ? 'Type a subject, e.g. carbon dioxide, ocean, fire' : PLACEHOLDER[m];
       // the content database (Image, Video) has whole pictures and videos: no area or number of maps
-      const gal = B.eicView.usesGallery?.(m);
+      const gal = B.eicView.usesGallery?.(m) && type() !== 'tif';
       $('searchPlace').closest('label').hidden = !!gal;
       const steps = gal ? null : STEPS[m];
       $('searchStepsField').hidden = !steps;
@@ -67,7 +86,7 @@
     }
 
     // ---------------------------------------------------------------- results
-    const info = (id) => B.eicView.catalogue().find((c) => c.id === id);
+    const info = (id) => B.eicView.catalogue(type()).find((c) => c.id === id);
     const current = () => (S.choice[S.mode] === 'eic' ? { data: S.eic, image: S.eicImage, video: S.eicVideo }[S.mode]?.id : null);
     const say = (t) => ($('searchStatus').textContent = t);
     function mark() {
@@ -82,7 +101,8 @@
       $('searchResults').replaceChildren(
         ...results.map((r, k) => {
           const c = info(r.id);
-          const years = c.svs || c.gibs ? `${c.years || 'NASA SVS'} · ${c.kind}` : `${c.from.slice(0, 4)}–${c.to.slice(0, 4)}${c.density ? ' · ' + (DENSITY[c.density] || c.density) : ''}`;
+          const span = c.from ? `${c.from.slice(0, 4)}–${c.to.slice(0, 4)}${c.density ? ' · ' + (DENSITY[c.density] || c.density) : ''}` : '';
+          const years = c.file ? `${c.kind}${c.svs ? ' · NASA SVS ' + (c.years || '') : span ? ' · ' + span : ''}` : c.svs || c.gibs ? `${c.years || 'NASA SVS'} · ${c.kind}` : span;
           const b = el(
             'button',
             { type: 'button', class: 'result', 'data-id': c.id, title: c.text.slice(0, 300) },
@@ -115,7 +135,9 @@
 
     async function catalogue() {
       try {
-        return await B.eicView.fill();
+        const list = await B.eicView.fill(type());
+        syncTypes();
+        return list;
       } catch (e) {
         say(`Search needs the internet: ${e.message}. The pictures and videos in the menu above work offline.`);
         return null;
@@ -130,17 +152,18 @@
       const near = X.detectPlace(q, B.snapshots.PLACES);
       if (near) setPlace(near);
       const m = mode();
-      const ideas = (X.IDEAS[m] || []).filter((t) => X.rank(list, t, 1).length).slice(0, 3);
-      show(found, found.length ? `${found.length} ${what(m, found.length)} match${found.length === 1 ? 'es' : ''} “${q}”. Choose one to listen.` : quiet ? '' : `No ${what(m, 2)} match “${q}”.${ideas.length ? ` Try ${ideas.map((t) => `“${t.toLowerCase()}”`).join(', ')}.` : ' Try another word.'}`);
+      const ideas = (X.IDEAS[type() !== 'any' ? 'data' : m] || []).filter((t) => X.rank(list, t, 1).length).slice(0, 3);
+      const k = kindNow();
+      show(found, found.length ? `${found.length} ${what(k, found.length)} match${found.length === 1 ? 'es' : ''} “${q}”. Choose one to listen.` : quiet ? '' : `No ${what(k, 2)} match “${q}”.${ideas.length ? ` Try ${ideas.map((t) => `“${t.toLowerCase()}”`).join(', ')}.` : ' Try another word.'}`);
       return found;
     }
 
     // ---------------------------------------------------------------- ideas, clear, typing
     function syncIdeas() {
       const empty = !$('searchInput').value.trim() && !results.length;
-      const list = B.eicView.catalogue();
-      const m = mode();
-      const ideas = (X.IDEAS[m] || X.SUGGESTIONS).filter((t) => !list.length || X.rank(list, t, 1).length).slice(0, 7);
+      const list = B.eicView.catalogue(type());
+      const m = kindNow();
+      const ideas = (X.IDEAS[type() !== 'any' ? 'data' : m] || X.SUGGESTIONS).filter((t) => !list.length || X.rank(list, t, 1).length).slice(0, 7);
       $('searchSuggest').hidden = !empty;
       $('searchSuggest').replaceChildren(
         ...(empty
@@ -169,10 +192,10 @@
       $('searchInput').removeAttribute('aria-activedescendant');
     }
     function showHints(q) {
-      const list = B.eicView.catalogue();
+      const list = B.eicView.catalogue(type());
       const f = X.fold(q);
       // ideas of this tab that start with (or contain) what is typed and find something here
-      const ideas = (X.IDEAS[mode()] || [])
+      const ideas = (X.IDEAS[type() !== 'any' ? 'data' : mode()] || [])
         .filter((t) => X.fold(t) !== f && (X.fold(t).startsWith(f) || X.fold(t).includes(' ' + f) || X.fold(t).includes(f)) && X.rank(list, t, 1).length)
         .sort((p, q) => X.fold(q).startsWith(f) - X.fold(p).startsWith(f))
         .map((t) => ({ kind: 'idea', text: t }));
@@ -213,6 +236,7 @@
     }
 
     function run(q) {
+      clearTimeout(typing); // a search is chosen: the suggestions that were about to open stay closed
       closeHints();
       $('searchInput').value = q;
       $('searchClear').hidden = !q;
@@ -220,7 +244,7 @@
       return keywords(q);
     }
     function listAll() {
-      return catalogue().then((list) => list && show([...list].sort((p, q) => p.title.localeCompare(q.title)).map((c) => ({ id: c.id })), `${list.length} ${what(mode(), list.length)}, A to Z. Type to narrow them.`));
+      return catalogue().then((list) => list && show([...list].sort((p, q) => p.title.localeCompare(q.title)).map((c) => ({ id: c.id })), `${list.length} ${what(kindNow(), list.length)}, A to Z. Type to narrow them.`));
     }
     function clear() {
       ++token;
@@ -271,6 +295,12 @@
       if (id) choose(id);
     };
     $('searchPlace').onchange = replay;
+    $('searchType').onchange = () => {
+      syncMode();
+      const q = X.clean($('searchInput').value);
+      announce(`Showing ${what(kindNow(), 2)}.`);
+      return q ? keywords(q) : listAll();
+    };
     $('searchSteps').onchange = replay;
     root.addEventListener('b2b:source', syncMode);
     root.addEventListener('b2b:mode', () => {
@@ -279,7 +309,7 @@
       if (!mode()) return;
       const m = mode();
       B.eicView
-        .fill()
+        .fill(type())
         .then(() => {
           if (mode() !== m) return; // another tab was chosen meanwhile
           const q = X.clean($('searchInput').value); // read now: voice may have typed meanwhile
@@ -287,12 +317,13 @@
         })
         .catch(() => {});
     });
-    root.addEventListener('b2b:catalogue', syncIdeas);
+    root.addEventListener('b2b:catalogue', () => (syncTypes(), syncIdeas()));
     // open the catalogue in the background once the page is idle (search is then instant)
-    setTimeout(() => mode() && B.eicView.fill().catch(() => {}), 1500);
+    setTimeout(() => mode() && B.eicView.fill(type()).catch(() => {}), 1500);
+    syncTypes();
     syncMode();
     syncIdeas();
-    B.search = Object.assign(B.search || {}, { run, choose, clear, results: () => results, info, mode });
+    B.search = Object.assign(B.search || {}, { run, choose, clear, results: () => results, info, mode, type });
   }
 
   B.search = { init };

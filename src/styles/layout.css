@@ -76,6 +76,7 @@ main:focus {
 }
 .source-pick {
   flex: 1 1 280px;
+  min-width: 0; /* a long name is cut with … instead of widening the page on phones */
   max-width: 460px;
 }
 .source-pick select {

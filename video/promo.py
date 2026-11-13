@@ -33,19 +33,19 @@ BEAT = 0.5  # 120 BPM
 config.background_color = BG
 config.frame_rate = 60
 
-SHOTS = [  # (screenshot, words before, highlighted words, words after)
-    ("studio", "NASA climate data, turned into", "music", ""),
-    ("earth", "Live earthquakes, played", "west to east", ""),
-    ("video", "NASA videos, read through their own", "colour bars", ""),
-    ("story", "Bitty's story:", "eight chapters", "of real data"),
-    ("guide", "A guide for", "every", "visitor"),
+SHOTS = [  # (screenshot, words before, highlighted words, words after) — version 3.5
+    ("video-preset", "The challenge's NASA videos, playing", "offline", ""),
+    ("search-image", "Search NASA's Earth Information Center", "by tab", ""),
+    ("geotiff-map", "Scientific maps with", "real values", ""),
+    ("earth-events", "Earth events, played", "west to east", ""),
+    ("export-braille", "Export the music, even as a", "braille", "score"),
 ]
 TEAM = [
-    ("george-hany", "George Hany", "Team leader"),
-    ("mina-helal", "Mina Helal", "Data analyst"),
-    ("steven-joseph", "Steven Joseph", "Integration lead"),
-    ("mostafa-ragab", "Mostafa Ragab", r"UI specialist \& engine"),
-    ("mostafa-mohammed", "Mostafa Mohammed", "Core"),
+    ("george-hany", "George Hany", "Resources Manager"),
+    ("mina-helal", "Mina Helal", "Data Analyst"),
+    ("steven-joseph", "Steven Joseph", "Sound Engineer"),
+    ("mostafa-ragab", "Mostafa Ragab", r"UI Specialist \& Guide"),
+    ("mostafa-mohammed", "Mostafa Mohammed", "Algorithms Manager"),
 ]
 
 

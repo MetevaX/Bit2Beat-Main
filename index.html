@@ -50,11 +50,11 @@
     <button type="button" class="topnav-link" data-page="about">About the team</button>
   </nav>
   <button type="button" class="top-btn upload-btn" id="uploadBtn" aria-label="Upload a file: data, picture or video" title="Open any file: data (CSV, TSV, TXT, JSON, GeoJSON, Excel, OpenDocument), a picture (PNG, JPG, WebP, GIF, SVG…), a video (MP4, WebM, MOV, MKV…) or a scientific Earth-data file (GeoTIFF / COG, NetCDF, HDF5, up to 5 GB). Bit2Beat opens the right tab by itself. Your files stay on your device."><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Upload</span></button>
-  <button type="button" class="top-btn voice-btn" id="voiceBtn" aria-pressed="false" aria-label="Voice control (V)" title="Voice control: say play, pause, next, search for …, help (V)"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg><span>Voice</span></button>
   <div class="topbar-actions">
     <button type="button" class="top-btn guide-btn" id="guideBtn" aria-label="Guide: Bitty shows you how to use Bit2Beat (G)"><span class="guide-face" id="guideFace" aria-hidden="true"></span><span>Guide</span></button>
     <button type="button" class="top-btn" id="sessionsBtn">Sessions</button>
     <button type="button" class="top-btn" id="helpBtn" aria-label="Help and keyboard shortcuts">Help</button>
+    <button type="button" class="top-btn voice-btn" id="voiceBtn" aria-pressed="false" aria-label="Voice control (V)" title="Voice control: say play, pause, next, explain, search for …, help (V)"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg><span>Voice</span></button>
     <button type="button" class="top-btn" id="accessBtn" aria-label="Accessibility"><svg class="i" aria-hidden="true"><use href="#i-person"/></svg><span>Accessibility</span></button>
   </div>
 </header>
@@ -84,13 +84,14 @@
           <button type="button" class="search-clear" id="searchClear" title="Clear the search (Esc)" hidden><svg class="i" aria-hidden="true"><use href="#i-close"/></svg><span>Clear</span></button>
           <ul class="search-hints" id="searchHints" role="listbox" aria-label="Suggestions" hidden></ul>
         </div>
+        <label class="field search-type" id="searchTypeField" title="Choose what kind of file to find: pictures, or scientific maps (GeoTIFF, NetCDF, HDF5) that open with layers, zoom and surround sound"><span class="sr-only">File type</span><select id="searchType" aria-label="File type"></select></label>
         <label class="field search-place"><span class="sr-only">Area</span><select id="searchPlace" aria-label="Area"></select></label>
         <label class="field" id="searchStepsField"><span class="sr-only">Maps</span><select id="searchSteps" aria-label="How many maps"></select></label>
         <button type="submit" class="btn btn-primary" id="searchBtn">Search</button>
       </div>
     </form>
     <div class="search-suggest" id="searchSuggest" aria-label="Ideas to search"></div>
-    <p class="search-status" id="searchStatus" role="status">Results and suggestions appear as you type. Turn on Gemini to ask in your own words.</p>
+    <p class="search-status" id="searchStatus" role="status">Results and suggestions appear as you type.</p>
     <div class="results-bar" id="resultsBar" hidden><span id="resultsCount"></span><button type="button" class="btn btn-quiet btn-small" id="clearResults"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg>Clear results</button></div>
     <ul class="search-results" id="searchResults" aria-label="Search results"></ul>
     <details class="eic-more">
@@ -145,7 +146,7 @@
         </div>
 
         <div class="source-options" id="opts-video" hidden>
-          <p class="card-note" id="videoNote">Two frames per second. NASA presets are read through their own colour bar; your videos (MP4 or WebM) play brightness, colour and motion. The picture follows the music.</p>
+          <p class="card-note" id="videoNote">Two samples per second: the brightness, colour and motion of the picture, with the empty background left out. The video follows the music.</p>
         </div>
 
         <div class="source-options" id="opts-earth" hidden>
@@ -404,7 +405,7 @@
       <section>
         <h2>How it works</h2>
         <p>Every number becomes a note: higher values play higher. Each series is scaled between its own lowest and highest value (or a range shared with series in the same unit) and placed on a musical scale, so equal steps in the data sound like equal steps in the melody. Position in time can also become position in space, from simple stereo to 7.1.4 surround.</p>
-        <p>The data comes from NASA GISTEMP, NASA POWER and NASA EONET, the NASA Earth Information Center (Scientific Visualization Studio) and the USGS earthquake feed. When there is no internet, Bit2Beat uses real copies of those feeds saved inside the app. Everything runs in your browser; your files never leave your computer.</p>
+        <p>The data comes from the NASA Earth Information Center (its content database of pictures and videos, and its data API of real maps), NASA satellite images (GIBS), NASA GISTEMP, POWER and EONET, and the USGS earthquake feed. The challenge’s own data sets are bundled with the app, and real copies of the feeds are saved inside it, so it works without the internet. Everything runs in your browser; your files never leave your computer.</p>
       </section>
       <section>
         <h2>Our vision</h2>
@@ -414,11 +415,11 @@
     </div>
     <h2 class="team-title">The team</h2>
     <div class="team">
-      <article class="member"><img src="assets/team/george-hany.jpg" alt="George Hany" width="96" height="96"><div><h3>George Hany <span class="role">Team leader</span></h3><p>I’m George, a 2nd-year Electrical Engineering student at Assiut University. I love AI and computer vision and how they solve real problems. This summer I started learning the violin, and I fell in love with music. I wanted to bring music and technology together, so I chose the Earth Information Jukebox challenge.</p></div></article>
+      <article class="member"><img src="assets/team/george-hany.jpg" alt="George Hany" width="96" height="96"><div><h3>George Hany <span class="role">Resources Manager</span></h3><p>I’m George, a 2nd-year Electrical Engineering student at Assiut University. I love AI and computer vision and how they solve real problems. This summer I started learning the violin, and I fell in love with music. I wanted to bring music and technology together, so I chose the Earth Information Jukebox challenge.</p></div></article>
       <article class="member"><img src="assets/team/mina-helal.jpg" alt="Mina Helal" width="96" height="96"><div><h3>Mina Helal <span class="role">Data Analyst</span></h3><p>I’m Mina Helal—an Electrical Engineering undergrad who loves the thrill of building things from scratch, figuring out exactly how things work. I’m here to bridge theory with hands-on challenge and see what we can create.</p></div></article>
-      <article class="member"><img src="assets/team/steven-joseph.jpg" alt="Steven Joseph" width="96" height="96"><div><h3>Steven Joseph <span class="role">Integration lead</span></h3><p>Hi, I am Steven, 20 years old. I am a science enthusiast and love playing violin and eating burger, and in this team I am leader of the integration.</p></div></article>
-      <article class="member"><img src="assets/team/mostafa-ragab.jpg" alt="Mostafa Ragab" width="96" height="96"><div><h3>Mostafa Ragab <span class="role">UI Specialist &amp; Engine</span></h3><p>I’m Mostafa Ragab, an EE student as well, 20 years. I don’t have a specific passion that is taking my mind, but I’m always learning. Not far long ago, I was stunned by Quantum Physics, and I have always been dedicated to master Pure Math and advanced complex analysis to help me understand it, but like a flame it never stays at the same level of light and heat. 3 years ago, I discovered that I have a hidden passion to music, either creating, listening or playing. I never actually had the chance to play it due to the poor resources we had, but I always was listening, analyzing what I hear, like this part is indeed from this instrument. I love peaceful beautiful music, because it’s always attached to good memories of mine. Happy to be in the competition!</p></div></article>
-      <article class="member"><img src="assets/team/mostafa-mohammed.jpg" alt="Mostafa Mohammed" width="96" height="96"><div><h3>Mostafa Mohammed <span class="role">Core</span></h3><p>Electrical Engineering student and member of the Bit2Beat team, working together from scratch to turn images and scientific Earth data into sound and visual experiences.</p></div></article>
+      <article class="member"><img src="assets/team/steven-joseph.jpg" alt="Steven Joseph" width="96" height="96"><div><h3>Steven Joseph <span class="role">Sound Engineer</span></h3><p>Hi, I am Steven, 20 years old. I am a science enthusiast and love playing violin and eating burger, and in this team I am the sound engineer.</p></div></article>
+      <article class="member"><img src="assets/team/mostafa-ragab.jpg" alt="Mostafa Ragab" width="96" height="96"><div><h3>Mostafa Ragab <span class="role">UI Specialist &amp; Guide</span></h3><p>I’m Mostafa Ragab, an EE student as well, 20 years. I don’t have a specific passion that is taking my mind, but I’m always learning. Not far long ago, I was stunned by Quantum Physics, and I have always been dedicated to master Pure Math and advanced complex analysis to help me understand it, but like a flame it never stays at the same level of light and heat. 3 years ago, I discovered that I have a hidden passion to music, either creating, listening or playing. I never actually had the chance to play it due to the poor resources we had, but I always was listening, analyzing what I hear, like this part is indeed from this instrument. I love peaceful beautiful music, because it’s always attached to good memories of mine. Happy to be in the competition!</p></div></article>
+      <article class="member"><img src="assets/team/mostafa-mohammed.jpg" alt="Mostafa Mohammed" width="96" height="96"><div><h3>Mostafa Mohammed <span class="role">Algorithms Manager</span></h3><p>Electrical Engineering student and member of the Bit2Beat team, working together from scratch to turn images and scientific Earth data into sound and visual experiences.</p></div></article>
     </div>
     <div class="launch">
       <p class="launch-kicker">Five of us, one planet, every number a note.</p>
@@ -427,12 +428,17 @@
     </div>
     <h2 class="team-title">Data sources &amp; credits</h2>
     <ul class="credits">
-      <li>NASA GISS Surface Temperature Analysis (GISTEMP v4) — data.giss.nasa.gov/gistemp</li>
-      <li>NASA POWER daily and monthly point data — power.larc.nasa.gov</li>
-      <li>NASA Earth Observatory Natural Event Tracker (EONET v3) — eonet.gsfc.nasa.gov</li>
-      <li>NASA GIBS satellite imagery (MODIS, VIIRS) — gibs.earthdata.nasa.gov</li>
-      <li>NASA Image and Video Library (Bitty’s notes) — images.nasa.gov</li>
-      <li>USGS Earthquake Hazards Program real-time feeds — earthquake.usgs.gov</li>
+      <li><b>NASA Earth Information Center content database</b>, the Space Apps challenge resource: pictures and videos by NASA's Scientific Visualization Studio — <a href="https://svs.gsfc.nasa.gov/gallery/earth-information-center/" target="_blank" rel="noopener noreferrer">svs.gsfc.nasa.gov/gallery/earth-information-center</a></li>
+      <li><b>The challenge's data sets</b> (bundled, work offline): sea surface currents and temperature (<a href="https://svs.gsfc.nasa.gov/3912/" target="_blank" rel="noopener noreferrer">SVS 3912</a>), Perpetual Ocean 2 (<a href="https://svs.gsfc.nasa.gov/5425/" target="_blank" rel="noopener noreferrer">5425</a>), GEOS aerosols (<a href="https://svs.gsfc.nasa.gov/5669/" target="_blank" rel="noopener noreferrer">5669</a>), air quality model runs (<a href="https://svs.gsfc.nasa.gov/5533/" target="_blank" rel="noopener noreferrer">5533</a>), night lights 2012–2023 (<a href="https://svs.gsfc.nasa.gov/5313/" target="_blank" rel="noopener noreferrer">5313</a>), lightning from the ISS (<a href="https://svs.gsfc.nasa.gov/5011/" target="_blank" rel="noopener noreferrer">5011</a>) and an atmospheric river in 3D (<a href="https://svs.gsfc.nasa.gov/4960/" target="_blank" rel="noopener noreferrer">4960</a>)</li>
+      <li><b>NASA Earth Information Center data API</b> (STAC catalogue and raster maps, also as GeoTIFF files of real values) — <a href="https://earth.gov/" target="_blank" rel="noopener noreferrer">earth.gov</a></li>
+      <li><b>NASA GIBS</b>: 26 satellite layers of the whole Earth and live satellite views (MODIS, VIIRS, OMI, OMPS, GPM IMERG, SMAP, PACE, GRACE-FO, MERRA-2) — <a href="https://gibs.earthdata.nasa.gov/" target="_blank" rel="noopener noreferrer">gibs.earthdata.nasa.gov</a></li>
+      <li>NASA GISS Surface Temperature Analysis (GISTEMP v4) — <a href="https://data.giss.nasa.gov/gistemp/" target="_blank" rel="noopener noreferrer">data.giss.nasa.gov/gistemp</a></li>
+      <li>NASA POWER daily and monthly point data — <a href="https://power.larc.nasa.gov/" target="_blank" rel="noopener noreferrer">power.larc.nasa.gov</a></li>
+      <li>NASA Earth Observatory Natural Event Tracker (EONET v3) — <a href="https://eonet.gsfc.nasa.gov/" target="_blank" rel="noopener noreferrer">eonet.gsfc.nasa.gov</a></li>
+      <li>USGS Earthquake Hazards Program real-time feeds — <a href="https://earthquake.usgs.gov/" target="_blank" rel="noopener noreferrer">earthquake.usgs.gov</a></li>
+      <li>NASA Image and Video Library (Bitty's notes) — <a href="https://images.nasa.gov/" target="_blank" rel="noopener noreferrer">images.nasa.gov</a></li>
+      <li>Scientific files read in the browser by our own readers: GeoTIFF / Cloud-Optimized GeoTIFF, NetCDF and HDF5 (NetCDF-4)</li>
+      <li>Voice control understands any language through Google Gemini (our server keeps the key)</li>
       <li>abcjs music engraving (MIT licence)</li>
     </ul>
     <p><button type="button" class="btn" data-page="studio">Back to the studio</button></p>
@@ -607,6 +613,7 @@
 <script src="src/js/data/presets.js"></script>
 <script src="src/js/data/nasa-keys.js"></script>
 <script src="src/js/data/nasa-media.js"></script>
+<script src="src/js/data/svs-clips.js"></script>
 <script src="src/js/audio/engine.js"></script>
 <script src="src/js/audio/player.js"></script>
 <script src="src/js/audio/exporter.js"></script>

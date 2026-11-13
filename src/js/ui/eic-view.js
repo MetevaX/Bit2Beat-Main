@@ -105,7 +105,7 @@
     const SV = B.svs;
     let gallery = [];
     let galleryLoading = null;
-    const GKEY = 'b2b-eic-gallery';
+    const GKEY = 'b2b-eic-gallery2'; // 2: entries list their file types (search filter)
     /** Image and Video search the content database, unless another catalogue was chosen. */
     const usesGallery = (mode = S.mode) => (mode === 'image' || mode === 'video') && api.stac === E.ENDPOINTS.stac;
     function fillGallery() {
@@ -118,7 +118,7 @@
         return gallery;
       };
       if (saved?.items?.length && Date.now() - saved.at < 7 * 864e5) return Promise.resolve(use(saved.items));
-      galleryLoading = get('api/eic-gallery', { timeout: 60000 })
+      galleryLoading = get('api/eic-gallery?v=2', { timeout: 60000 })
         .then((j) => {
           storage.set(GKEY, { at: Date.now(), items: j.items });
           return use(j.items);
@@ -135,6 +135,11 @@
 
     /** A picture from the content database (saved small in the browser, so presets work offline after once). */
     async function svsStill(it) {
+      if (it.offline) {
+        // a challenge preset: the copy bundled with the app (works offline, opens at once)
+        const canvas = await B.illustrations.loadToCanvas(B.assets?.[`svs${it.id}Image`] || SV.localStill(it.id), 1440, 15000);
+        return { canvas, meta: { name: `NASA EIC · ${it.title}`, noBackground: false, origin: { ...originOf(it), fetched: '', live: false, note: `${it.about} A copy bundled with Bit2Beat, so it works offline; the link opens NASA's original page.` } } };
+      }
       const key = `b2b-svs-img-${it.id}`;
       let canvas;
       try {
@@ -156,6 +161,12 @@
 
     /** A video from the content database, read two samples a second (the result is kept in the browser). */
     async function svsVideo(it, { signal } = {}) {
+      const clip = it.offline && B.svsClips?.[it.id];
+      if (clip) {
+        // a challenge preset: a short bundled clip and its analysis (works offline, opens at once)
+        const s = JSON.parse(JSON.stringify(clip));
+        return { ...s, name: `NASA EIC · ${it.title}`, videoUrl: B.assets?.[`svs${it.id}Video`] || SV.localVideo(it.id), origin: { ...originOf(it), fetched: '', live: false, note: `${it.about ? it.about + ' ' : ''}The first ${Math.round(s.duration)} seconds of NASA's video, bundled with Bit2Beat so it works offline: ${s.labels.length} samples, two per second, of the brightness, colour and motion of the picture.` } };
+      }
       const key = `b2b-svs-vid-${it.id}`;
       const url = SV.media(it.video);
       let s = storage.get(key, null);
@@ -170,7 +181,7 @@
     const presetStill = (id) => svsStill(SV.item(id));
     const presetVideo = (id) =>
       busy('Reading NASA’s video…', () => svsVideo(SV.item(id))).then((s) => {
-        if (s) toast(`${s.labels.length} samples of ${SV.item(id).title}. Press Play: the video follows the music.`, 5000);
+        if (s) toast(`${s.labels.length} samples of ${SV.item(id).title}. Press play: the video follows the music.`, 5000);
         return s;
       });
 
@@ -217,8 +228,50 @@
       return { canvas, meta: { name: `NASA satellite · ${l.title}`, origin: { source: `NASA GIBS · ${l.by} · ${l.title}${when ? ' · ' + when : ''}`, url: 'https://worldview.earthdata.nasa.gov/', fetched: saved ? '' : new Date().toISOString(), live: !saved, cached: saved, note: `${l.about} The whole world, west on the left; black where the layer has no data (silent).` } } };
     }
 
+    /** An EIC data set's newest map as a GeoTIFF of real values: a scientific map (layers, zoom, surround). */
+    async function eicGeoTiff(info, place) {
+      const m = await E.latestMap({ info, place: placeOf(place) }, opts());
+      const bytes = async (url, signal) => {
+        const r = await fetch(url, { signal: signal || (AbortSignal.timeout ? AbortSignal.timeout(45000) : undefined) });
+        if (!r.ok) throw new Error(`the raster API answered ${r.status}`);
+        return new Uint8Array(await r.arrayBuffer());
+      };
+      return app.sci.fromBytes(await bytes(m.values), {
+        name: `${info.title} · ${m.region.name} · ${m.date}`,
+        label: m.title,
+        units: m.unit,
+        nodata: m.nodata,
+        fetchBox: (bbox, signal) => bytes(m.valuesFor(bbox), signal),
+        origin: { source: `${api.name || 'STAC catalogue'} · ${info.provider || 'NASA'} · GeoTIFF of ${m.date}`, url: api.site || api.stac, fetched: new Date().toISOString(), live: true, note: `The newest map of ${info.id} as a GeoTIFF file of real values (not colours), from the Earth Information Center's raster API. Zoom in to read that part again in detail.` },
+      });
+    }
+
     async function loadImage(pick) {
-      if (!pick.id && usesGallery('image')) return app.choose('image', 'nasa:gedi'), null;
+      if (!pick.id && usesGallery('image')) return app.choose('image', 'svs:3912'), null;
+      // a scientific file: an EIC data set as GeoTIFF, or a GeoTIFF / NetCDF / HDF5 file in NASA's gallery
+      const file = String(pick.id).match(/^(tif|nc|h5):(.+)$/);
+      if (file) {
+        const [, type, ref] = file;
+        let res;
+        if (/^svs-/.test(ref)) {
+          const entry = (await fillGallery().catch(() => gallery)).find((c) => c.id === `svs:${ref.slice(4)}`);
+          const path = entry?.svs.f?.[type];
+          if (!path) return toast('That file is no longer in the gallery.'), null;
+          const it = SV.item(entry.svs);
+          res = await app.sci.openUrl(SV.media(path), { name: `NASA EIC · ${it.title}`, fileName: path.split('/').pop(), origin: { ...originOf(it), note: `${it.about ? it.about + ' ' : ''}File: ${path.split('/').pop()}.` } }).catch((e) => (e?.name === 'AbortError' ? null : (toast(`NASA's file could not be opened: ${e.message}`, 7000), null)));
+        } else {
+          const info = await infoFor({ id: ref });
+          if (!info) return null;
+          res = await busy('Getting the GeoTIFF…', () => eicGeoTiff(info, pick.place));
+        }
+        if (!res) return null;
+        S.eicImage = { ...pick };
+        B.eicView.image = res;
+        S.choice.image = 'eic';
+        app.fillSourceSelect();
+        app.useImage(res);
+        return res;
+      }
       if (String(pick.id).startsWith('gibs:')) {
         const l = B.gibs.find(pick.id);
         if (!l) return null;
@@ -271,7 +324,7 @@
 
     /** Video tab: a time-lapse of the latest maps. */
     async function loadVideo(pick) {
-      if (!pick.id && usesGallery('video')) return app.choose('video', 'gedi'), null;
+      if (!pick.id && usesGallery('video')) return app.choose('video', 'svs:3912'), null;
       if (String(pick.id).startsWith('svs:')) {
         const entry = (await fillGallery().catch(() => gallery)).find((c) => c.id === pick.id);
         const it = SV.item(entry?.svs || pick.id);
@@ -304,14 +357,25 @@
     // search, one catalogue per tab (presets left out):
     //   Image – the gallery's pictures and NASA satellite images (GIBS); Video – the gallery's videos;
     //   Data – the EIC data API.
+    // File type (search filter): any, picture, video, tif (GeoTIFF), nc (NetCDF), h5 (HDF5).
+    // GeoTIFF also lists every EIC data set: its newest map comes as a GeoTIFF of real values.
     const gibsList = B.gibs.catalogue();
-    function catalogueFor(mode = S.mode) {
+    const FILE_NAME = { tif: 'GeoTIFF', nc: 'NetCDF', h5: 'HDF5' };
+    const asFile = (c, type) => ({ ...c, id: `${type}:${c.svs ? 'svs-' + c.svs.id : c.id}`, kind: `${FILE_NAME[type]} file (.${type})`, exts: [type], file: type });
+    function catalogueFor(mode = S.mode, type = 'any') {
+      if (FILE_NAME[type]) {
+        const own = gallery.filter((c) => c.svs.f?.[type]).map((c) => asFile(c, type));
+        return type === 'tif' && api.stac === E.ENDPOINTS.stac ? [...own, ...list.map((c) => asFile({ ...c, exts: ['tif'] }, 'tif'))] : own;
+      }
       if (!usesGallery(mode)) return list;
       if (mode === 'video') return gallery.filter((c) => c.kind === 'video');
       return [...gallery.filter((c) => c.kind === 'picture'), ...gibsList];
     }
-    function fillFor() {
+    /** How many of each file type there are (for the filter menu). */
+    const typeCounts = () => Object.fromEntries(Object.keys(FILE_NAME).map((t) => [t, catalogueFor('image', t).length]));
+    function fillFor(type = 'any') {
       const mode = S.mode;
+      if (FILE_NAME[type]) return Promise.allSettled([fillGallery(), fill()]).then(() => catalogueFor(mode, type));
       if (!usesGallery(mode)) return fill();
       // satellite images need no gallery: the Image tab can search even when NASA's gallery is slow
       return fillGallery().then(
@@ -322,7 +386,7 @@
         },
       );
     }
-    Object.assign(B.eicView, { load, loadImage, loadVideo, fill: fillFor, catalogue: () => catalogueFor(), api: () => api, usesGallery, presetStill, presetVideo });
+    Object.assign(B.eicView, { load, loadImage, loadVideo, fill: fillFor, catalogue: (type) => catalogueFor(S.mode, type), typeCounts, FILE_NAME, api: () => api, usesGallery, presetStill, presetVideo });
     $('eicUse').onclick = () => {
       const stac = $('eicStac').value.trim();
       const raster = $('eicRaster').value.trim();
