@@ -14909,7 +14909,7 @@ ${m.mouth}
       $('sciLayer').value = sci.layer;
       $('sciLayerOut').textContent = `${sci.layer + 1} of ${levels}`;
       $('sciSpot').hidden = sci.mode !== 'point';
-      $('sciZoomInfo').textContent = describeView(sci);
+      $('sciZoomInfo').textContent = sci.view ? describeView(sci) : ''; // the button already says “Whole map”
       $('sciZoomAll').disabled = !sci.view;
       $('sciZoomOut').disabled = !sci.view;
       $('sciZoomIn').disabled = !!sci.view && Math.max(sci.view[2] - sci.view[0], sci.view[3] - sci.view[1]) <= minSpan(sci) + 1e-6;
@@ -16863,27 +16863,6 @@ ${m.mouth}
       if (!info) return null;
       const res = await busy('Drawing the latest map…', async () => {
         const m = await E.latestMap({ info, place: placeOf(pick.place) }, opts());
-        const name = `${info.title} · ${m.region.name} · ${m.date}`;
-        const source = `${api.name || 'STAC catalogue'} · ${info.provider || 'NASA'} · map of ${m.date}`;
-        // best: the real numbers of the map (a GeoTIFF from the raster API), shown and played as a scientific map
-        if (app.sci && m.values)
-          try {
-            const bytesOf = async (url, signal) => {
-              const r = await fetch(url, { signal: signal || (AbortSignal.timeout ? AbortSignal.timeout(40000) : undefined) });
-              if (!r.ok) throw new Error(`The Earth Information Center answered ${r.status}.`);
-              return new Uint8Array(await r.arrayBuffer());
-            };
-            return await app.sci.fromBytes(await bytesOf(m.values), {
-              name,
-              label: m.title,
-              units: m.unit,
-              nodata: m.nodata,
-              fetchBox: (bbox, signal) => bytesOf(m.valuesFor(bbox), signal), // zoom: only that part, in detail
-              origin: { source, url: api.site || api.stac, fetched: new Date().toISOString(), live: true, note: `The newest map of ${info.id}, read as real values (not colours) from the raster API. Under the pointer you get the exact value at that place; zoom in for more detail.` },
-            });
-          } catch {
-            /* fall back to the coloured picture */
-          }
         const canvas = await B.illustrations.loadToCanvas(m.url, 1200, 30000);
         return {
           canvas,

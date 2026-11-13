@@ -344,7 +344,7 @@
       $('sciLayer').value = sci.layer;
       $('sciLayerOut').textContent = `${sci.layer + 1} of ${levels}`;
       $('sciSpot').hidden = sci.mode !== 'point';
-      $('sciZoomInfo').textContent = describeView(sci);
+      $('sciZoomInfo').textContent = sci.view ? describeView(sci) : ''; // the button already says “Whole map”
       $('sciZoomAll').disabled = !sci.view;
       $('sciZoomOut').disabled = !sci.view;
       $('sciZoomIn').disabled = !!sci.view && Math.max(sci.view[2] - sci.view[0], sci.view[3] - sci.view[1]) <= minSpan(sci) + 1e-6;

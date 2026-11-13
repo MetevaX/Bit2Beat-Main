@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.2 — 13 November 2026
+- **The *What's inside* panel (layers, zoom, colour scale) and 5.1 / 7.1 / 7.1.4 are only for scientific files** (NetCDF, HDF5, GeoTIFF you open, and *Sunlight on Earth*). Earth Information Center maps found by search are pictures again, as before 3.0: drawn in the data set's own colours and read through their colour key (Light, Colour, Colour key), in stereo or headphone 3D.
+- The zoom row no longer says “Whole map” twice; it names the area only when you are zoomed in.
+
 ## 3.2.1 — 13 November 2026
 - **Gemini no longer leaves you waiting.** On 13 November Gemini 3.8 Flash did not answer at all (both search and voice ran out of time on it). Now each model gets a short time (7 s for a voice command, 18 s for a search); if it is busy, slow or missing, the next one is asked: 3.6 Flash, 3.5 Flash, then **every other Flash model your key can use** (looked up from Google's own list, newest first, Lite included). Later attempts think less, so they answer fast; models that do not take the thinking setting are asked again without it. The answer says which model replied (`model`) and, when all were busy, what each one did (`tried`).
 
