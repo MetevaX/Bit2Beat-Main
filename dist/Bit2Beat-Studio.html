@@ -3895,6 +3895,40 @@ body.pointer-mode main {
   }
 }
 
+/* ---------------------------------------------------------------- zoom on scientific maps */
+.sci-zoom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.sci-zoom .btn {
+  min-width: 2.4em;
+  font-weight: 700;
+}
+.sci-zoom .btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.sci-zoom-info {
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.sci-zoom-tip {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+@media (hover: none) {
+  .sci-zoom-tip {
+    display: none;
+  }
+}
+#sourceCanvas.is-panning {
+  cursor: grabbing;
+}
+
 </style>
 <!-- abcjs licence:
 Copyright (c) 2009-2026 Paul Rosen and Gregory Dyke
@@ -4089,6 +4123,13 @@ THE SOFTWARE.
                 <label>Longitude <input type="number" id="sciLon" min="-180" max="180" step="0.1" inputmode="decimal"></label>
                 <button type="button" class="btn btn-small" id="sciGo">Hear this spot</button>
               </fieldset>
+            </div>
+            <div class="sci-zoom" role="group" aria-label="Zoom the map">
+              <button type="button" class="btn btn-quiet btn-small" id="sciZoomIn" aria-label="Zoom in (+)" title="Zoom in (+ or the mouse wheel)">+</button>
+              <button type="button" class="btn btn-quiet btn-small" id="sciZoomOut" aria-label="Zoom out (−)" title="Zoom out (−)">−</button>
+              <button type="button" class="btn btn-quiet btn-small" id="sciZoomAll" title="Show the whole map (0)">Whole map</button>
+              <span class="sci-zoom-info" id="sciZoomInfo">Whole map</span>
+              <span class="sci-zoom-tip">Wheel to zoom, drag to move</span>
             </div>
             <div class="sci-key" aria-hidden="true"><span id="sciLo"></span><i id="sciRamp"></i><span id="sciHi"></span></div>
             <p class="sci-read" id="sciReadout"></p>
@@ -4450,6 +4491,7 @@ THE SOFTWARE.
     <dt><kbd>G</kbd></dt><dd>Bitty’s guide</dd>
     <dt><kbd>Esc</kbd></dt><dd>Stop reading aloud, close the guide</dd>
     <dt><kbd>T</kbd></dt><dd>Readings table</dd>
+    <dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Scientific maps: zoom in, zoom out, whole map (also the mouse wheel; drag to move)</dd>
     <dt><kbd>V</kbd></dt><dd>Voice control on / off: say “play”, “pause”, “next”, “where am I”, “search for sea ice”, “go to video”, “violin”, “7.1”, “help” or “stop voice control”</dd>
     <dt><kbd>?</kbd></dt><dd>This help</dd>
   </dl>
@@ -6860,12 +6902,17 @@ THE SOFTWARE.
     return `${trim(raster)}/cog/bbox/${w},${s},${e},${n}/${Math.round(reg.width * size)}x${Math.round(reg.height * size)}.png?${q}`;
   }
 
-  /** The same map as real numbers: a GeoTIFF of the values (float, with a no-data mask), not colours. */
-  function valuesUrl(raster, layer, reg, size = 0.75) {
+  /**
+   * The same map as real numbers: a GeoTIFF of the values (32-bit float), not colours. Kept small:
+   * no mask band (no data comes back as the data set's own no-data value), and about 480 values
+   * across for the whole area; zooming in fetches only the part on screen, in more detail.
+   */
+  function valuesUrl(raster, layer, bbox, width = 480) {
     const nodata = layer.bands?.nodata;
-    const q = [`url=${encodeURIComponent(layer.href)}`, nodata != null && nodata !== 'nan' ? `nodata=${encodeURIComponent(nodata)}` : ''].filter(Boolean).join('&');
-    const [w, s, e, n] = reg.bbox.map((v) => +v.toFixed(3));
-    return `${trim(raster)}/cog/bbox/${w},${s},${e},${n}/${Math.round(reg.width * size)}x${Math.round(reg.height * size)}.tif?${q}`;
+    const q = [`url=${encodeURIComponent(layer.href)}`, 'return_mask=false', nodata != null && nodata !== 'nan' ? `nodata=${encodeURIComponent(nodata)}` : ''].filter(Boolean).join('&');
+    const [w, s, e, n] = bbox.map((v) => +(+v).toFixed(3));
+    const height = Math.max(8, Math.round((width * (n - s)) / Math.max(1e-6, e - w)));
+    return `${trim(raster)}/cog/bbox/${w},${s},${e},${n}/${width}x${Math.min(height, 960)}.tif?${q}`;
   }
 
   /**
@@ -6946,7 +6993,7 @@ THE SOFTWARE.
     } catch {
       key = null;
     }
-    return { url: mapUrl(raster, layer, info, reg, 1, range), values: valuesUrl(raster, layer, reg), date: label(t.date, info.density), layer: name, title, unit, key, range, region: reg };
+    return { url: mapUrl(raster, layer, info, reg, 1, range), values: valuesUrl(raster, layer, reg.bbox), valuesFor: (bbox) => valuesUrl(raster, layer, bbox), nodata: layer.bands?.nodata ?? null, date: label(t.date, info.density), layer: name, title, unit, key, range, region: reg };
   }
 
   /**
@@ -7975,20 +8022,24 @@ THE SOFTWARE.
    * A grid of at most width × height values (nearest pixel), as Float32Array with NaN for no data.
    * opts: { width, height, band, signal, progress(done, total) }
    */
-  async function readGrid(reader, t, { width = 720, height = 360, band = 0, signal, progress } = {}) {
-    const img = pick(t, width);
-    const w = Math.min(width, img.width);
-    const h = Math.min(height, img.height);
+  async function readGrid(reader, t, { width = 720, height = 360, band = 0, window = [0, 0, 1, 1], signal, progress } = {}) {
+    // window = [u0, v0, u1, v1]: the part of the picture to read (zoom), 0…1 from the top-left
+    const [u0, v0, u1, v1] = window.map((f) => Math.max(0, Math.min(1, f)));
+    const fu = Math.max(1e-6, u1 - u0);
+    const fv = Math.max(1e-6, v1 - v0);
+    const img = pick(t, Math.ceil(width / fu)); // the overview with enough detail for this part
+    const w = Math.max(1, Math.min(width, Math.round(img.width * fu)));
+    const h = Math.max(1, Math.min(height, Math.round(img.height * fv)));
     const sppIn = img.planar === 2 ? 1 : img.spp;
     const bps = img.bits / 8;
     const b = img.planar === 2 ? 0 : band;
     const get = getter(img);
-    const xs = Array.from({ length: w }, (_, i) => Math.floor(((i + 0.5) * img.width) / w));
+    const xs = Array.from({ length: w }, (_, i) => Math.min(img.width - 1, Math.floor((u0 + ((i + 0.5) / w) * fu) * img.width)));
     const out = new Float32Array(w * h).fill(NaN);
     // rows grouped by the strip / tile row that holds them
     const groups = new Map();
     for (let j = 0; j < h; j++) {
-      const sy = Math.floor(((j + 0.5) * img.height) / h);
+      const sy = Math.min(img.height - 1, Math.floor((v0 + ((j + 0.5) / h) * fv) * img.height));
       const by = Math.floor(sy / img.th);
       if (!groups.has(by)) groups.set(by, []);
       groups.get(by).push([j, sy - by * img.th]);
@@ -8015,7 +8066,7 @@ THE SOFTWARE.
         }
       }
     }
-    return { data: out, width: w, height: h, from: [img.width, img.height], overview: img !== t.main };
+    return { data: out, width: w, height: h, from: [t.main.width, t.main.height], overview: img !== t.main, simplified: w < Math.round(t.main.width * fu) - 1 || h < Math.round(t.main.height * fv) - 1 };
   }
 
   return { open, readGrid, pick, pixel };
@@ -9250,52 +9301,97 @@ THE SOFTWARE.
     }
 
     /** One map (2D slice at time index t), sampled to at most width × height. */
-    async function map(id, { t = 0, layer = 0, width = 360, height = 180, signal, progress } = {}) {
+    /**
+     * Display order of an axis: for each row (north first) or column (west first) of the map as
+     * shown, the index in the file. Latitudes stored south first are flipped; longitudes stored
+     * 0…360 are reordered to −180…180.
+     */
+    const orders = new Map();
+    async function displayOrder(v) {
+      if (orders.has(v)) return orders.get(v);
+      const ax = await axisValues(v);
+      const H = v.shape[v.axes.y];
+      const W = v.shape[v.axes.x];
+      const flip = ax.lat && ax.lat.length > 1 && ax.lat[0] < ax.lat[ax.lat.length - 1];
+      const rows = Array.from({ length: H }, (_, r) => (flip ? H - 1 - r : r));
+      let cols = Array.from({ length: W }, (_, c) => c);
+      const norm = (l) => (l > 180 ? l - 360 : l);
+      if (ax.lon && Array.from(ax.lon).some((l) => l > 180)) cols.sort((p, q) => norm(ax.lon[p]) - norm(ax.lon[q]));
+      const o = { rows, cols, ax, norm };
+      orders.set(v, o);
+      return o;
+    }
+
+    /** File indices (in any order) → runs of evenly spaced indices that one slab can read. */
+    function runs(list) {
+      const sorted = [...new Set(list)].sort((p, q) => p - q);
+      const out = [];
+      for (let k = 0; k < sorted.length; ) {
+        let n = 1;
+        const step = k + 1 < sorted.length ? sorted[k + 1] - sorted[k] : 1;
+        while (k + n < sorted.length && sorted[k + n] - sorted[k + n - 1] === step) n++;
+        out.push({ start: sorted[k], stride: step, count: n });
+        k += n;
+      }
+      return out;
+    }
+
+    /**
+     * One map (2D slice at time index t), at most width × height values, read straight from the
+     * file. window = [u0, v0, u1, v1]: the part of the whole map to read (0…1 from the top-left of
+     * the map as shown), for zooming in: only that part is read, at full detail when it fits.
+     */
+    async function map(id, { t = 0, layer = 0, width = 360, height = 180, window = [0, 0, 1, 1], signal, progress } = {}) {
       const v = variables.find((x) => x.id === id);
       if (!v || v.shape.length < 2) throw new Error('That variable is not a map.');
       const { y, x, t: ta, other } = v.axes;
-      const sy = sampling(v.shape[y], height);
-      const sx = sampling(v.shape[x], width);
-      const start = v.shape.map(() => 0);
-      const count = v.shape.map(() => 1);
-      const stride = v.shape.map(() => 1);
-      start[y] = sy.start;
-      count[y] = sy.count;
-      stride[y] = sy.stride;
-      start[x] = sx.start;
-      count[x] = sx.count;
-      stride[x] = sx.stride;
-      if (ta >= 0) start[ta] = Math.min(Math.max(0, t), v.shape[ta] - 1);
-      other.forEach((k) => (start[k] = Math.min(layer, v.shape[k] - 1)));
-      const raw = await v.array.slab(start, count, stride, { signal, progress });
-      // rows run along y and columns along x, whatever their order in the file
-      const w = sx.count;
-      const h = sy.count;
-      const data = new Float32Array(w * h);
-      const yFirst = y < x;
-      for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) data[j * w + i] = v.unpack(raw[yFirst ? j * w + i : i * h + j]);
-      const ax = await axisValues(v);
-      let lat = ax.lat ? Array.from({ length: h }, (_, j) => ax.lat[sy.start + j * sy.stride]) : null;
-      let lon = ax.lon ? Array.from({ length: w }, (_, i) => ax.lon[sx.start + i * sx.stride]) : null;
-      // north at the top
-      if (lat && lat.length > 1 && lat[0] < lat[lat.length - 1]) {
-        for (let j = 0; j < h >> 1; j++) {
-          const a = data.slice(j * w, j * w + w);
-          data.copyWithin(j * w, (h - 1 - j) * w, (h - j) * w);
-          data.set(a, (h - 1 - j) * w);
+      const { rows, cols, ax, norm } = await displayOrder(v);
+      const H = rows.length;
+      const W = cols.length;
+      const [u0, v0, u1, v1] = window.map((f) => Math.max(0, Math.min(1, f)));
+      const r0 = Math.min(H - 1, Math.floor(v0 * H));
+      const r1 = Math.max(r0 + 1, Math.min(H, Math.ceil(v1 * H)));
+      const c0 = Math.min(W - 1, Math.floor(u0 * W));
+      const c1 = Math.max(c0 + 1, Math.min(W, Math.ceil(u1 * W)));
+      const sy = sampling(r1 - r0, height);
+      const sx = sampling(c1 - c0, width);
+      const yList = Array.from({ length: sy.count }, (_, j) => rows[r0 + sy.start + j * sy.stride]);
+      const xList = Array.from({ length: sx.count }, (_, i) => cols[c0 + sx.start + i * sx.stride]);
+      const h = yList.length;
+      const w = xList.length;
+      const data = new Float32Array(w * h).fill(NaN);
+      const base = v.shape.map(() => 0);
+      if (ta >= 0) base[ta] = Math.min(Math.max(0, t), v.shape[ta] - 1);
+      other.forEach((k) => (base[k] = Math.min(layer, v.shape[k] - 1)));
+      // where each file row / column goes in the picture
+      const yAt = new Map();
+      yList.forEach((f, j) => yAt.set(f, [...(yAt.get(f) || []), j]));
+      const xAt = new Map();
+      xList.forEach((f, i) => xAt.set(f, [...(xAt.get(f) || []), i]));
+      const yRuns = runs(yList);
+      const xRuns = runs(xList);
+      let done = 0;
+      const total = yRuns.length * xRuns.length;
+      for (const ry of yRuns)
+        for (const rx of xRuns) {
+          const start = base.slice();
+          const count = v.shape.map(() => 1);
+          const stride = v.shape.map(() => 1);
+          [start[y], count[y], stride[y]] = [ry.start, ry.count, ry.stride];
+          [start[x], count[x], stride[x]] = [rx.start, rx.count, rx.stride];
+          const part = (d, n) => progress?.(done * n + d, total * n);
+          const raw = await v.array.slab(start, count, stride, { signal, progress: part });
+          done++;
+          for (let a = 0; a < ry.count; a++)
+            for (let b = 0; b < rx.count; b++) {
+              const val = v.unpack(raw[y < x ? a * rx.count + b : b * ry.count + a]);
+              for (const j of yAt.get(ry.start + a * ry.stride)) for (const i of xAt.get(rx.start + b * rx.stride)) data[j * w + i] = val;
+            }
         }
-        lat = lat.reverse();
-      }
-      // longitudes 0…360 → −180…180, west on the left
-      if (lon && lon.some((l) => l > 180)) {
-        const fixed = lon.map((l) => (l > 180 ? l - 360 : l));
-        const order = fixed.map((l, i) => [l, i]).sort((p, q) => p[0] - q[0]);
-        const copy = data.slice();
-        for (let j = 0; j < h; j++) order.forEach(([, i], k) => (data[j * w + k] = copy[j * w + i]));
-        lon = order.map(([l]) => l);
-      }
-      const dLa = lat && lat.length > 1 ? Math.abs(lat[1] - lat[0]) / 2 : 0;
-      const dLo = lon && lon.length > 1 ? Math.abs(lon[1] - lon[0]) / 2 : 0;
+      const lat = ax.lat ? yList.map((f) => ax.lat[f]) : null;
+      const lon = ax.lon ? xList.map((f) => norm(ax.lon[f])) : null;
+      const dLa = lat && lat.length > 1 ? Math.abs(lat[1] - lat[0]) / 2 : ax.lat && ax.lat.length > 1 ? Math.abs(ax.lat[1] - ax.lat[0]) / 2 : 0;
+      const dLo = lon && lon.length > 1 ? Math.abs(lon[1] - lon[0]) / 2 : ax.lon && ax.lon.length > 1 ? Math.abs(ax.lon[1] - ax.lon[0]) / 2 : 0;
       return {
         data,
         width: w,
@@ -9303,8 +9399,9 @@ THE SOFTWARE.
         lat,
         lon,
         bbox: lat && lon ? [lon[0] - dLo, lat[h - 1] - dLa, lon[w - 1] + dLo, lat[0] + dLa] : null,
-        time: ax.times ? ax.times[start[ta]] : null,
-        from: [v.shape[x], v.shape[y]],
+        time: ax.times ? ax.times[base[ta]] : null,
+        from: [W, H],
+        window: [c0 / W, r0 / H, c1 / W, r1 / H],
         simplified: sx.stride > 1 || sy.stride > 1,
       };
     }
@@ -9386,11 +9483,17 @@ THE SOFTWARE.
     // a band per time step: offer them together as maps over time too
     if (bands > 1) vars.unshift({ ...v, id: 'bands', name: 'All bands', label: `All ${bands} bands as steps`, kind: 'maps over time', steps: bands, shape: [bands, m.height, m.width], dims: ['band', 'y', 'x'] });
     const grid = async (band, o) => {
-      const g = await tiff.readGrid(reader, t, { ...o, band });
-      const bb = m.bbox;
+      // snapped to whole pixels, so the zoomed part lines up with the full map exactly
+      const [a, b, c, d] = (o.window || [0, 0, 1, 1]).map((f) => Math.max(0, Math.min(1, f)));
+      const [W, H] = [m.width, m.height];
+      const win = [Math.floor(a * W) / W, Math.floor(b * H) / H, Math.max(Math.floor(a * W) + 1, Math.ceil(c * W)) / W, Math.max(Math.floor(b * H) + 1, Math.ceil(d * H)) / H];
+      const g = await tiff.readGrid(reader, t, { ...o, band, window: win });
+      const full = m.bbox;
+      // the part of the map that was read, in degrees
+      const bb = full && [full[0] + win[0] * (full[2] - full[0]), full[3] - win[3] * (full[3] - full[1]), full[0] + win[2] * (full[2] - full[0]), full[3] - win[1] * (full[3] - full[1])];
       const lon = bb ? Array.from({ length: g.width }, (_, i) => bb[0] + ((i + 0.5) * (bb[2] - bb[0])) / g.width) : null;
       const lat = bb ? Array.from({ length: g.height }, (_, j) => bb[3] - ((j + 0.5) * (bb[3] - bb[1])) / g.height) : null;
-      return { ...g, lat, lon, bbox: bb, time: null, simplified: g.width < m.width || g.height < m.height, note: m.note };
+      return { ...g, lat, lon, bbox: bb, time: null, window: win, note: m.note };
     };
     return {
       format: t.bigTiff ? 'BigTIFF (GeoTIFF)' : t.images.length > 1 ? 'Cloud-Optimized GeoTIFF' : 'GeoTIFF',
@@ -9676,7 +9779,28 @@ THE SOFTWARE.
     return { value: grid.data[y * grid.width + x], lat: p?.lat ?? null, lon: p?.lon ?? null, x, y };
   }
 
-  return { SEQ, DIV, colourRange, paint, sweep, timelapse, point, valueAt, place, fmtLat, fmtLon, cellPlace };
+  /**
+   * Pack a grid into 16-bit steps between its lowest and highest value (half the memory of
+   * 32-bit floats; 65 535 steps is far finer than any note or colour). 65 535 marks no data.
+   */
+  function pack(grid) {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const v of grid.data) if (Number.isFinite(v)) (lo = Math.min(lo, v)), (hi = Math.max(hi, v));
+    const k = hi > lo ? 65534 / (hi - lo) : 0;
+    const q = new Uint16Array(grid.data.length);
+    grid.data.forEach((v, i) => (q[i] = Number.isFinite(v) ? Math.round((v - lo) * k) : 65535));
+    const { data, ...meta } = grid;
+    return { ...meta, q, lo: Number.isFinite(lo) ? lo : 0, step: k ? 1 / k : 0 };
+  }
+  function unpack(p) {
+    const data = new Float32Array(p.q.length);
+    p.q.forEach((v, i) => (data[i] = v === 65535 ? NaN : p.lo + v * p.step));
+    const { q, lo, step, ...meta } = p;
+    return { ...meta, data };
+  }
+
+  return { pack, unpack, SEQ, DIV, colourRange, paint, sweep, timelapse, point, valueAt, place, fmtLat, fmtLon, cellPlace };
 });
 
 </script>
@@ -12078,8 +12202,10 @@ THE SOFTWARE.
   /** Scientific files, "one spot over time" and "time-lapse": the spot, and a time bar under the map. */
   function drawTimeline(g, R, src, plan, pos, t) {
     const sci = src.science.res.meta.science;
-    const uv = src.science.mode === 'point' && sci.spotUV;
-    if (uv) {
+    const full = src.science.mode === 'point' && sci.spotUV;
+    const [u0, v0, u1, v1] = sci.view || [0, 0, 1, 1];
+    const uv = full && { u: (full.u - u0) / (u1 - u0), v: (full.v - v0) / (v1 - v0) }; // the spot in the zoomed view
+    if (uv && uv.u >= 0 && uv.u <= 1 && uv.v >= 0 && uv.v <= 1) {
       const px = R.x + uv.u * R.w;
       const py = R.y + uv.v * R.h;
       g.strokeStyle = '#fff';
@@ -14030,13 +14156,16 @@ ${m.mouth}
     canvas.addEventListener('pointermove', onCanvasMove);
     // a click (or tap) on the picture moves the playhead there and plays that step;
     // in Follow pointer it puts the pointer there (touch screens have no hover)
-    canvas.addEventListener('pointerdown', (e) => {
+    function press(e) {
       const sci = app.src?.science;
       if (app.src?.kind === 'image' && state.image.scan === 'pointer' && (!sci || sci.mode === 'sweep')) return onCanvasMove(e);
       const hit = stepFromEvent(e);
       if (hit && sci?.mode === 'point') return app.sci.pickSpot(hit.u, Math.max(0, Math.min(1, hit.v)));
       if (hit) seek(hit.i, { audition: true });
-    });
+    }
+    // a zoomed scientific map can be dragged, so it acts on click (not on press) and never after a drag
+    canvas.addEventListener('pointerdown', (e) => !(app.src?.science && app.sci.zoomed()) && press(e));
+    canvas.addEventListener('click', (e) => app.src?.science && app.sci.zoomed() && !app.sci.wasDragged() && press(e));
     canvas.addEventListener('pointerleave', () => {
       $('hoverTip').hidden = true;
       if (state.pointer) {
@@ -14478,14 +14607,17 @@ ${m.mouth}
       });
     }
 
-    /** A GeoTIFF already in memory (the Earth Information Center's real values): an image resource. */
-    async function fromBytes(u8, { name, origin, label, units }) {
+    /**
+     * A GeoTIFF already in memory (the Earth Information Center's real values): an image resource.
+     * fetchBox(bbox) → Uint8Array fetches a part of the map again in detail when you zoom in.
+     */
+    async function fromBytes(u8, { name, origin, label, units, nodata = null, fetchBox = null }) {
       const f = await science.open(B.bytes.bufferReader(u8));
       f.variables.forEach((v) => {
         if (label) v.label = label;
         if (units) v.units = science.prettyUnits(units);
       });
-      const sci = { file: f, fileName: '', size: u8.length, mode: 'sweep', varId: f.variables[0].id, t: 0, layer: 0, spot: null, info: null };
+      const sci = { file: f, fileName: '', size: u8.length, mode: 'sweep', varId: f.variables[0].id, t: 0, layer: 0, spot: null, info: null, nodata, fetchBox, boxes: new Map() };
       const res = { canvas: null, meta: { name, origin, science: sci, noBackground: true } };
       await loadVariable(res, sci.varId, undefined, () => {});
       return res;
@@ -14497,7 +14629,7 @@ ${m.mouth}
       const had = builtIns[id];
       if (had) {
         // opened again (menu, story): start from the whole map at 12:00 UTC, as the story describes
-        Object.assign(had.meta.science, { mode: 'sweep', t: 12, spot: null, spotUV: null, series: null });
+        Object.assign(had.meta.science, { mode: 'sweep', t: 12, spot: null, spotUV: null, series: null, view: null, lapse: null });
         await loadVariable(had, 'sunlight', undefined, () => {});
         return had;
       }
@@ -14539,15 +14671,60 @@ ${m.mouth}
       if (sci.mode === 'point') await loadPoint(res, signal, progress);
     }
 
+    const FULL = [0, 0, 1, 1];
+    /** The part of the map in degrees [west, south, east, north] for a view (0…1 of the whole map). */
+    const boxOf = (bb, [u0, v0, u1, v1]) => [bb[0] + u0 * (bb[2] - bb[0]), bb[3] - v1 * (bb[3] - bb[1]), bb[0] + u1 * (bb[2] - bb[0]), bb[3] - v0 * (bb[3] - bb[1])].map((x) => +x.toFixed(4));
+    const noNodata = (grid, nd) => {
+      if (nd != null && nd !== '' && Number.isFinite(+nd)) grid.data.forEach((v, i) => v === +nd && (grid.data[i] = NaN));
+      return grid;
+    };
+
+    /** One map of the current view: read from the file (or, for remote maps, fetched for that area only). */
+    async function readView(sci, t, size, signal, progress) {
+      const view = sci.view || FULL;
+      if (sci.fetchBox && sci.info.bbox && view.join() !== FULL.join()) {
+        const bbox = boxOf(sci.info.bbox, view);
+        const key = bbox.join();
+        if (!sci.boxes.has(key)) {
+          if (sci.boxes.size > 12) sci.boxes.delete(sci.boxes.keys().next().value);
+          sci.boxes.set(key, sci.fetchBox(bbox, signal).then((u8) => science.open(B.bytes.bufferReader(u8))));
+        }
+        let part;
+        try {
+          part = await sci.boxes.get(key);
+        } catch (e) {
+          sci.boxes.delete(key);
+          throw e;
+        }
+        const g = await part.map(part.variables[0].id, { ...size, signal, progress });
+        return noNodata({ ...g, window: view }, sci.nodata);
+      }
+      return noNodata(await sci.file.map(sci.varId, { t, layer: sci.layer, ...size, window: view, signal, progress }), sci.nodata);
+    }
+
     async function loadMap(res, signal, progress) {
       const sci = res.meta.science;
-      const grid = await sci.file.map(sci.varId, { t: sci.t, layer: sci.layer, width: MAP_W, height: MAP_H, signal, progress });
+      const grid = await readView(sci, sci.t, { width: MAP_W, height: MAP_H }, signal, progress);
       sci.grid = grid;
       sci.range = sciSource.colourRange(grid.data);
       const { canvas, paint } = canvasOf(grid, sci.range);
       res.canvas = canvas;
       sci.paint = paint;
-      if (!Array.from(grid.data).some(Number.isFinite)) toast('This map has no values at this date or level (all missing).', 5000);
+      if (!Array.from(grid.data).some(Number.isFinite)) toast(sci.view && sci.view.join() !== FULL.join() ? 'No values in this part of the map. Zoom out (−) to see more.' : 'This map has no values at this date or level (all missing).', 5000);
+    }
+
+    /** A time-lapse frame kept packed in 16 bits (half the memory); .grid unpacks it when needed. */
+    let lastUnpacked = null;
+    function packed(grid, t, label) {
+      const p = sciSource.pack(grid);
+      return {
+        t,
+        label,
+        get grid() {
+          if (lastUnpacked?.p !== p) lastUnpacked = { p, g: sciSource.unpack(p) };
+          return lastUnpacked.g;
+        },
+      };
     }
 
     async function loadLapse(res, signal, progress) {
@@ -14557,14 +14734,13 @@ ${m.mouth}
       const frames = [];
       for (let k = 0; k < pick.count; k++) {
         const t = pick.start + k * pick.stride;
-        const grid = await sci.file.map(sci.varId, { t, layer: sci.layer, width: 240, height: 120, signal });
-        frames.push({ grid, t, label: labelAt(sci, t) });
+        const grid = await readView(sci, t, { width: 240, height: 120 }, signal);
+        frames.push(packed(grid, t, labelAt(sci, t)));
         progress(k + 1, pick.count);
       }
       // one colour range for every frame, so colours can be compared through time
-      const all = new Float32Array(frames.reduce((a, f) => a + f.grid.data.length, 0));
-      let o = 0;
-      frames.forEach((f) => (all.set(f.grid.data, o), (o += f.grid.data.length)));
+      const all = [];
+      frames.forEach((f) => all.push(...f.grid.data.filter((_, i) => i % 3 === 0))); // a sample is enough for the range
       sci.lapse = { frames, range: sciSource.colourRange(all), simplified: pick.stride > 1, total: n, shown: -1 };
     }
 
@@ -14681,6 +14857,10 @@ ${m.mouth}
       $('sciLayer').value = sci.layer;
       $('sciLayerOut').textContent = `${sci.layer + 1} of ${levels}`;
       $('sciSpot').hidden = sci.mode !== 'point';
+      $('sciZoomInfo').textContent = describeView(sci);
+      $('sciZoomAll').disabled = !sci.view;
+      $('sciZoomOut').disabled = !sci.view;
+      $('sciZoomIn').disabled = !!sci.view && Math.max(sci.view[2] - sci.view[0], sci.view[3] - sci.view[1]) <= minSpan(sci) + 1e-6;
       if (sci.series && Number.isFinite(sci.series.lat)) {
         $('sciLat').value = sci.series.lat.toFixed(2);
         $('sciLon').value = sci.series.lon.toFixed(2);
@@ -14693,7 +14873,7 @@ ${m.mouth}
       const notes = [`Area: ${area}.`];
       if (v.dates) notes.push(`Dates: ${v.dates[0]} to ${v.dates[1]} (${steps} steps).`);
       const g = sci.grid;
-      if (g?.simplified && sci.mode === 'sweep') notes.push(`Simplified to ${g.width} × ${g.height} points from ${g.from[0]} × ${g.from[1]} so it stays quick (each point is a real value from the file, not an average).`);
+      if (g?.simplified && sci.mode === 'sweep') notes.push(`Shown with ${g.width} × ${g.height} points of the file's ${g.from[0]} × ${g.from[1]}, so it stays quick (each point is a real value, not an average). Zoom in (+, the mouse wheel or the buttons) to read a part in full detail.`);
       if (sci.mode === 'timelapse' && sci.lapse?.simplified) notes.push(`Time-lapse uses ${sci.lapse.frames.length} of ${sci.lapse.total} dates, evenly spread.`);
       if (sci.mode === 'point' && sci.series?.simplified) notes.push(`Plays ${sci.series.values.length} of ${sci.series.total} dates, evenly spread.`);
       if (sci.mode === 'point') notes.push('Click the map (or type a latitude and longitude) to choose the spot.');
@@ -14757,8 +14937,9 @@ ${m.mouth}
       const sci = current?.meta.science;
       if (!sci) return;
       const r = sciSource.valueAt(sci.grid, u, v);
-      sci.spot = Number.isFinite(r.lat) ? { lat: r.lat, lon: r.lon } : { fx: u, fy: v };
-      sci.spotUV = { u, v };
+      const [fu, fv] = toFull(sci, u, v);
+      sci.spot = Number.isFinite(r.lat) ? { lat: r.lat, lon: r.lon } : { fx: fu, fy: fv };
+      sci.spotUV = { u: fu, v: fv };
       change((res, s, p) => loadPoint(res, s, p)).then(() => announce(`Now playing ${app.src?.channels?.[0]?.name || 'this spot'} over time.`));
     }
     $('sciGo').onclick = () => {
@@ -14772,7 +14953,137 @@ ${m.mouth}
       change((res, s, p) => loadPoint(res, s, p));
     };
 
-    return { detect, open, builtIn, fromBytes, source, sync, readout, pickSpot, gridAt, cancel: () => job?.abort() };
+    // ---------------------------------------------------------------- zoom
+    // sci.view = [u0, v0, u1, v1]: the part of the whole map that is shown (0…1 from the top-left).
+    // Zooming reads that part again from the file (or fetches it again), so you see real detail.
+    const viewOf = (sci) => sci.view || FULL;
+    const toFull = (sci, u, v) => {
+      const [u0, v0, u1, v1] = viewOf(sci);
+      return [u0 + u * (u1 - u0), v0 + v * (v1 - v0)];
+    };
+    /** The smallest part you can zoom to: a few cells of the file (remote maps: 1/64 of the map). */
+    function minSpan(sci) {
+      if (sci.fetchBox) return 1 / 64;
+      const v = sci.info;
+      const H = v.shape[v.axes?.y ?? v.shape.length - 2] || 2;
+      const W = v.shape[v.axes?.x ?? v.shape.length - 1] || 2;
+      return Math.min(0.5, Math.max(6 / W, 6 / H));
+    }
+    function zoomed() {
+      const sci = current?.meta.science;
+      return !!sci && viewOf(sci).join() !== FULL.join();
+    }
+    /** A new view: `factor` < 1 zooms in, around (cu, cv) of the shown map; dx, dy pan (shown-map fractions). */
+    function nextView(sci, { factor = 1, cu = 0.5, cv = 0.5, dx = 0, dy = 0 }) {
+      const [u0, v0, u1, v1] = viewOf(sci);
+      const fw = u1 - u0;
+      const fh = v1 - v0;
+      const span = Math.min(1, Math.max(minSpan(sci), Math.max(fw, fh) * factor)) / Math.max(fw, fh);
+      const nw = Math.min(1, fw * span);
+      const nh = Math.min(1, fh * span);
+      const [pu, pv] = [u0 + cu * fw - dx * fw, v0 + cv * fh - dy * fh]; // the point that stays put
+      let a = pu - cu * nw;
+      let b = pv - cv * nh;
+      a = Math.max(0, Math.min(1 - nw, a));
+      b = Math.max(0, Math.min(1 - nh, b));
+      const v = [a, b, a + nw, b + nh].map((x) => +x.toFixed(5));
+      return nw > 0.999 && nh > 0.999 ? null : v;
+    }
+    function describeView(sci) {
+      const view = viewOf(sci);
+      const x = 1 / Math.max(view[2] - view[0], view[3] - view[1]);
+      const bb = sci.grid?.bbox;
+      const where = bb ? `${sciSource.fmtLat(bb[3])} to ${sciSource.fmtLat(bb[1])}, ${sciSource.fmtLon(bb[0])} to ${sciSource.fmtLon(bb[2])}` : '';
+      return x < 1.01 ? 'Whole map' : `Zoom ×${x < 10 ? x.toFixed(1).replace(/\.0$/, '') : Math.round(x)}${where ? ' · ' + where : ''}`;
+    }
+    let zoomTimer = 0;
+    /** Change the view; the map is read again a moment later (so a few wheel turns make one read). */
+    function setView(view, { now = false } = {}) {
+      const sci = current?.meta.science;
+      if (!sci) return;
+      if ((view || FULL).join() === viewOf(sci).join()) return;
+      sci.view = view;
+      clearTimeout(zoomTimer);
+      zoomTimer = setTimeout(
+        () =>
+          change(async (res, s, p) => {
+            await loadMap(res, s, p);
+            if (res.meta.science.mode === 'timelapse') await loadLapse(res, s, p);
+          }, sci.fetchBox ? 'Getting this part of the map…' : 'Reading this part of the map…').then(() => announce(describeView(sci) + '.')),
+        now ? 0 : 220,
+      );
+    }
+    const zoomBy = (factor, cu = 0.5, cv = 0.5) => {
+      const sci = current?.meta.science;
+      if (sci) setView(nextView(sci, { factor, cu, cv }), { now: true });
+    };
+    $('sciZoomIn').onclick = () => zoomBy(0.5);
+    $('sciZoomOut').onclick = () => zoomBy(2);
+    $('sciZoomAll').onclick = () => setView(null, { now: true });
+
+    // wheel over the map: zoom around the pointer; drag (when zoomed in): move around
+    const canvas = $('sourceCanvas');
+    const shownAt = (e) => {
+      const R = app.hitInfo?.rect;
+      if (!R) return null;
+      const r = canvas.getBoundingClientRect();
+      const u = (e.clientX - r.left - R.x) / R.w;
+      const v = (e.clientY - r.top - R.y) / R.h;
+      return u >= 0 && u <= 1 && v >= 0 && v <= 1 ? { u, v, R } : null;
+    };
+    canvas.addEventListener(
+      'wheel',
+      (e) => {
+        const sci = app.src?.science && current?.meta.science;
+        const at = sci && shownAt(e);
+        if (!at) return;
+        e.preventDefault();
+        const nv = nextView(sci, { factor: e.deltaY < 0 ? 0.8 : 1.25, cu: at.u, cv: at.v });
+        setView(nv);
+      },
+      { passive: false },
+    );
+    let drag = null;
+    let dragged = false;
+    canvas.addEventListener('pointerdown', (e) => {
+      dragged = false;
+      if (!app.src?.science || !zoomed() || e.button !== 0) return;
+      const at = shownAt(e);
+      if (at) drag = { x: e.clientX, y: e.clientY, R: at.R, id: e.pointerId };
+    });
+    canvas.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x;
+      const dy = e.clientY - drag.y;
+      if (!dragged && Math.hypot(dx, dy) < 6) return;
+      if (!dragged) {
+        dragged = true;
+        canvas.setPointerCapture?.(drag.id);
+        canvas.classList.add('is-panning');
+      }
+    });
+    const endDrag = (e) => {
+      if (!drag) return;
+      const sci = current?.meta.science;
+      if (dragged && sci) setView(nextView(sci, { dx: (e.clientX - drag.x) / drag.R.w, dy: (e.clientY - drag.y) / drag.R.h }), { now: true });
+      drag = null;
+      canvas.classList.remove('is-panning');
+    };
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', () => ((drag = null), canvas.classList.remove('is-panning')));
+    // keys: + and − zoom, 0 shows the whole map (when a scientific map is open)
+    document.addEventListener('keydown', (e) => {
+      if (!app.src?.science || e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]')) return;
+      const tag = e.target.tagName;
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag) || e.target.isContentEditable) return;
+      if (e.key === '+' || e.key === '=') zoomBy(0.5);
+      else if (e.key === '-' || e.key === '_') zoomBy(2);
+      else if (e.key === '0') setView(null, { now: true });
+      else return;
+      e.preventDefault();
+    });
+
+    return { detect, open, builtIn, fromBytes, source, sync, readout, pickSpot, gridAt, zoomed, wasDragged: () => dragged, cancel: () => job?.abort() };
   }
 
   B.scienceView = { init };
@@ -16264,14 +16575,18 @@ ${m.mouth}
         // best: the real numbers of the map (a GeoTIFF from the raster API), shown and played as a scientific map
         if (app.sci && m.values)
           try {
-            const r = await fetch(m.values, { signal: AbortSignal.timeout ? AbortSignal.timeout(40000) : undefined });
-            if (!r.ok) throw new Error(String(r.status));
-            const u8 = new Uint8Array(await r.arrayBuffer());
-            return await app.sci.fromBytes(u8, {
+            const bytesOf = async (url, signal) => {
+              const r = await fetch(url, { signal: signal || (AbortSignal.timeout ? AbortSignal.timeout(40000) : undefined) });
+              if (!r.ok) throw new Error(`The Earth Information Center answered ${r.status}.`);
+              return new Uint8Array(await r.arrayBuffer());
+            };
+            return await app.sci.fromBytes(await bytesOf(m.values), {
               name,
               label: m.title,
               units: m.unit,
-              origin: { source, url: api.site || api.stac, fetched: new Date().toISOString(), live: true, note: `The newest map of ${info.id}, read as real values (not colours) from the raster API. Under the pointer you get the exact value at that place.` },
+              nodata: m.nodata,
+              fetchBox: (bbox, signal) => bytesOf(m.valuesFor(bbox), signal), // zoom: only that part, in detail
+              origin: { source, url: api.site || api.stac, fetched: new Date().toISOString(), live: true, note: `The newest map of ${info.id}, read as real values (not colours) from the raster API. Under the pointer you get the exact value at that place; zoom in for more detail.` },
             });
           } catch {
             /* fall back to the coloured picture */

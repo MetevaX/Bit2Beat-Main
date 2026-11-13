@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.1.0 — 13 November 2026
+- **Zoom on scientific maps** (NetCDF, HDF5, GeoTIFF, the Earth Information Center map and *Sunlight on Earth*): **+ / −** buttons and keys, **0** or *Whole map* to go back, the **mouse wheel** zooms around the pointer and **dragging** moves a zoomed map. Zooming reads only the part on screen again from the file, in full detail (across the date line too, and from the right GeoTIFF overview), so a 5 GB file stays quick. The sweep, the read-out, the spot, the time-lapse and the place names follow the zoomed area.
+- **Smaller downloads and less memory:**
+  - The Earth Information Center map now comes without its extra mask band and about 480 values across (≈ 0.45 MB instead of 2 MB for the whole world); zooming in fetches only that part, in detail, and remembers the last 12 parts.
+  - Files from your device are never loaded whole: only the pieces needed for what is on screen are read (about 12 MB of the file at most is kept in memory).
+  - Time-lapse frames are kept packed in 16 bits (half the memory).
+
 ## 3.0.0 — 13 November 2026
 - **Scientific Earth-data files.** Upload (or drop) **NetCDF** (classic, 64-bit offset, CDF-5), **HDF5 / NetCDF-4** and **GeoTIFF / Cloud-Optimized GeoTIFF** files up to **5 GB**; the type is found from the file's first bytes. Files are read in the browser a few pieces at a time with progress and *Cancel*; nothing leaves the device. Readers written for Bit2Beat (no libraries): TIFF/BigTIFF with Deflate, LZW, PackBits, predictors and overviews; HDF5 superblocks 0–3, old and new object headers, compact/contiguous/chunked layouts, B-tree, fixed-array, extensible-array and single-chunk indexes, Deflate, shuffle and Fletcher-32. Clear messages for damaged, too-large or unsupported files (HDF4, GRIB, JPEG/LERC/Zstandard packing) with the command that fixes them.
 - **What's inside:** layers with units, size, dates and area. Listen to the **whole map** (west → east, north → south, radar or follow pointer, from the real values), **one spot over time** (click the map or type latitude and longitude) or a **time-lapse**. Missing values are silent; a read-out gives value, place and date under the pointer; a notice says when a map was simplified to stay quick. Readings, Excel and every export work with these sources.

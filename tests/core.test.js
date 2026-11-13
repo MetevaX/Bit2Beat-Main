@@ -973,3 +973,25 @@ test('voice control: the grammar, and Gemini may only answer with known commands
   assert.ok(req.generationConfig.responseJsonSchema.properties.id.enum.includes('none'));
   assert.match(V.helpText(), /stop voice control/);
 });
+
+test('scientific maps: zoom reads only that part, across the date line, in full detail', async () => {
+  for (const [name, id] of [['tiny.nc', 'tas'], ['tiny.h5', '/sst'], ['tiny-cog.tif', 'band1']]) {
+    const f = await science.open(fixture(name));
+    const full = await f.map(id, { t: 1, width: 1e4, height: 1e4 });
+    const win = [0.4, 0.25, 0.6, 0.75]; // the middle of the map, across 0° (the 0…360 files wrap there)
+    const z = await f.map(id, { t: 1, width: 1e4, height: 1e4, window: win });
+    const c0 = full.lon.findIndex((l) => Math.abs(l - z.lon[0]) < 1e-6);
+    const r0 = full.lat.findIndex((l) => Math.abs(l - z.lat[0]) < 1e-6);
+    assert.ok(c0 >= 0 && r0 >= 0 && Math.abs(z.width - (win[2] - win[0]) * full.width) < 2, `${name}: the zoomed part (${z.width} columns, edge cells included)`);
+    for (let j = 0; j < z.height; j++)
+      for (let i = 0; i < z.width; i++) {
+        const a = z.data[j * z.width + i];
+        const b = full.data[(r0 + j) * full.width + c0 + i];
+        assert.ok((Number.isNaN(a) && Number.isNaN(b)) || a === b, `${name}: the zoomed value at ${i},${j}`);
+      }
+    assert.ok(z.bbox[0] < 0 && z.bbox[2] > 0, `${name}: the zoomed area spans 0°`);
+  }
+  const g = { data: Float32Array.from([1, 2.5, NaN, 10]), width: 2, height: 2 };
+  const back = sciSource.unpack(sciSource.pack(g));
+  assert.ok(Math.abs(back.data[1] - 2.5) < 1e-3 && Number.isNaN(back.data[2]), 'time-lapse frames packed in 16 bits keep their values');
+});

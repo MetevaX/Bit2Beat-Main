@@ -691,3 +691,37 @@ body.pointer-mode main {
     clip: rect(0 0 0 0);
   }
 }
+
+/* ---------------------------------------------------------------- zoom on scientific maps */
+.sci-zoom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.sci-zoom .btn {
+  min-width: 2.4em;
+  font-weight: 700;
+}
+.sci-zoom .btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.sci-zoom-info {
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.sci-zoom-tip {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+@media (hover: none) {
+  .sci-zoom-tip {
+    display: none;
+  }
+}
+#sourceCanvas.is-panning {
+  cursor: grabbing;
+}

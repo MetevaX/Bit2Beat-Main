@@ -243,12 +243,17 @@
     return `${trim(raster)}/cog/bbox/${w},${s},${e},${n}/${Math.round(reg.width * size)}x${Math.round(reg.height * size)}.png?${q}`;
   }
 
-  /** The same map as real numbers: a GeoTIFF of the values (float, with a no-data mask), not colours. */
-  function valuesUrl(raster, layer, reg, size = 0.75) {
+  /**
+   * The same map as real numbers: a GeoTIFF of the values (32-bit float), not colours. Kept small:
+   * no mask band (no data comes back as the data set's own no-data value), and about 480 values
+   * across for the whole area; zooming in fetches only the part on screen, in more detail.
+   */
+  function valuesUrl(raster, layer, bbox, width = 480) {
     const nodata = layer.bands?.nodata;
-    const q = [`url=${encodeURIComponent(layer.href)}`, nodata != null && nodata !== 'nan' ? `nodata=${encodeURIComponent(nodata)}` : ''].filter(Boolean).join('&');
-    const [w, s, e, n] = reg.bbox.map((v) => +v.toFixed(3));
-    return `${trim(raster)}/cog/bbox/${w},${s},${e},${n}/${Math.round(reg.width * size)}x${Math.round(reg.height * size)}.tif?${q}`;
+    const q = [`url=${encodeURIComponent(layer.href)}`, 'return_mask=false', nodata != null && nodata !== 'nan' ? `nodata=${encodeURIComponent(nodata)}` : ''].filter(Boolean).join('&');
+    const [w, s, e, n] = bbox.map((v) => +(+v).toFixed(3));
+    const height = Math.max(8, Math.round((width * (n - s)) / Math.max(1e-6, e - w)));
+    return `${trim(raster)}/cog/bbox/${w},${s},${e},${n}/${width}x${Math.min(height, 960)}.tif?${q}`;
   }
 
   /**
@@ -329,7 +334,7 @@
     } catch {
       key = null;
     }
-    return { url: mapUrl(raster, layer, info, reg, 1, range), values: valuesUrl(raster, layer, reg), date: label(t.date, info.density), layer: name, title, unit, key, range, region: reg };
+    return { url: mapUrl(raster, layer, info, reg, 1, range), values: valuesUrl(raster, layer, reg.bbox), valuesFor: (bbox) => valuesUrl(raster, layer, bbox), nodata: layer.bands?.nodata ?? null, date: label(t.date, info.density), layer: name, title, unit, key, range, region: reg };
   }
 
   /**

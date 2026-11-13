@@ -195,5 +195,26 @@
     return { value: grid.data[y * grid.width + x], lat: p?.lat ?? null, lon: p?.lon ?? null, x, y };
   }
 
-  return { SEQ, DIV, colourRange, paint, sweep, timelapse, point, valueAt, place, fmtLat, fmtLon, cellPlace };
+  /**
+   * Pack a grid into 16-bit steps between its lowest and highest value (half the memory of
+   * 32-bit floats; 65 535 steps is far finer than any note or colour). 65 535 marks no data.
+   */
+  function pack(grid) {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const v of grid.data) if (Number.isFinite(v)) (lo = Math.min(lo, v)), (hi = Math.max(hi, v));
+    const k = hi > lo ? 65534 / (hi - lo) : 0;
+    const q = new Uint16Array(grid.data.length);
+    grid.data.forEach((v, i) => (q[i] = Number.isFinite(v) ? Math.round((v - lo) * k) : 65535));
+    const { data, ...meta } = grid;
+    return { ...meta, q, lo: Number.isFinite(lo) ? lo : 0, step: k ? 1 / k : 0 };
+  }
+  function unpack(p) {
+    const data = new Float32Array(p.q.length);
+    p.q.forEach((v, i) => (data[i] = v === 65535 ? NaN : p.lo + v * p.step));
+    const { q, lo, step, ...meta } = p;
+    return { ...meta, data };
+  }
+
+  return { pack, unpack, SEQ, DIV, colourRange, paint, sweep, timelapse, point, valueAt, place, fmtLat, fmtLon, cellPlace };
 });

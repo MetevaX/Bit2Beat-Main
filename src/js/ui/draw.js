@@ -251,8 +251,10 @@
   /** Scientific files, "one spot over time" and "time-lapse": the spot, and a time bar under the map. */
   function drawTimeline(g, R, src, plan, pos, t) {
     const sci = src.science.res.meta.science;
-    const uv = src.science.mode === 'point' && sci.spotUV;
-    if (uv) {
+    const full = src.science.mode === 'point' && sci.spotUV;
+    const [u0, v0, u1, v1] = sci.view || [0, 0, 1, 1];
+    const uv = full && { u: (full.u - u0) / (u1 - u0), v: (full.v - v0) / (v1 - v0) }; // the spot in the zoomed view
+    if (uv && uv.u >= 0 && uv.u <= 1 && uv.v >= 0 && uv.v <= 1) {
       const px = R.x + uv.u * R.w;
       const py = R.y + uv.v * R.h;
       g.strokeStyle = '#fff';

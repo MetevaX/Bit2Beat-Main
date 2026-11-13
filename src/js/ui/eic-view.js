@@ -126,14 +126,18 @@
         // best: the real numbers of the map (a GeoTIFF from the raster API), shown and played as a scientific map
         if (app.sci && m.values)
           try {
-            const r = await fetch(m.values, { signal: AbortSignal.timeout ? AbortSignal.timeout(40000) : undefined });
-            if (!r.ok) throw new Error(String(r.status));
-            const u8 = new Uint8Array(await r.arrayBuffer());
-            return await app.sci.fromBytes(u8, {
+            const bytesOf = async (url, signal) => {
+              const r = await fetch(url, { signal: signal || (AbortSignal.timeout ? AbortSignal.timeout(40000) : undefined) });
+              if (!r.ok) throw new Error(`The Earth Information Center answered ${r.status}.`);
+              return new Uint8Array(await r.arrayBuffer());
+            };
+            return await app.sci.fromBytes(await bytesOf(m.values), {
               name,
               label: m.title,
               units: m.unit,
-              origin: { source, url: api.site || api.stac, fetched: new Date().toISOString(), live: true, note: `The newest map of ${info.id}, read as real values (not colours) from the raster API. Under the pointer you get the exact value at that place.` },
+              nodata: m.nodata,
+              fetchBox: (bbox, signal) => bytesOf(m.valuesFor(bbox), signal), // zoom: only that part, in detail
+              origin: { source, url: api.site || api.stac, fetched: new Date().toISOString(), live: true, note: `The newest map of ${info.id}, read as real values (not colours) from the raster API. Under the pointer you get the exact value at that place; zoom in for more detail.` },
             });
           } catch {
             /* fall back to the coloured picture */

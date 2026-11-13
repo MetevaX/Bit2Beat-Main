@@ -226,20 +226,24 @@
    * A grid of at most width × height values (nearest pixel), as Float32Array with NaN for no data.
    * opts: { width, height, band, signal, progress(done, total) }
    */
-  async function readGrid(reader, t, { width = 720, height = 360, band = 0, signal, progress } = {}) {
-    const img = pick(t, width);
-    const w = Math.min(width, img.width);
-    const h = Math.min(height, img.height);
+  async function readGrid(reader, t, { width = 720, height = 360, band = 0, window = [0, 0, 1, 1], signal, progress } = {}) {
+    // window = [u0, v0, u1, v1]: the part of the picture to read (zoom), 0…1 from the top-left
+    const [u0, v0, u1, v1] = window.map((f) => Math.max(0, Math.min(1, f)));
+    const fu = Math.max(1e-6, u1 - u0);
+    const fv = Math.max(1e-6, v1 - v0);
+    const img = pick(t, Math.ceil(width / fu)); // the overview with enough detail for this part
+    const w = Math.max(1, Math.min(width, Math.round(img.width * fu)));
+    const h = Math.max(1, Math.min(height, Math.round(img.height * fv)));
     const sppIn = img.planar === 2 ? 1 : img.spp;
     const bps = img.bits / 8;
     const b = img.planar === 2 ? 0 : band;
     const get = getter(img);
-    const xs = Array.from({ length: w }, (_, i) => Math.floor(((i + 0.5) * img.width) / w));
+    const xs = Array.from({ length: w }, (_, i) => Math.min(img.width - 1, Math.floor((u0 + ((i + 0.5) / w) * fu) * img.width)));
     const out = new Float32Array(w * h).fill(NaN);
     // rows grouped by the strip / tile row that holds them
     const groups = new Map();
     for (let j = 0; j < h; j++) {
-      const sy = Math.floor(((j + 0.5) * img.height) / h);
+      const sy = Math.min(img.height - 1, Math.floor((v0 + ((j + 0.5) / h) * fv) * img.height));
       const by = Math.floor(sy / img.th);
       if (!groups.has(by)) groups.set(by, []);
       groups.get(by).push([j, sy - by * img.th]);
@@ -266,7 +270,7 @@
         }
       }
     }
-    return { data: out, width: w, height: h, from: [img.width, img.height], overview: img !== t.main };
+    return { data: out, width: w, height: h, from: [t.main.width, t.main.height], overview: img !== t.main, simplified: w < Math.round(t.main.width * fu) - 1 || h < Math.round(t.main.height * fv) - 1 };
   }
 
   return { open, readGrid, pick, pixel };

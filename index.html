@@ -190,6 +190,13 @@
                 <button type="button" class="btn btn-small" id="sciGo">Hear this spot</button>
               </fieldset>
             </div>
+            <div class="sci-zoom" role="group" aria-label="Zoom the map">
+              <button type="button" class="btn btn-quiet btn-small" id="sciZoomIn" aria-label="Zoom in (+)" title="Zoom in (+ or the mouse wheel)">+</button>
+              <button type="button" class="btn btn-quiet btn-small" id="sciZoomOut" aria-label="Zoom out (−)" title="Zoom out (−)">−</button>
+              <button type="button" class="btn btn-quiet btn-small" id="sciZoomAll" title="Show the whole map (0)">Whole map</button>
+              <span class="sci-zoom-info" id="sciZoomInfo">Whole map</span>
+              <span class="sci-zoom-tip">Wheel to zoom, drag to move</span>
+            </div>
             <div class="sci-key" aria-hidden="true"><span id="sciLo"></span><i id="sciRamp"></i><span id="sciHi"></span></div>
             <p class="sci-read" id="sciReadout"></p>
             <p class="card-note" id="sciNote"></p>
@@ -550,6 +557,7 @@
     <dt><kbd>G</kbd></dt><dd>Bitty’s guide</dd>
     <dt><kbd>Esc</kbd></dt><dd>Stop reading aloud, close the guide</dd>
     <dt><kbd>T</kbd></dt><dd>Readings table</dd>
+    <dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Scientific maps: zoom in, zoom out, whole map (also the mouse wheel; drag to move)</dd>
     <dt><kbd>V</kbd></dt><dd>Voice control on / off: say “play”, “pause”, “next”, “where am I”, “search for sea ice”, “go to video”, “violin”, “7.1”, “help” or “stop voice control”</dd>
     <dt><kbd>?</kbd></dt><dd>This help</dd>
   </dl>

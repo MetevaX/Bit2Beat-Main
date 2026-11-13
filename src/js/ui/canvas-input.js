@@ -118,13 +118,16 @@
     canvas.addEventListener('pointermove', onCanvasMove);
     // a click (or tap) on the picture moves the playhead there and plays that step;
     // in Follow pointer it puts the pointer there (touch screens have no hover)
-    canvas.addEventListener('pointerdown', (e) => {
+    function press(e) {
       const sci = app.src?.science;
       if (app.src?.kind === 'image' && state.image.scan === 'pointer' && (!sci || sci.mode === 'sweep')) return onCanvasMove(e);
       const hit = stepFromEvent(e);
       if (hit && sci?.mode === 'point') return app.sci.pickSpot(hit.u, Math.max(0, Math.min(1, hit.v)));
       if (hit) seek(hit.i, { audition: true });
-    });
+    }
+    // a zoomed scientific map can be dragged, so it acts on click (not on press) and never after a drag
+    canvas.addEventListener('pointerdown', (e) => !(app.src?.science && app.sci.zoomed()) && press(e));
+    canvas.addEventListener('click', (e) => app.src?.science && app.sci.zoomed() && !app.sci.wasDragged() && press(e));
     canvas.addEventListener('pointerleave', () => {
       $('hoverTip').hidden = true;
       if (state.pointer) {
