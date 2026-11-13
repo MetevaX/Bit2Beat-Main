@@ -121,6 +121,23 @@
       if (!info) return null;
       const res = await busy('Drawing the latest map…', async () => {
         const m = await E.latestMap({ info, place: placeOf(pick.place) }, opts());
+        const name = `${info.title} · ${m.region.name} · ${m.date}`;
+        const source = `${api.name || 'STAC catalogue'} · ${info.provider || 'NASA'} · map of ${m.date}`;
+        // best: the real numbers of the map (a GeoTIFF from the raster API), shown and played as a scientific map
+        if (app.sci && m.values)
+          try {
+            const r = await fetch(m.values, { signal: AbortSignal.timeout ? AbortSignal.timeout(40000) : undefined });
+            if (!r.ok) throw new Error(String(r.status));
+            const u8 = new Uint8Array(await r.arrayBuffer());
+            return await app.sci.fromBytes(u8, {
+              name,
+              label: m.title,
+              units: m.unit,
+              origin: { source, url: api.site || api.stac, fetched: new Date().toISOString(), live: true, note: `The newest map of ${info.id}, read as real values (not colours) from the raster API. Under the pointer you get the exact value at that place.` },
+            });
+          } catch {
+            /* fall back to the coloured picture */
+          }
         const canvas = await B.illustrations.loadToCanvas(m.url, 1200, 30000);
         return {
           canvas,

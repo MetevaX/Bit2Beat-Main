@@ -1,20 +1,21 @@
 /**
  * Bit2Beat core · Bitty's Earth story.
  *
- * Eight short chapters that each play one real data set from the studio, told by Bitty, the
+ * Nine short chapters that each play one real data set from the studio, told by Bitty, the
  * space pup. Every chapter has a "scene" (which tab and source to load, and the few settings that
  * make it easier to hear), a narration, a hint of what to listen for, and facts that are worked
  * out from the very numbers you hear, so they stay true when a live feed replaces the snapshot.
  * Pure data and functions, no DOM: tested in Node.
  */
 (function (root, factory) {
-  const deps = typeof module === 'object' && module.exports ? { stats: require('./stats.js') } : root.Bit2Beat;
+  const deps = typeof module === 'object' && module.exports ? { stats: require('./stats.js'), sunlight: require('./sunlight.js') } : root.Bit2Beat;
   const mod = factory(deps);
   if (typeof module === 'object' && module.exports) module.exports = mod;
   else (root.Bit2Beat = root.Bit2Beat || {}).story = mod;
 })(typeof self !== 'undefined' ? self : this, function (deps) {
   'use strict';
   const { stats } = deps;
+  const sunOf = () => deps.sunlight || (typeof self !== 'undefined' && self.Bit2Beat?.sunlight);
 
   // ------------------------------------------------------------------ helpers
   const finite = (v) => typeof v === 'number' && Number.isFinite(v);
@@ -159,6 +160,28 @@
       out.push('Values are from a NASA model shown through its colour bar, not new measurements.');
       return out;
     },
+
+    sunlight(src) {
+      const out = [];
+      const hi = channel(src, /^Highest/);
+      const avg = channel(src, /^Average/);
+      if (hi) {
+        const k = argBest(hi.values, 1);
+        if (k >= 0) out.push(`The brightest sunlight in the sweep is about ${Math.round(hi.values[k]).toLocaleString('en')} W/m², at ${src.labels[k]}: there the Sun is almost straight overhead. It is a little less than 1361 W/m² because in June Earth is near its farthest from the Sun.`);
+      }
+      if (avg) {
+        const top = Math.max(...avg.values.filter(finite));
+        const dim = avg.values.filter((v) => finite(v) && v < top * 0.1).length;
+        if (dim) out.push(`${plural(dim, 'step')} of ${avg.values.length} play the lowest notes: that part of the map is in night. At any moment, half of Earth is dark.`);
+      }
+      const L = sunOf();
+      if (L) {
+        const day = Date.UTC(2026, 5, 21);
+        out.push(`Over the whole of 21 June the North Pole gets about ${Math.round(L.daily(90, day))} W/m², more than the equator (about ${Math.round(L.daily(0, day))} W/m²), because there the Sun does not set.`);
+      }
+      out.push('Averaged over the whole globe, the top of the atmosphere gets about 1361 ÷ 4 ≈ 340 W/m²: a ball has four times the area of the shadow it casts.');
+      return out;
+    },
   };
 
   // ------------------------------------------------------------------ the chapters
@@ -247,6 +270,16 @@
       listen: 'The tone rises and the second voice grows louder as thick plumes over East Asia and fire regions swing into view.',
       facts: 'breath',
     },
+    {
+      id: 'planet',
+      kicker: 'Chapter 8 · The whole planet',
+      title: 'A map that sings',
+      mood: 'excited',
+      scene: { mode: 'image', src: 'sci:sunlight', image: { scan: 'line', steps: 48 } },
+      text: 'Satellites do not only make lines of numbers. They make maps of the whole planet, with a value for every place, and scientists keep them in files called NetCDF, HDF5 and GeoTIFF. Here is the simplest map of all: the sunlight arriving at the top of the atmosphere at 12:00 UTC on 21 June, the June solstice, worked out from where the Sun is. I sweep it from west to east. With surround sound, the west plays on your left and the east on your right.',
+      listen: 'The melody starts low in the night over the Pacific, climbs through the morning over the Americas, peaks over Africa and Europe where the Sun is high, then sinks into night again over Asia.',
+      facts: 'sunlight',
+    },
   ];
 
   const FINALE = {
@@ -254,7 +287,7 @@
     kicker: 'Epilogue',
     title: 'Your turn',
     mood: 'joy',
-    text: 'You heard a warming century, a fevered Arctic, a restless crust, a planet that burns, floods and freezes, its forests and its breath. Now it is your turn: open the studio and listen to anything with numbers, from a school weather station to a river gauge, or a picture of your own.',
+    text: 'You heard a warming century, a fevered Arctic, a restless crust, a planet that burns, floods and freezes, its forests, its breath and a whole planet in one map. Now it is your turn: open the studio and listen to anything with numbers, from a school weather station to a river gauge, a picture of your own or a scientific map file (Upload opens NetCDF, HDF5 and GeoTIFF).',
   };
 
   const byId = Object.fromEntries(CHAPTERS.map((c) => [c.id, c]));

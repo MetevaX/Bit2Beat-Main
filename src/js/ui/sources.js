@@ -32,7 +32,7 @@
   const IMAGE_MENU = [
     ['NASA EIC · works offline', [['nasa:gedi', 'GEDI forest height'], ['nasa:co2', 'Global carbon dioxide']]],
     ['Live NASA satellite view', [['sat:world', 'Whole Earth today (VIIRS NOAA-20)'], ['sat:lights', 'Earth at night, city lights (VIIRS Black Marble)'], ['sat:amazon', 'Amazon rainforest (MODIS)'], ['sat:himalaya', 'Himalaya and Tibetan Plateau (MODIS)'], ['sat:greenland', 'Greenland ice sheet (MODIS)'], ['sat:sahara', 'Western Sahara desert (MODIS)']]],
-    ['Works offline', [['map:world', 'World relief map'], ['gen:storm', 'Storm spiral (generated illustration)'], ['gen:aurora', 'Aurora (generated illustration)']]],
+    ['Works offline', [['sci:sunlight', 'Sunlight on Earth, 21 June (worked out from astronomy)'], ['map:world', 'World relief map'], ['gen:storm', 'Storm spiral (generated illustration)'], ['gen:aurora', 'Aurora (generated illustration)']]],
   ];
 
   // ------------------------------------------------------------------ earth
@@ -283,7 +283,7 @@
         items.forEach((it) => add(og, it));
         sel.append(og);
       });
-      if (uploads.image) add(sel, ['upload', 'Your picture: ' + uploads.image.meta.name]);
+      if (uploads.image) add(sel, ['upload', (uploads.image.meta.science ? 'Your map: ' : 'Your picture: ') + uploads.image.meta.name]);
       if (state.choice.image === 'eic') add(sel, ['eic', B.eicView?.image?.meta.name || 'NASA Earth Information Center map']);
     }
     sel.value = state.choice[state.mode];

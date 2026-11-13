@@ -243,6 +243,14 @@
     return `${trim(raster)}/cog/bbox/${w},${s},${e},${n}/${Math.round(reg.width * size)}x${Math.round(reg.height * size)}.png?${q}`;
   }
 
+  /** The same map as real numbers: a GeoTIFF of the values (float, with a no-data mask), not colours. */
+  function valuesUrl(raster, layer, reg, size = 0.75) {
+    const nodata = layer.bands?.nodata;
+    const q = [`url=${encodeURIComponent(layer.href)}`, nodata != null && nodata !== 'nan' ? `nodata=${encodeURIComponent(nodata)}` : ''].filter(Boolean).join('&');
+    const [w, s, e, n] = reg.bbox.map((v) => +v.toFixed(3));
+    return `${trim(raster)}/cog/bbox/${w},${s},${e},${n}/${Math.round(reg.width * size)}x${Math.round(reg.height * size)}.tif?${q}`;
+  }
+
   /**
    * A colour key (see core/image.js) made from the colour map the API draws with:
    * colormap = { 0: [r, g, b, a], …, 255: [r, g, b, a] } spread over the data set's range.
@@ -321,7 +329,7 @@
     } catch {
       key = null;
     }
-    return { url: mapUrl(raster, layer, info, reg, 1, range), date: label(t.date, info.density), layer: name, title, unit, key, range, region: reg };
+    return { url: mapUrl(raster, layer, info, reg, 1, range), values: valuesUrl(raster, layer, reg), date: label(t.date, info.density), layer: name, title, unit, key, range, region: reg };
   }
 
   /**

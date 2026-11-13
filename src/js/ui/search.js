@@ -160,9 +160,13 @@
         if (ans.place) setPlace(ans.place);
         if (ans.picks.length) {
           const who = res.model && res.model !== X.MODEL ? `Gemini (${res.model.replace('gemini-', '').replace('-flash', ' Flash')}, as 3.8 Flash was busy)` : 'Gemini';
-          show(ans.picks, `${who} picked ${ans.picks.length} data set${ans.picks.length > 1 ? 's' : ''}${ans.place !== 'world' ? ` for ${ans.place.name}` : ''}. Choose one to listen.`);
+          // Gemini's picks first, then the keyword matches it did not pick (marked), up to 6
+          const ids = new Set(ans.picks.map((p) => p.id));
+          const more = quick.filter((r) => !ids.has(r.id)).slice(0, Math.max(0, 6 - ans.picks.length)).map((r) => ({ ...r, why: r.why || 'Keyword match' }));
+          show([...ans.picks, ...more], `${ans.summary ? ans.summary + ' ' : ''}${who} picked ${ans.picks.length} data set${ans.picks.length > 1 ? 's' : ''}${ans.place !== 'world' ? ` for ${ans.place.name}` : ''}. Choose one to listen.`);
           announce(`${ans.picks.length} results. First: ${info(ans.picks[0].id)?.title}.`);
         } else say(quick.length ? 'Gemini found nothing better; these are the keyword matches.' : `Nothing in the catalogue matches “${q}”. Try other words, like carbon, methane, fire or population.`);
+        alsoTry(ans.alsoTry);
       } catch (e) {
         if (my !== token) return;
         const why = /404|405|not set up|Failed to fetch|network/i.test(e.message) ? 'AI search is not available here (it works on bit2beat.vercel.app)' : /429|Too many/.test(e.message) ? 'too many AI searches: wait a minute' : e.message;
@@ -173,6 +177,13 @@
           box.classList.remove('is-thinking');
         }
       }
+    }
+
+    /** Gemini's "also try" ideas, as chips under the results. */
+    function alsoTry(list = []) {
+      if (!list.length) return;
+      $('searchSuggest').hidden = false;
+      $('searchSuggest').replaceChildren(el('span', { class: 'suggest-label', text: 'Gemini suggests:' }), ...list.map((t) => el('button', { type: 'button', class: 'chip', onclick: () => run(t) }, t)));
     }
 
     // ---------------------------------------------------------------- ideas, clear, typing

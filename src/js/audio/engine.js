@@ -199,11 +199,20 @@
           pan.connect(out);
           setPosition = (pos, t) => glide(pan.pan, cfg.mono ? 0 : spatial.stereoPan(pos), t);
         } else input.connect(out);
+      } else if (cfg.kind === 'binaural' && key === 'rumble') {
+        input.connect(out); // very low notes have no direction: keep them centred
+        return { input, setPosition };
       } else if (cfg.kind === 'binaural') {
         const panner = hrtf(spatial.toWebAudio(front));
         input.connect(panner);
         panner.connect(out);
         setPosition = (pos, t) => setPannerPosition(panner, spatial.toWebAudio(pos), t);
+      } else if (key === 'rumble' && (cfg.kind === 'layout' || cfg.kind === 'virtual')) {
+        // the deep trend tone goes to the subwoofer (LFE); over headphones it sits in the middle
+        const k = cfg.layout.speakers.findIndex((s) => s.lfe);
+        if (cfg.kind === 'layout' && k >= 0) input.connect(merger, 0, k);
+        else input.connect(out);
+        return { input, setPosition };
       } else if (cfg.kind === 'layout' || cfg.kind === 'virtual') {
         const gains = cfg.layout.speakers.map((s, k) => {
           const g = monoGain();
@@ -463,6 +472,41 @@
   }
 
   /**
+   * Trend rumble: one step of a deep, soft, continuous tone (sine + a quiet octave). Steps overlap
+   * a little and glide, so the slow trend is heard as one rumble that rises and falls.
+   */
+  function rumbleStep(ctx, out, m, t, step, activeNodes = null) {
+    const f = 440 * 2 ** ((m - 69) / 12);
+    const t0 = Math.max(t, ctx.currentTime);
+    const len = step * 1.12;
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0.0001, t0);
+    env.gain.linearRampToValueAtTime(0.07, t0 + Math.min(0.06, step * 0.3));
+    env.gain.setValueAtTime(0.07, t0 + len * 0.8);
+    env.gain.linearRampToValueAtTime(0.0001, t0 + len);
+    env.connect(out);
+    [1, 2].forEach((mult, k) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.frequency.value = f * mult;
+      g.gain.value = k ? 0.18 : 1;
+      o.connect(g);
+      g.connect(env);
+      o.start(t0);
+      o.stop(t0 + len + 0.02);
+      if (activeNodes) activeNodes.add(o);
+      o.onended = () => {
+        if (activeNodes) activeNodes.delete(o);
+        try {
+          o.disconnect();
+          g.disconnect();
+          if (!k) env.disconnect();
+        } catch {}
+      };
+    });
+  }
+
+  /**
    * Schedule every active note of plan step `i` at context time `t` through `renderer`.
    * Shared by live playback and offline export so both sound identical.
    */
@@ -476,6 +520,12 @@
       bus.setPosition(n.pos, t);
       voice(ctx, bus.input, n.midi, t, plan.noteLen, n.gain, ch.instrument, activeNodes, { value: n.value });
       if (n.cue) cue(ctx, bus.input, t + 0.004, n.gain, activeNodes);
+    }
+    const rb = plan.rumble?.[i];
+    if (rb) {
+      const bus = renderer.bus('rumble');
+      bus.setPosition({ x: 0, y: 0, z: 0 }, t);
+      rumbleStep(ctx, bus.input, rb.midi, t, plan.step, activeNodes);
     }
     if (plan.settings?.drums) {
       const lead = notes.find((n) => n.active && n.midi != null);
@@ -498,6 +548,7 @@
   return {
     instruments,
     drumStep,
+    rumbleStep,
     impulseResponse,
     createEqChain,
     createRenderer,

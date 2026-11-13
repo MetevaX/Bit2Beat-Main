@@ -323,7 +323,11 @@
     root.addEventListener('b2b:source', (e) => tipFor !== e.detail.mode && showTip(e.detail.mode));
     const firstVisit = !storage.get(KEY, {}).seen && !root.location?.search;
     if (fromUrl.tour === true) setTimeout(() => open('studio'), 500);
-    else if (fromUrl.tour !== false && firstVisit) setTimeout(() => !document.querySelector('dialog[open]') && app.page() === 'studio' && open('hello'), 900);
+    else if (fromUrl.tour !== false && firstVisit) {
+      const hello = () => !document.querySelector('dialog[open]') && app.page() === 'studio' && open('hello');
+      // the voice-control question comes first; Bitty says hello after it is answered
+      setTimeout(() => (document.getElementById('voiceAsk')?.hidden === false ? root.addEventListener('b2b:voice-asked', () => setTimeout(hello, 400), { once: true }) : hello()), 900);
+    }
     else setTimeout(() => showTip(app.state.mode), 600);
   }
 

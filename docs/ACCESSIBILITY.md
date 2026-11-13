@@ -4,6 +4,8 @@ Bit2Beat exists to make Earth data available to people who cannot see a chart, s
 
 ## Listening without seeing
 
+- **Voice control.** On the first visit a small dialog asks *“Do you want to turn on voice control?”*; it takes focus, is read by screen readers (and spoken aloud where the browser allows), and waits five seconds: `Enter` = yes, `Esc` = no (moving through it with `Tab` stops the countdown). `V` turns it on and off at any time. Commands: *play, pause, start over, next, back, where am I, describe, faster, slower, louder, quieter, mute, unmute, go to image / video / earth events / data, search for …, piano / guitar / marimba / flute / violin / electric piano, happy / sad / excited mood, smart tuning, stereo / headphones / 5.1 / 7.1 / 7.1.4, drums on / off, readings, export, open a file, story, dark / light mode, help, repeat, stop voice control*. Each one is confirmed out loud. Phrases the page does not know go to Gemini, which may only choose one of these same commands.
+- **Scientific maps without seeing.** *Where am I* and the captions name the place of each step (for example “135° W”, or the place of the highest value); *One spot over time* takes a typed latitude and longitude; in surround, places sound where they are (west left, east right, north in front).
 - **Everything is reachable by keyboard.** Tabs move with arrow keys; `Space` plays; `←`/`→` step through the data and play each step; `Shift` jumps a bar; `Home`/`End` go to the ends. Menus open with `↓`, `Enter` or `Space`; longer ones have a search box (a combobox with a listbox, announced with the current choice).
 - **Captions** state exactly what is sounding: “Yearly anomaly 1.28 °C → C5”.
 - **Screen-reader updates** (optional) announce the caption every few seconds while playing; every action (play, source change, export) is announced through a polite live region.
@@ -27,7 +29,7 @@ Bit2Beat exists to make Earth data available to people who cannot see a chart, s
 ## Hearing more clearly
 
 - **Mono audio** for listeners with hearing in one ear.
-- Binaural output adds height cues on ordinary headphones.
+- Binaural output adds height cues on ordinary headphones; 5.1, 7.1 and 7.1.4 have a test button per speaker that says which speaker it is.
 - Pentatonic default scale avoids harsh intervals; Chromatic gives the finest pitch resolution.
 
 ## Testing checklist

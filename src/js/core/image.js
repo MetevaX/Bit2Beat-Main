@@ -265,7 +265,7 @@
     const hi = key.max ?? k.max;
     // minSpan: a few ppm of difference should not sound like the whole colour bar
     const value = { name: key.name, unit: key.unit, minSpan: (hi - lo) / 4, hint: `Read from the picture's colour bar (${lo}–${hi} ${key.unit}).`, values: [] };
-    const cover = { name: key.coverName || 'Data shown', unit: '%', minSpan: 10, hint: 'Share of the band that shows data colours.', values: [] };
+    const cover = { name: key.coverName || 'Data shown', unit: '%', minSpan: 10, mute: true, hint: 'Share of the band that shows data colours. Muted at first; press M to hear it.', values: [] };
     for (let i = 0; i < steps; i++) {
       const s = keyStats(px, w, h, bandVisitor(path, w, h, i, steps), k, bg);
       value.values.push(s && s.value != null ? +s.value.toFixed(2) : null);
@@ -301,5 +301,5 @@
     return defs.map((d) => (d.key === 'height' ? (1 - ny) * 100 : s[d.key]));
   }
 
-  return { lightness, lab, chroma, background, isBackground, makeKey, keyStats, ignored, scan, probe, bandLabel, CHANNELS };
+  return { lightness, lab, chroma, background, isBackground, makeKey, keyStats, ignored, scan, probe, bandLabel, bandVisitor, CHANNELS };
 });

@@ -17,8 +17,9 @@
   'use strict';
 
   const EXT = {
+    science: ['nc', 'nc3', 'nc4', 'cdf', 'netcdf', 'h5', 'hdf5', 'he5', 'h5nc', 'hdf', 'geotiff', 'gtiff', 'cog', 'tif', 'tiff'],
     data: ['csv', 'tsv', 'tab', 'txt', 'dat', 'prn', 'json', 'geojson', 'xlsx', 'xlsm', 'ods'],
-    image: ['png', 'jpg', 'jpeg', 'jfif', 'pjpeg', 'webp', 'gif', 'bmp', 'avif', 'svg', 'ico', 'tif', 'tiff', 'heic', 'heif'],
+    image: ['png', 'jpg', 'jpeg', 'jfif', 'pjpeg', 'webp', 'gif', 'bmp', 'avif', 'svg', 'ico', 'heic', 'heif'],
     video: ['mp4', 'm4v', 'webm', 'mov', 'qt', 'ogv', 'ogg', 'mkv', '3gp', '3g2', 'mpeg', 'mpg', 'avi', 'wmv', 'flv', 'ts', 'm2ts'],
     audio: ['mp3', 'wav', 'flac', 'aac', 'm4a', 'opus', 'oga', 'wma', 'aiff', 'aif'],
   };
@@ -42,8 +43,10 @@
     const ext = extOf(name);
     const kind = kindOf(name, type);
     if (kind === 'audio') return 'That is a sound file. Bit2Beat makes sound from data: open a data file (CSV, Excel, JSON), a picture or a video.';
+    if (/^(grib2?|grb2?)$/.test(ext)) return 'GRIB weather files cannot be read here. Convert it to NetCDF first (for example: cdo -f nc copy in.grib out.nc) and open that.';
+    if (ext === 'zarr' || ext === 'zip') return 'Bit2Beat opens single files. For Zarr data, save the part you need as NetCDF (.nc) first.';
     if (SAVE_AS[ext]) return `${SAVE_AS[ext]} files cannot be read here. Save it as CSV or Excel (.xlsx) and open that.`;
-    return `Bit2Beat cannot open “.${ext || '?'}” files. Open data (CSV, TSV, TXT, JSON, GeoJSON, Excel .xlsx, OpenDocument .ods), a picture (PNG, JPG, WebP, GIF, BMP, AVIF, SVG…) or a video (MP4, WebM, MOV, MKV…).`;
+    return `Bit2Beat cannot open “.${ext || '?'}” files. Open data (CSV, TSV, TXT, JSON, GeoJSON, Excel .xlsx, OpenDocument .ods), a picture (PNG, JPG, WebP, GIF, BMP, AVIF, SVG…) a video (MP4, WebM, MOV, MKV…) or a scientific Earth-data file (GeoTIFF / COG, NetCDF, HDF5).`;
   }
 
   // ---------------------------------------------------------------- CSV out

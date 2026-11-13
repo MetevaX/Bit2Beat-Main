@@ -162,6 +162,7 @@
       $('sharedScale').checked = S.sharedScale;
       $('cues').checked = S.cues;
       $('drums').checked = !!S.drums;
+      $('rumble').checked = !!S.rumble;
       $('drone').value = S.drone;
       $('path').value = S.path;
       $('output').value = A.output;
@@ -230,7 +231,14 @@
       announce(e.target.checked ? 'Drums on.' : 'Drums off.');
     };
     $('drone').onchange = (e) => set('drone', e.target.value);
-    $('path').onchange = (e) => set('path', e.target.value);
+    $('path').onchange = (e) => {
+      set('path', e.target.value);
+      if (e.target.value === 'globe') announce('The globe wraps around you: 0° longitude ahead, east to the right, the date line behind, west to the left; the north is up high.');
+    };
+    $('rumble').onchange = (e) => {
+      set('rumble', e.target.checked);
+      announce(e.target.checked ? 'Trend rumble on: the long-term trend plays as a deep tone.' : 'Trend rumble off.');
+    };
     $('autoTuneBtn').onclick = () => {
       const p = app.plan;
       if (!p) return;
@@ -275,6 +283,8 @@
       A.output = e.target.value;
       app.persist();
       app.player.refreshRouting();
+      speakerTests();
+      app.drawAll();
       const hw = app.player.context?.destination.maxChannelCount || 2;
       const need = B.spatial.OUTPUTS[A.output]?.channels || 2;
       if (need > 2 && hw < need) toast(`Your device has ${hw} output channels, so ${A.output} is simulated over headphones.`, 4500);
@@ -285,6 +295,33 @@
       app.player.refreshRouting();
       app.persist();
     };
+    /** One button per speaker (or direction): press to hear where it is. */
+    function speakerTests() {
+      const out = app.state.prefs.mono ? 'stereo' : A.output;
+      const pts = B.spatial.testPoints(out);
+      $('speakerTests').replaceChildren(
+        ...pts.map((p) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'btn btn-quiet btn-small';
+          b.textContent = p.label;
+          b.title = `Test: ${p.name}`;
+          b.setAttribute('aria-label', `Test ${p.name}`);
+          b.onclick = () => {
+            app.player.testSpeaker(p).catch((err) => toast(err.message));
+            announce(`${p.name}.`);
+          };
+          return b;
+        }),
+      );
+      const o = B.spatial.OUTPUTS[out];
+      const hw = app.player.context?.destination.maxChannelCount || 2;
+      $('stageNote').textContent =
+        out === 'binaural' ? 'Headphone 3D places each sound around, above and behind you. Use headphones.'
+        : o.layout ? `${o.name}: lit squares are the speakers playing now (dashed = height). ${hw < o.channels ? 'Your device has ' + hw + ' outputs, so it is simulated over headphones; exports keep every speaker.' : ''}`
+        : 'Stereo: left and right speakers.';
+    }
+    speakerTests();
     const eqInput = (band) => (e) => {
       A.eq[band] = +e.target.value;
       $('eq' + band[0].toUpperCase() + band.slice(1) + 'Out').textContent = (A.eq[band] > 0 ? '+' : '') + A.eq[band] + ' dB';
@@ -297,6 +334,8 @@
         () => {
           Object.assign(A, { output: 'stereo', room: 0.22, eq: { low: 0, mid: 0, high: 0 } });
           S.path = 'auto';
+          S.rumble = false;
+          speakerTests();
           pressOne($('eqPresets'), $('eqPresets').querySelector('[data-eq="flat"]'));
           sync();
           app.player.refreshRouting();

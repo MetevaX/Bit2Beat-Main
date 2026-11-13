@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   const B = window.Bit2Beat || {};
-  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView', 'eic', 'eicView', 'eicSearch', 'search', 'options', 'xlsx', 'tables'];
+  const need = ['music', 'stats', 'csv', 'wav', 'spatial', 'adm', 'geo', 'image', 'video', 'score', 'feeds', 'plan', 'presets', 'audio', 'player', 'exporter', 'dom', 'draw', 'scoreView', 'bittyCard', 'sources', 'mixer', 'panels', 'dialogs', 'canvasInput', 'recorder', 'urlState', 'nasaMedia', 'nasaKeys', 'videoView', 'keys', 'pages', 'story', 'storyView', 'tour', 'bittyArt', 'spotlight', 'aboutView', 'eic', 'eicView', 'eicSearch', 'search', 'options', 'xlsx', 'tables', 'science', 'sciSource', 'scienceView', 'voiceCommands', 'voice'];
   const missing = need.filter((k) => !B[k]);
   if (missing.length) {
     document.body.insertAdjacentHTML('afterbegin', `<p role="alert" style="padding:16px;background:#fbe9d0;color:#14213d">Bit2Beat could not load: ${missing.join(', ')}. Open the single-file build in dist/ or serve the folder.</p>`);
@@ -49,7 +49,7 @@
     if (valid[state.mode].includes(fromUrl.choice)) state.choice[state.mode] = fromUrl.choice;
   }
   if (fromUrl.power) state.power = fromUrl.power;
-  if (!['stereo', 'binaural'].includes(state.audio.output)) state.audio.output = 'stereo'; // surround was removed in 2.9
+  if (!B.spatial.OUTPUTS[state.audio.output]) state.audio.output = 'stereo';
   if (!B.audio.instruments[state.settings.instrument]) state.settings.instrument = 'soft'; // organ, bass and synth were removed
   if (fromUrl.eic) state[{ data: 'eic', image: 'eicImage', video: 'eicVideo' }[state.mode] || 'eic'] = fromUrl.eic;
   let pending = { mix: fromUrl.mix, position: fromUrl.position };
@@ -184,7 +184,7 @@
   function drawAll() {
     hitInfo = B.draw.source($('sourceCanvas'), src, plan, state.position, { scan: state.image.scan, pointer: state.pointer }, () => drawAll());
     B.draw.pitchRoll($('pitchCanvas'), plan, state.position);
-    B.draw.stage($('stageCanvas'), plan, state.position);
+    B.draw.stage($('stageCanvas'), plan, state.position, state.prefs.mono ? 'stereo' : state.audio.output);
   }
 
   function seek(i, { audition = false } = {}) {
@@ -326,6 +326,7 @@
       let res;
       if (id === 'upload' && uploads.image) res = uploads.image;
       else if (id === 'eic') return B.eicView.image ? app.useImage(B.eicView.image) : B.eicView.loadImage(state.eicImage || {}).then((r) => r || app.choose('image', 'nasa:gedi'));
+      else if (id.startsWith('sci:')) res = await sciView.builtIn(id);
       else {
         setBusy(true, 'Loading picture…');
         res = await B.sources.imageCanvas(id, state.image.date);
@@ -356,7 +357,7 @@
   function analyseImage() {
     if (!imageBase) return;
     try {
-      const next = B.sources.fromCanvas(imageBase.canvas, imageBase.meta, state.image);
+      const next = imageBase.meta.science ? sciView.source(imageBase, state.image) : B.sources.fromCanvas(imageBase.canvas, imageBase.meta, state.image);
       setSource(next, { keepMix: src?.kind === 'image' && src.channels.length === next.channels.length && src.channels.every((c, j) => c.name === next.channels[j].name) });
     } catch (e) {
       toast(e.message, 5000);
@@ -417,6 +418,7 @@
   }
   function syncImageOptions() {
     $('satDateField').hidden = !state.choice.image.startsWith('sat:') || state.choice.image === 'sat:lights';
+    sciView.sync(imageBase);
     const hasKey = !!imageBase?.meta?.key;
     $('keyBtn').hidden = !hasKey;
     if (!hasKey && state.image.analysis === 'key') state.image.analysis = 'light';
@@ -431,7 +433,7 @@
     const controller = new AbortController();
     videoImport = controller;
     // smart upload: the kind of file decides the tab (data, picture or video)
-    const kind = B.tables.kindOf(file.name, file.type);
+    const kind = (await sciView.detect(file)) ? 'science' : B.tables.kindOf(file.name, file.type);
     try {
       if (kind === 'video') {
         player.pause();
@@ -461,8 +463,8 @@
           setSource(s);
         }
         toast(`Loaded ${parsed.count} rows, ${parsed.cols.length} channel${parsed.cols.length > 1 ? 's' : ''}.` + (parsed.skipped ? ` ${parsed.skipped} more numeric column(s) skipped (limit 6).` : '') + (parsed.missing ? ' Missing values stay silent.' : ''), 5000);
-      } else if (kind === 'image') {
-        uploads.image = await B.sources.fromImageFile(file);
+      } else if (kind === 'image' || kind === 'science') {
+        uploads.image = kind === 'science' ? await sciView.open(file) : await B.sources.fromImageFile(file);
         state.choice.image = 'upload';
         if (state.mode !== 'image') setMode('image');
         else {
@@ -504,6 +506,7 @@
   // ------------------------------------------------------------------ wiring
   const bitty = B.bittyCard.create(() => state.prefs);
   const videoView = B.videoView.init(app);
+  const sciView = (app.sci = B.scienceView.init(app));
 
   $$('[data-mode]').forEach((b) => {
     b.onclick = () => state.mode !== b.dataset.mode && setMode(b.dataset.mode);
@@ -611,6 +614,7 @@
   B.storyView.init(app);
   B.aboutView.init(app);
   if (fromUrl.page && fromUrl.page !== 'studio') showPage(fromUrl.page, { focus: false });
+  app.voice = B.voice.init(app);
   B.tour.init(app, fromUrl);
   B.draw.spectrum($('spectrumCanvas'), null, false);
   window.Bit2Beat.app = app; // handy for debugging and tests

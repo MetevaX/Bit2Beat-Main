@@ -42,7 +42,7 @@
     if (has('shared')) S.sharedScale = q.get('shared') === '1';
     if (has('move')) S.path = oneOf(q.get('move'), ['auto', 'sweep', 'fall', 'orbit', 'fixed']);
 
-    if (has('out')) out.audio.output = oneOf(q.get('out'), ['stereo', 'binaural']);
+    if (has('out')) out.audio.output = oneOf(q.get('out'), ['stereo', 'binaural', '5.1', '7.1', '7.1.4']);
     if (has('room')) out.audio.room = num(q.get('room'), 0, 100) / 100;
 
     if (has('quakes')) out.earth.quakeFeed = q.get('quakes');

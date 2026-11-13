@@ -128,8 +128,7 @@
     });
 
     // export
-    // the studio offers stereo and binaural (headphones); the other formats stay in the exporter for scripts
-    ['stereo', 'binaural'].forEach((k) => $('exportFormat').append(new Option(B.exporter.FORMATS[k].label, k)));
+    Object.entries(B.exporter.FORMATS).forEach(([k, v]) => $('exportFormat').append(new Option(v.label, k)));
     const describe = () => {
       const f = B.exporter.FORMATS[$('exportFormat').value];
       $('exportHint').textContent = f.detail + ($('exportFormat').value === 'adm' ? '. For Dolby Atmos tools such as the Dolby Atmos Renderer, Pro Tools, Logic Pro, Nuendo or DaVinci Resolve. Bit2Beat is not affiliated with Dolby.' : '.');

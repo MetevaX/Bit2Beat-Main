@@ -34,6 +34,7 @@
     drone: 'off', // 'off' | 'baseline' | 'mean'
     cues: true, // short tick on sudden jumps
     drums: false, // Beta: a kick / snare / hi-hat beat on the steps (audio/engine.js drumStep)
+    rumble: false, // the slow long-term trend of the lead channel as a deep tone (to the LFE / subwoofer)
   };
 
   /** Eighth-note step length in seconds at `tempo` quarter-notes per minute. */
@@ -157,10 +158,16 @@
     });
 
     // --- positions ---
-    const resolvedPath = o.path === 'auto' ? ({ radar: 'orbit', down: 'fall' }[o.imagePath] || 'sweep') : o.path;
+    const resolvedPath = o.path === 'auto' ? ({ radar: 'orbit', down: 'fall' }[o.imagePath] || 'sweep') : o.path === 'globe' ? 'orbit' : o.path;
     function position(i, j, v) {
       const p = src.points?.[i];
       if (p && Number.isFinite(p.lat)) {
+        if (o.path === 'globe') {
+          // the globe wraps around the listener: 0° longitude ahead, 90° E to the right, 180° behind,
+          // 90° W to the left; the north is up high and the south down at ear level
+          const a = (p.lon * Math.PI) / 180;
+          return { x: +(Math.sin(a) * o.width).toFixed(4), y: +Math.cos(a).toFixed(4), z: +clamp((p.lat + 90) / 180).toFixed(4) };
+        }
         const z = src.positionZ ? src.positionZ[i] : clamp((v ?? 0.5) * o.height);
         const r = geo.roomPosition(p.lat, p.lon, z);
         return { x: +(r.x * o.width).toFixed(4), y: +r.y.toFixed(4), z: +r.z.toFixed(4) };
@@ -200,9 +207,29 @@
       }
     }
 
+    // --- trend rumble: the slow long-term trend of the lead channel, two octaves under the melody ---
+    let rumble = null;
+    if (o.rumble && lead && count > 2) {
+      const half = Math.max(1, Math.round(count / 16));
+      const norm = lead.loudNorm;
+      rumble = norm.map((_, i) => {
+        let sum = 0;
+        let n = 0;
+        for (let k = Math.max(0, i - half); k <= Math.min(count - 1, i + half); k++)
+          if (norm[k] != null) {
+            sum += norm[k];
+            n++;
+          }
+        if (!n) return null;
+        const v = lead.invert ? 1 - sum / n : sum / n;
+        return { value: v, midi: 28 + Math.round(v * 12) }; // E1 (41 Hz) … E2 (82 Hz)
+      });
+    }
+
     return {
       settings: o,
       source: src,
+      rumble,
       buckets,
       count,
       step,

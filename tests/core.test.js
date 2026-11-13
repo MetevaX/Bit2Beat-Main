@@ -403,10 +403,11 @@ test('story: every chapter plays a real source and its facts come from the numbe
     data: (id) => presets.DATA[id](),
     earth: (id) => feeds.offline[id](),
     video: (id) => nasaMedia[id].source,
+    image: (id) => (id === 'sci:sunlight' ? require('../src/js/core/sunlight.js').source(require('../src/js/core/sci-source.js')) : null),
   };
   const global = presets.DATA.gistemp();
-  assert.equal(story.CHAPTERS.length, 8);
-  assert.equal(new Set(story.CHAPTERS.map((c) => c.id)).size, 8, 'unique chapter ids');
+  assert.equal(story.CHAPTERS.length, 9);
+  assert.equal(new Set(story.CHAPTERS.map((c) => c.id)).size, 9, 'unique chapter ids');
   for (const ch of story.CHAPTERS) {
     assert.ok(ch.title && ch.text && ch.listen && ch.kicker, `${ch.id} has words`);
     assert.ok(['happy', 'excited', 'curious', 'joy'].includes(ch.mood));
@@ -434,7 +435,7 @@ test('story: every chapter plays a real source and its facts come from the numbe
   assert.deepEqual(story.factsFor('warming', null), []);
   assert.deepEqual(story.factsFor('nope', global), []);
   assert.ok(story.factsFor('quakes', { name: 'x', labels: ['a'], channels: [{ name: 'Earthquakes', values: [null] }] }).length >= 1);
-  assert.deepEqual(story.progress({ listen: true, warming: true }), { n: 2, total: 8, done: false });
+  assert.deepEqual(story.progress({ listen: true, warming: true }), { n: 2, total: 9, done: false });
   assert.equal(story.progress(Object.fromEntries(story.CHAPTERS.map((c) => [c.id, true]))).done, true);
   assert.equal(story.day('2025-03-05'), '5 March');
 });
@@ -648,7 +649,10 @@ test('Earth Information Center search: keywords, places, Gemini request and answ
   assert.match(body.contents[0].parts[0].text, /offTopic/, 'off-topic questions are refused');
   assert.match(body.contents[0].parts[0].text, /never instructions/);
   assert.equal(X.answer({ picks: [{ id: 'micasa-carbonflux-monthgrid-v1', why: 'x' }], offTopic: true, place: { world: true } }, list).picks.length, 1, 'picks win over a stray offTopic');
-  assert.deepEqual(X.answer({ picks: [], offTopic: true, place: { world: true } }, list), { picks: [], place: 'world', offTopic: true });
+  assert.deepEqual(X.answer({ picks: [], offTopic: true, place: { world: true } }, list), { picks: [], place: 'world', offTopic: true, summary: '', alsoTry: [] });
+  const more = X.answer({ picks: [], place: { world: true }, offTopic: false, summary: 'About <b>wetlands</b>.', alsoTry: ['rice', 'cows', 'Cairo heat', 'cows', 'fire', 'smoke'] }, list);
+  assert.deepEqual(more.alsoTry, ['rice', 'cows', 'fire'], 'also-try ideas: no Egypt, no repeats, at most 3');
+  assert.ok(!/[<>]/.test(more.summary), 'summary is plain text');
   assert.equal(X.clean('  carbon\n\tdioxide\u0000 '), 'carbon dioxide');
   assert.equal(X.clean('x'.repeat(500)).length, 200);
   assert.ok(X.SUGGESTIONS.length >= 4);
@@ -830,4 +834,142 @@ test('Earth events: a slow EONET never leaves earthquakes alone', async () => {
   } finally {
     global.fetch = real;
   }
+});
+
+// ---------------------------------------------------------------- scientific Earth-data files
+const bytesMod = require('../src/js/core/bytes.js');
+const science = require('../src/js/core/science.js');
+const sciSource = require('../src/js/core/sci-source.js');
+const fixture = (name) => bytesMod.bufferReader(new Uint8Array(fs.readFileSync(path.join(__dirname, 'fixtures', name))));
+// the fixtures hold 30·cos(lat) − 5 + 3·sin(lon) (+ the step number) on a 12 × 24 grid
+const expected = (lat, lon, k = 0) => 30 * Math.cos((lat * Math.PI) / 180) - 5 + 3 * Math.sin((lon * Math.PI) / 180) + k;
+
+test('scientific files: NetCDF classic, packed values, CF time, north up and −180…180', async () => {
+  const f = await science.open(fixture('tiny.nc'));
+  assert.equal(f.format, 'NetCDF classic (CDF-2)');
+  assert.equal(f.title, 'Bit2Beat test grid');
+  assert.deepEqual(f.variables.map((v) => [v.id, v.kind, v.units, v.steps]), [['tas', 'maps over time', '°C', 4]]);
+  const info = await f.info('tas');
+  assert.deepEqual(info.bbox, [-180, -90, 180, 90]);
+  assert.deepEqual(info.dates, ['2020-01', '2020-04']);
+  const m = await f.map('tas', { t: 2 });
+  assert.deepEqual([m.width, m.height, m.lat[0], m.lon[0]], [24, 12, 82.5, -172.5], 'north at the top, west on the left');
+  assert.ok(Math.abs(m.data[0] - expected(82.5, -172.5, 2)) < 0.02, 'scale_factor and add_offset applied');
+  assert.ok(Number.isNaN(m.data[11 * 24 + 12]), '_FillValue becomes no data (the south-west corner, moved to the middle by the longitude fix)');
+  const s = await f.series('tas', { lat: 45, lon: 100 });
+  assert.deepEqual(s.labels, ['2020-01', '2020-02', '2020-03', '2020-04']);
+  assert.ok(s.values.every((v, k) => Math.abs(v - expected(s.lat, s.lon, k)) < 0.02));
+});
+
+test('scientific files: Cloud-Optimized GeoTIFF with an overview and GDAL no-data', async () => {
+  const f = await science.open(fixture('tiny-cog.tif'));
+  assert.equal(f.format, 'Cloud-Optimized GeoTIFF');
+  assert.equal(f.photo, false);
+  const full = await f.map('band1', { width: 24, height: 12 });
+  assert.deepEqual([full.width, full.height, full.bbox], [24, 12, [-180, -90, 180, 90]]);
+  assert.ok(Number.isNaN(full.data[0]) && Number.isNaN(full.data[2]) && Number.isFinite(full.data[3]), 'no-data cells stay silent');
+  assert.ok(Math.abs(full.data[5] - expected(82.5, -97.5 + 360)) < 1e-4);
+  const small = await f.map('band1', { width: 12, height: 6 });
+  assert.deepEqual([small.width, small.height], [12, 6], 'the overview is used for a small map');
+  assert.ok(Number.isNaN(small.data[0]), 'the overview keeps the no-data value');
+  const s = await f.series('band1', { lat: 0, lon: 0 });
+  assert.equal(s.values.length, 1);
+});
+
+test('scientific files: HDF5 (latest format, chunked, shuffle + Deflate, unlimited time)', async () => {
+  const f = await science.open(fixture('tiny.h5'));
+  assert.deepEqual(f.variables.map((v) => [v.id, v.kind, v.units]), [['/sst', 'maps over time', '°C'], ['/mask', 'map', '']]);
+  const m = await f.map('/sst', { t: 3 });
+  assert.ok(Math.abs(m.data[0] - expected(82.5, -172.5, 3)) < 1e-4);
+  const s = await f.series('/sst', { x: 1, y: 1 });
+  assert.ok(s.values.every((v) => Number.isNaN(v)), '_FillValue at one cell through time');
+  const big = await f.map('/sst', { t: 0, width: 6, height: 3 });
+  assert.equal(big.simplified, true, 'a smaller map than the file is marked as simplified');
+});
+
+test('scientific files: detection, size limit, friendly refusals, units and dates', async () => {
+  assert.equal(science.sniff(new Uint8Array([0x89, 0x48, 0x44, 0x46, 13, 10, 26, 10])), 'hdf5');
+  assert.equal(science.sniff(new Uint8Array([0x43, 0x44, 0x46, 2, 0, 0, 0, 0])), 'netcdf3');
+  assert.equal(science.sniff(new Uint8Array([0x49, 0x49, 43, 0, 8, 0, 0, 0])), 'geotiff');
+  assert.equal(science.isScienceName('ocean.nc4'), true);
+  await assert.rejects(science.open({ size: 6 * 1024 ** 3, read: async () => new Uint8Array(8) }), /up to 5 GB/);
+  await assert.rejects(science.open(bytesMod.bufferReader(new Uint8Array([0x0e, 0x03, 0x13, 0x01, 0, 0, 0, 0, 0]))), /HDF4/);
+  await assert.rejects(science.open(bytesMod.bufferReader(new TextEncoder().encode('just some text, not data'))), /not a GeoTIFF, NetCDF or HDF5/);
+  const cut = new Uint8Array(fs.readFileSync(path.join(__dirname, 'fixtures', 'tiny.h5'))).slice(0, 900);
+  await assert.rejects(science.open(bytesMod.bufferReader(cut)), (e) => e instanceof Error && e.message.length > 10, 'a cut file is refused with a message');
+  assert.deepEqual(['degC', 'kg m-2 s-1', 'm s**-1', 'K'].map(science.prettyUnits), ['°C', 'kg m⁻² s⁻¹', 'm s⁻¹', 'K']);
+  const parse = science.timeParser('hours since 1970-01-02 00:00:00');
+  assert.equal(new Date(parse(12)).toISOString(), '1970-01-02T12:00:00.000Z');
+  assert.deepEqual(science.dateLabels([0, 30, 60].map(science.timeParser('days since 2020-01-01'))), ['2020-01-01', '2020-01-31', '2020-03-01'], 'finer labels when months would repeat');
+  assert.deepEqual(science.sampling(10, 3), { start: 0, stride: 4, count: 3 });
+});
+
+test('scientific maps into sound: sweeps from west to east, time-lapse, one spot, colours', async () => {
+  const f = await science.open(fixture('tiny.nc'));
+  const grid = await f.map('tas', { t: 0 });
+  const sw = sciSource.sweep(grid, { path: 'line', steps: 6, label: 'Air temperature', units: '°C' });
+  assert.equal(sw.labels.length, 6);
+  assert.deepEqual([sw.labels[0], sw.labels[5]], ['150° W', '150° E']);
+  assert.deepEqual(sw.channels.map((c) => [c.name, !!c.mute]), [['Average air temperature', false], ['Highest air temperature', false], ['Area with data', true]], 'the area with data is muted at first');
+  assert.ok(sw.points.every((p, i) => i === 0 || p.lon >= sw.points[i - 1].lon - 30), 'steps move from west to east');
+  const down = sciSource.sweep(grid, { path: 'down', steps: 4 });
+  assert.deepEqual(down.labels, ['68° N', '23° N', '23° S', '68° S']);
+  assert.ok(down.channels[0].values[1] > down.channels[0].values[0], 'warmer towards the equator');
+  const frames = [];
+  for (let t = 0; t < 4; t++) frames.push({ grid: await f.map('tas', { t }), label: `t${t}` });
+  const tl = sciSource.timelapse(frames, { label: 'tas' });
+  const avg = tl.channels[0].values;
+  assert.ok(avg.every((v, k) => k === 0 || Math.abs(v - avg[k - 1] - 1) < 0.01), 'the area-weighted average rises by 1 each step');
+  const pt = sciSource.point(await f.series('tas', { lat: 10, lon: 20 }), { label: 'Air temperature', units: '°C' });
+  assert.match(pt.channels[0].name, /^Air temperature at 7\.5° N, 23° E$/);
+  const paint = sciSource.paint(grid);
+  assert.equal(paint.rgba.length, 24 * 12 * 4);
+  assert.equal(paint.diverging, false, 'mostly positive values: one colour ramp');
+  const anomaly = sciSource.paint({ data: Float32Array.from([-3, -1, 0, 1, 2, 3, NaN]), width: 7, height: 1 });
+  assert.equal(anomaly.diverging, true, 'values on both sides of zero get the diverging colours, centred on 0');
+  assert.equal(anomaly.lo, -anomaly.hi);
+  assert.equal(anomaly.rgba[6 * 4 + 3], 60, 'no data is a light grey veil');
+  const v = sciSource.valueAt(grid, 0.01, 0.01);
+  assert.deepEqual([v.lat, v.lon], [82.5, -172.5]);
+});
+
+// ---------------------------------------------------------------- surround, voice
+test('surround: geographic places, the globe around the listener, trend rumble, speaker tests', () => {
+  const src = { name: 'g', kind: 'image', labels: ['a', 'b', 'c', 'd'], points: [{ lat: 0, lon: -90 }, { lat: 0, lon: 90 }, { lat: 60, lon: 0 }, { lat: -60, lon: 180 }], channels: [{ name: 'v', values: [1, 2, 3, 4] }] };
+  const flat = plan.build(src, [], { path: 'auto' });
+  const at = (p, i) => p.steps[i][0].pos;
+  assert.ok(at(flat, 0).x < 0 && at(flat, 1).x > 0, 'west on the left, east on the right');
+  assert.ok(at(flat, 2).y > 0 && at(flat, 3).y < 0, 'north in front, south behind');
+  const globe = plan.build(src, [], { path: 'globe' });
+  assert.ok(Math.abs(at(globe, 3).y + 1) < 1e-3, '180° is behind the listener');
+  assert.ok(at(globe, 2).z > at(globe, 3).z, 'the north is higher up');
+  assert.equal(flat.rumble, null);
+  const rum = plan.build({ ...src, channels: [{ name: 'v', values: [1, 2, 3, 4, 5, 6, 7, 8] }], labels: [...'abcdefgh'], points: null }, [], { rumble: true });
+  assert.equal(rum.rumble.length, 8);
+  assert.ok(rum.rumble[7].midi >= rum.rumble[0].midi && rum.rumble.every((r) => r.midi >= 28 && r.midi <= 40), 'a deep tone that follows the trend');
+  assert.deepEqual(spatial.testPoints('7.1').map((p) => p.label), ['L', 'R', 'C', 'LFE', 'Lrs', 'Rrs', 'Lss', 'Rss']);
+  assert.equal(spatial.testPoints('7.1.4').filter((p) => p.pos.z > 0.5).length, 4);
+  assert.deepEqual(spatial.testPoints('binaural').map((p) => p.name), ['Front', 'Left', 'Right', 'Behind', 'Above']);
+});
+
+test('voice control: the grammar, and Gemini may only answer with known commands', () => {
+  const V = require('../src/js/core/voice-commands.js');
+  const said = (t) => V.parse(t);
+  assert.deepEqual(said('Play please'), { id: 'play' });
+  assert.deepEqual(said('stop'), { id: 'pause' });
+  assert.deepEqual(said('stop voice control'), { id: 'stop' });
+  assert.deepEqual(said('go to the video tab'), { id: 'tab', arg: 'video' });
+  assert.deepEqual(said('show me the data'), { id: 'tab', arg: 'data' });
+  assert.deepEqual(said('search for sea ice'), { id: 'search', arg: 'sea ice' });
+  assert.deepEqual(said('seven point one'), { id: 'output', arg: '7.1' });
+  assert.deepEqual(said('switch to violin'), { id: 'instrument', arg: 'violin' });
+  assert.deepEqual(said('where am I'), { id: 'where' });
+  assert.equal(said('tell me a joke'), null);
+  assert.deepEqual(V.answer('{"id":"faster","reply":"Speeding up."}'), { id: 'faster', reply: 'Speeding up.' });
+  assert.equal(V.answer({ id: 'tab', arg: 'kitchen' }).id, 'none', 'unknown arguments are refused');
+  assert.equal(V.answer({ id: 'deleteEverything' }).id, 'none', 'unknown commands are refused');
+  assert.equal(V.answer({ id: 'search', arg: 'heat in Cairo' }).id, 'none');
+  const req = V.prompt('make it quicker');
+  assert.ok(req.generationConfig.responseJsonSchema.properties.id.enum.includes('none'));
+  assert.match(V.helpText(), /stop voice control/);
 });

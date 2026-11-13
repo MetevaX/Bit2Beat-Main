@@ -223,9 +223,20 @@
       });
     }
 
+    /** Speaker test: a short rising chime from one speaker (or direction); the subwoofer gets a deep hum. */
+    async function testSpeaker(point) {
+      await init();
+      const t = ctx.currentTime + 0.03;
+      if (point.lfe) return engine.rumbleStep(ctx, renderer.bus('rumble').input, 31, t, 1.1, nodes);
+      const bus = renderer.bus('test');
+      bus.setPosition(point.pos, ctx.currentTime);
+      [72, 76, 79].forEach((m, k) => engine.voice(ctx, bus.input, m, t + k * 0.16, 0.35, 0.75, 'marimba', nodes, { value: 0.6 }));
+    }
+
     return {
       init,
       play,
+      testSpeaker,
       pause,
       seek,
       applyMix,

@@ -24,13 +24,19 @@
       const x = e.clientX - r.left;
       const y = e.clientY - r.top;
       const R = hitInfo.rect;
-      if (hitInfo.kind === 'image' && app.state.image.scan === 'radar') {
+      const scan = src?.science && src.science.mode !== 'sweep' ? 'line' : app.state.image.scan;
+      if (src?.science && src.science.mode !== 'sweep') {
+        if (y < R.y || y > R.y + R.h || x < R.x || x > R.x + R.w) return null;
+        const u = (x - R.x) / R.w;
+        return { i: Math.min(plan.count - 1, Math.floor(u * plan.count)), x, y, u, v: (y - R.y) / R.h };
+      }
+      if (hitInfo.kind === 'image' && scan === 'radar') {
         if (y < R.y || y > R.y + R.h || x < R.x || x > R.x + R.w) return null;
         // clockwise from 12 o'clock, like the scan
         const a = (Math.atan2(x - (R.x + R.w / 2), -(y - (R.y + R.h / 2))) + 2 * Math.PI) % (2 * Math.PI);
         return { i: Math.min(plan.count - 1, Math.floor((a / (2 * Math.PI)) * plan.count)), x, y, u: (x - R.x) / R.w, v: (y - R.y) / R.h };
       }
-      if (hitInfo.kind === 'image' && app.state.image.scan === 'down') {
+      if (hitInfo.kind === 'image' && scan === 'down') {
         if (y < R.y || y > R.y + R.h || x < R.x || x > R.x + R.w) return null;
         const v = (y - R.y) / R.h;
         return { i: Math.min(plan.count - 1, Math.floor(v * plan.count)), x, y, u: (x - R.x) / R.w, v };
@@ -61,7 +67,7 @@
       const hit = stepFromEvent(e);
       const tip = $('hoverTip');
       const src = app.src;
-      if (src?.kind === 'image' && state.image.scan === 'pointer' && hit) {
+      if (src?.kind === 'image' && state.image.scan === 'pointer' && hit && (!src.science || src.science.mode === 'sweep')) {
         state.pointer = { x: hit.u, y: Math.max(0, Math.min(1, hit.v)) };
         drawAll();
         if (Date.now() - lastProbe > 90) {
@@ -73,7 +79,7 @@
       }
       if (!hit) return void (tip.hidden = true);
       tip.hidden = false;
-      tip.textContent = B.panels.stepSummary(app, hit.i);
+      tip.textContent = src?.science ? app.sci.readout(src, hit.u, Math.max(0, Math.min(1, hit.v)), state.position).text : B.panels.stepSummary(app, hit.i);
       const wrap = $('sourceCanvas').getBoundingClientRect();
       tip.style.left = Math.min(hit.x + 14, wrap.width - 260) + 'px';
       tip.style.top = Math.max(4, hit.y - 40) + 'px';
@@ -84,11 +90,11 @@
     function probe(pt) {
       const src = app.src;
       const plan = app.plan;
-      const vals = B.image.probe(src.pixels, src.canvas.width, src.canvas.height, pt.x, pt.y, state.image.analysis, src.key);
+      const vals = src.science ? [app.sci.readout(src, pt.x, pt.y, state.position).value] : B.image.probe(src.pixels, src.canvas.width, src.canvas.height, pt.x, pt.y, state.image.analysis, src.key);
       if (!vals || !Number.isFinite(vals[0])) {
         $('nowNote').textContent = '—';
         $('nowHz').textContent = '';
-        $('nowDetail').textContent = 'No data here: move over the coloured part of the picture.';
+        $('nowDetail').textContent = src.science ? 'No data here: this place has no value in the file.' : 'No data here: move over the coloured part of the picture.';
         return;
       }
       const list = [];
@@ -113,8 +119,10 @@
     // a click (or tap) on the picture moves the playhead there and plays that step;
     // in Follow pointer it puts the pointer there (touch screens have no hover)
     canvas.addEventListener('pointerdown', (e) => {
-      if (app.src?.kind === 'image' && state.image.scan === 'pointer') return onCanvasMove(e);
+      const sci = app.src?.science;
+      if (app.src?.kind === 'image' && state.image.scan === 'pointer' && (!sci || sci.mode === 'sweep')) return onCanvasMove(e);
       const hit = stepFromEvent(e);
+      if (hit && sci?.mode === 'point') return app.sci.pickSpot(hit.u, Math.max(0, Math.min(1, hit.v)));
       if (hit) seek(hit.i, { audition: true });
     });
     canvas.addEventListener('pointerleave', () => {

@@ -173,11 +173,17 @@
   function drawImage(g, w, h, src, plan, pos, t, ui) {
     g.fillStyle = t.bg;
     g.fillRect(0, 0, w, h);
+    src.science?.frameAt(pos);
     const R = fitRect(src.canvas.width, src.canvas.height, w, h);
+    const crisp = !!src.science;
+    if (crisp) g.imageSmoothingEnabled = false;
     g.drawImage(src.canvas, R.x, R.y, R.w, R.h);
+    g.imageSmoothingEnabled = true;
     const n = plan.count;
     g.save();
-    if (ui.scan === 'pointer') {
+    if (src.science && src.science.mode !== 'sweep') {
+      drawTimeline(g, R, src, plan, pos, t);
+    } else if (ui.scan === 'pointer') {
       if (ui.pointer) {
         const px = R.x + ui.pointer.x * R.w;
         const py = R.y + ui.pointer.y * R.h;
@@ -240,6 +246,40 @@
     }
     g.restore();
     return R;
+  }
+
+  /** Scientific files, "one spot over time" and "time-lapse": the spot, and a time bar under the map. */
+  function drawTimeline(g, R, src, plan, pos, t) {
+    const sci = src.science.res.meta.science;
+    const uv = src.science.mode === 'point' && sci.spotUV;
+    if (uv) {
+      const px = R.x + uv.u * R.w;
+      const py = R.y + uv.v * R.h;
+      g.strokeStyle = '#fff';
+      g.lineWidth = 4;
+      g.beginPath();
+      g.arc(px, py, 9, 0, Math.PI * 2);
+      g.stroke();
+      g.strokeStyle = t.amber;
+      g.lineWidth = 2.5;
+      g.stroke();
+    }
+    const n = Math.max(1, plan.count);
+    const bh = 6;
+    const by = R.y + R.h - bh - 6;
+    g.fillStyle = 'rgba(20,33,61,0.55)';
+    g.fillRect(R.x + 8, by, R.w - 16, bh);
+    g.fillStyle = t.amber;
+    g.fillRect(R.x + 8, by, ((pos + 1) / n) * (R.w - 16), bh);
+    const label = plan.labels[pos] || '';
+    if (label) {
+      g.font = '600 13px system-ui, sans-serif';
+      const tw = g.measureText(label).width + 14;
+      g.fillStyle = 'rgba(20,33,61,0.8)';
+      g.fillRect(R.x + 8, by - 26, tw, 20);
+      g.fillStyle = '#fff';
+      g.fillText(label, R.x + 15, by - 11);
+    }
   }
 
   let worldImg = null;
@@ -432,31 +472,73 @@
   }
 
   // ---------------------------------------------------------------- spatial stage (top view)
-  function stage(canvas, plan, pos) {
-    const { g, w, h } = fitCanvas(canvas, 160);
+  function stage(canvas, plan, pos, output = 'stereo') {
+    const { g, w, h } = fitCanvas(canvas, 190);
     const t = theme();
     g.fillStyle = t.bg;
     g.fillRect(0, 0, w, h);
     const cx = w / 2;
-    const cy = h / 2;
-    const r = Math.min(w, h) / 2 - 14;
+    const cy = h / 2 + 2;
+    const r = Math.min(w, h) / 2 - 26;
     g.strokeStyle = t.line;
     g.lineWidth = 1;
     g.beginPath();
     g.arc(cx, cy, r, 0, Math.PI * 2);
     g.stroke();
-    text(g, 'front', cx, cy - r - 3, { size: 10, color: t.muted, align: 'center' });
-    text(g, 'L', cx - r - 8, cy + 4, { size: 10, color: t.muted, align: 'center' });
-    text(g, 'R', cx + r + 8, cy + 4, { size: 10, color: t.muted, align: 'center' });
+    const geoMap = !!plan?.source?.points && plan.settings?.path !== 'globe';
+    text(g, geoMap ? 'front · north' : 'front', cx, cy - r - 13, { size: 10, color: t.muted, align: 'center' });
+    text(g, geoMap ? 'behind · south' : 'behind', cx, cy + r + 22, { size: 10, color: t.muted, align: 'center' });
+    // the listener
     g.fillStyle = t.ink;
     g.beginPath();
     g.arc(cx, cy, 4, 0, Math.PI * 2);
     g.fill();
-    const notes = plan?.steps[pos] || [];
+    const notes = (plan?.steps[pos] || []).filter((n) => n.active);
+    // speakers of the chosen output, lit by how much of this step they play
+    const spatial = B.spatial;
+    const pts = spatial.testPoints(output);
+    const layout = spatial.OUTPUTS[output]?.layout;
+    const energy = pts.map(() => 0);
     notes.forEach((n) => {
-      if (!n.active) return;
-      const x = cx + n.pos.x * r * 0.92;
-      const y = cy - n.pos.y * r * 0.92;
+      if (layout) spatial.pannerGains(n.pos, layout).forEach((v, k) => (energy[k] += v * v * n.gain));
+      else if (output === 'stereo') {
+        const p = spatial.stereoPan(n.pos);
+        energy[0] += ((1 - p) / 2) * n.gain;
+        energy[1] += ((1 + p) / 2) * n.gain;
+      }
+    });
+    const rb = plan?.rumble?.[pos];
+    pts.forEach((p, k) => {
+      if (p.lfe) energy[k] = rb ? 0.4 + rb.value * 0.6 : 0;
+    });
+    const top = Math.max(0.0001, ...energy);
+    pts.forEach((p, k) => {
+      let x;
+      let y;
+      if (p.lfe) [x, y] = [16, 16]; // the subwoofer has no direction: shown in the corner
+      else {
+        const a = Math.atan2(p.pos.x, p.pos.y);
+        const rr = p.pos.z > 0.5 ? r * 0.55 : r;
+        [x, y] = [cx + Math.sin(a) * rr, cy - Math.cos(a) * rr];
+      }
+      const lit = output === 'binaural' ? 0 : energy[k] / top;
+      const size = p.lfe ? 9 : 7;
+      g.globalAlpha = 1;
+      g.fillStyle = t.bg;
+      g.fillRect(x - size, y - size, size * 2, size * 2);
+      g.fillStyle = t.amber;
+      g.globalAlpha = lit > 0.02 ? 0.25 + 0.75 * lit : 0;
+      g.fillRect(x - size, y - size, size * 2, size * 2);
+      g.globalAlpha = 1;
+      g.strokeStyle = p.pos.z > 0.5 ? t.muted : t.ink;
+      g.setLineDash(p.pos.z > 0.5 ? [2, 2] : []);
+      g.strokeRect(x - size + 0.5, y - size + 0.5, size * 2 - 1, size * 2 - 1);
+      g.setLineDash([]);
+      text(g, p.label, x, y + size + 10, { size: 9, color: t.muted, align: 'center' });
+    });
+    notes.forEach((n) => {
+      const x = cx + n.pos.x * r * 0.8;
+      const y = cy - n.pos.y * r * 0.8;
       g.fillStyle = chColor(plan, n.ch);
       g.beginPath();
       g.arc(x, y, 4 + n.pos.z * 7, 0, Math.PI * 2);

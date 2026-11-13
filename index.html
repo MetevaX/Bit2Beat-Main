@@ -37,6 +37,7 @@
   <symbol id="i-table" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 10h16M4 14.5h16M10 5v14"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></symbol>
   <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3c.6 4.6 3.4 7.4 8 8-4.6.6-7.4 3.4-8 8-.6-4.6-3.4-7.4-8-8 4.6-.6 7.4-3.4 8-8z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21m-3.5 0h7"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5m0 0-4 6m4-6 4 6"/></symbol>
 </svg>
@@ -48,7 +49,8 @@
     <button type="button" class="topnav-link" data-page="story">Story</button>
     <button type="button" class="topnav-link" data-page="about">About the team</button>
   </nav>
-  <button type="button" class="top-btn upload-btn" id="uploadBtn" aria-label="Upload a file: data, picture or video" title="Open any file: data (CSV, TSV, TXT, JSON, GeoJSON, Excel, OpenDocument), a picture (PNG, JPG, WebP, GIF, SVG…) or a video (MP4, WebM, MOV, MKV…). Bit2Beat opens the right tab by itself."><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Upload</span></button>
+  <button type="button" class="top-btn upload-btn" id="uploadBtn" aria-label="Upload a file: data, picture or video" title="Open any file: data (CSV, TSV, TXT, JSON, GeoJSON, Excel, OpenDocument), a picture (PNG, JPG, WebP, GIF, SVG…), a video (MP4, WebM, MOV, MKV…) or a scientific Earth-data file (GeoTIFF / COG, NetCDF, HDF5, up to 5 GB). Bit2Beat opens the right tab by itself. Your files stay on your device."><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Upload</span></button>
+  <button type="button" class="top-btn voice-btn" id="voiceBtn" aria-pressed="false" aria-label="Voice control (V)" title="Voice control: say play, pause, next, search for …, help (V)"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg><span>Voice</span></button>
   <div class="topbar-actions">
     <button type="button" class="top-btn guide-btn" id="guideBtn" aria-label="Guide: Bitty shows you how to use Bit2Beat (G)"><span class="guide-face" id="guideFace" aria-hidden="true"></span><span>Guide</span></button>
     <button type="button" class="top-btn" id="sessionsBtn">Sessions</button>
@@ -66,7 +68,7 @@
       <button role="tab" id="tab-earth" data-mode="earth" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Earth events</button>
       <button role="tab" id="tab-data" data-mode="data" aria-selected="false" aria-controls="sourceCard" tabindex="-1">Data</button>
     </div>
-    <input type="file" id="fileInput" hidden accept=".csv,.tsv,.tab,.txt,.dat,.prn,.json,.geojson,.xlsx,.xlsm,.ods,.png,.jpg,.jpeg,.jfif,.webp,.gif,.bmp,.avif,.svg,.ico,.tif,.tiff,.heic,.heif,.mp4,.m4v,.webm,.mov,.qt,.ogv,.ogg,.mkv,.3gp,.3g2,.mpeg,.mpg,.avi,.wmv,.flv,.ts,.m2ts,image/*,video/*,text/csv,application/json">
+    <input type="file" id="fileInput" hidden accept=".csv,.tsv,.tab,.txt,.dat,.prn,.json,.geojson,.xlsx,.xlsm,.ods,.png,.jpg,.jpeg,.jfif,.webp,.gif,.bmp,.avif,.svg,.ico,.tif,.tiff,.nc,.nc4,.cdf,.h5,.hdf5,.he5,.hdf,.cog,.heic,.heif,.mp4,.m4v,.webm,.mov,.qt,.ogv,.ogg,.mkv,.3gp,.3g2,.mpeg,.mpg,.avi,.wmv,.flv,.ts,.m2ts,image/*,video/*,text/csv,application/json">
     <label class="source-pick"><span class="sr-only">Source</span><select id="sourceSelect" aria-label="Choose what to listen to"></select></label>
     <button type="button" class="btn btn-quiet" id="reloadBtn" title="Load this source again (the newest data when online)"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Reload</button>
   </div>
@@ -166,6 +168,32 @@
         </div>
 
         <div class="source-options" id="opts-image">
+          <div class="sci-panel" id="sciPanel" hidden>
+            <p class="sci-sum"><strong>What's inside</strong> <span id="sciSummary"></span></p>
+            <div class="sci-row">
+              <label class="field">Layer <select id="sciVar"></select></label>
+              <div class="seg" role="group" aria-label="How to listen" id="sciMode">
+                <button type="button" data-sci="sweep" aria-pressed="true" title="Play the whole map as a sweep, from the real values">Whole map</button>
+                <button type="button" data-sci="point" aria-pressed="false" title="Click a place on the map to hear how it changes over time">One spot over time</button>
+                <button type="button" data-sci="timelapse" aria-pressed="false" title="One step per date: the map changes as the music plays">Time-lapse</button>
+              </div>
+            </div>
+            <div class="sci-row">
+              <label class="field field-range" id="sciTimeField">Date <output id="sciTimeOut"></output>
+                <input type="range" id="sciTime" min="0" max="0" value="0"></label>
+              <label class="field field-range" id="sciLayerField" hidden>Level <output id="sciLayerOut"></output>
+                <input type="range" id="sciLayer" min="0" max="0" value="0"></label>
+              <fieldset class="sci-spot" id="sciSpot" hidden>
+                <legend>Spot</legend>
+                <label>Latitude <input type="number" id="sciLat" min="-90" max="90" step="0.1" inputmode="decimal"></label>
+                <label>Longitude <input type="number" id="sciLon" min="-180" max="180" step="0.1" inputmode="decimal"></label>
+                <button type="button" class="btn btn-small" id="sciGo">Hear this spot</button>
+              </fieldset>
+            </div>
+            <div class="sci-key" aria-hidden="true"><span id="sciLo"></span><i id="sciRamp"></i><span id="sciHi"></span></div>
+            <p class="sci-read" id="sciReadout"></p>
+            <p class="card-note" id="sciNote"></p>
+          </div>
           <div class="seg" role="group" aria-label="What to measure" id="analysisGroup">
             <button type="button" data-analysis="light" aria-pressed="true" title="How the picture looks: brightness, detail and where the bright parts are">Light</button>
             <button type="button" data-analysis="color" aria-pressed="false" title="How the picture looks: its red, green and blue">Colour</button>
@@ -289,7 +317,10 @@
           <label class="field">Output
             <select id="output">
               <option value="stereo">Stereo</option>
-              <option value="binaural">Binaural (headphones, 3D)</option>
+              <option value="binaural">Headphone 3D (binaural)</option>
+              <option value="5.1">5.1 surround</option>
+              <option value="7.1">7.1 surround</option>
+              <option value="7.1.4">7.1.4 with height</option>
             </select>
           </label>
           <label class="field">Movement
@@ -299,10 +330,14 @@
               <option value="fall">Top to bottom</option>
               <option value="orbit">Circle around</option>
               <option value="fixed">Fixed places</option>
+              <option value="globe">Wrap the globe around me</option>
             </select>
           </label>
         </div>
-        <canvas id="stageCanvas" width="320" height="200" role="img" aria-label="Where each channel sits around the listener"></canvas>
+        <label class="check"><input type="checkbox" id="rumble"><span><b>Trend rumble</b><small>The slow long-term trend as a deep tone, sent to the subwoofer (LFE) on 5.1, 7.1 and 7.1.4.</small></span></label>
+        <canvas id="stageCanvas" width="320" height="200" role="img" aria-label="Top view of the listener and the speakers: lit speakers are playing"></canvas>
+        <div class="speaker-tests" id="speakerTests" role="group" aria-label="Test each speaker"></div>
+        <p class="card-note" id="stageNote"></p>
         <label class="field field-range">Room <output id="roomOut">22%</output><input type="range" id="room" min="0" max="100" value="22"></label>
         <div class="eq">
           <div class="eq-head"><span>Equaliser</span>
@@ -426,6 +461,24 @@
   </span>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="voice-ask" id="voiceAsk" role="alertdialog" aria-modal="false" aria-labelledby="voiceAskTitle" aria-describedby="voiceAskText" hidden>
+  <svg class="i voice-ask-icon" aria-hidden="true"><use href="#i-mic"/></svg>
+  <div>
+    <h2 id="voiceAskTitle">Do you want to turn on voice control?</h2>
+    <p id="voiceAskText">Use Bit2Beat by speaking: say “play”, “pause”, “next”, “search for sea ice” or “help”. Press Enter for yes, Escape for no. You can always press V.</p>
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" id="voiceYes">Yes, turn it on</button>
+      <button type="button" class="btn btn-quiet" id="voiceNo">No thanks</button>
+      <span class="voice-count" id="voiceCount" aria-hidden="true">5</span>
+    </div>
+  </div>
+</div>
+<div class="voice-bar" id="voiceBar" hidden>
+  <span class="voice-dot" aria-hidden="true"></span>
+  <span id="voiceHeard">Listening… say “help” for the commands.</span>
+  <button type="button" class="btn btn-quiet btn-small" id="voiceHelp">Commands</button>
+  <button type="button" class="btn btn-quiet btn-small" id="voiceOff">Turn off</button>
+</div>
 <div class="sr-only" id="srLive" role="status" aria-live="polite" aria-atomic="true"></div>
 <div class="sr-only" id="srLive2" role="status" aria-live="polite" aria-atomic="true"></div>
 
@@ -497,6 +550,7 @@
     <dt><kbd>G</kbd></dt><dd>Bitty’s guide</dd>
     <dt><kbd>Esc</kbd></dt><dd>Stop reading aloud, close the guide</dd>
     <dt><kbd>T</kbd></dt><dd>Readings table</dd>
+    <dt><kbd>V</kbd></dt><dd>Voice control on / off: say “play”, “pause”, “next”, “where am I”, “search for sea ice”, “go to video”, “violin”, “7.1”, “help” or “stop voice control”</dd>
     <dt><kbd>?</kbd></dt><dd>This help</dd>
   </dl>
 </dialog>
@@ -526,6 +580,14 @@
 <script src="src/js/core/eic-search.js"></script>
 <script src="src/js/core/xlsx.js"></script>
 <script src="src/js/core/tables.js"></script>
+<script src="src/js/core/bytes.js"></script>
+<script src="src/js/core/tiff.js"></script>
+<script src="src/js/core/netcdf3.js"></script>
+<script src="src/js/core/hdf5.js"></script>
+<script src="src/js/core/hdf5-data.js"></script>
+<script src="src/js/core/science.js"></script>
+<script src="src/js/core/sci-source.js"></script>
+<script src="src/js/core/sunlight.js"></script>
 <script src="src/js/core/plan.js"></script>
 <script src="src/js/core/story.js"></script>
 <script src="src/js/core/spotlight.js"></script>
@@ -550,6 +612,9 @@
 <script src="src/js/ui/recorder.js"></script>
 <script src="src/js/ui/url-state.js"></script>
 <script src="src/js/ui/video-view.js"></script>
+<script src="src/js/ui/science-view.js"></script>
+<script src="src/js/core/voice-commands.js"></script>
+<script src="src/js/ui/voice.js"></script>
 <script src="src/js/ui/speech.js"></script>
 <script src="src/js/ui/keys.js"></script>
 <script src="src/js/ui/pages.js"></script>

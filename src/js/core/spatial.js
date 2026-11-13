@@ -155,7 +155,30 @@
     '7.1.4': { id: '7.1.4', name: '7.1.4 immersive', channels: 12, layout: LAYOUTS['7.1.4'] },
   });
 
+  const NAMES = { L: 'Left', R: 'Right', C: 'Centre', LFE: 'Subwoofer (LFE)', Ls: 'Left surround', Rs: 'Right surround', Lss: 'Left side', Rss: 'Right side', Lrs: 'Left rear', Rrs: 'Right rear', Ltf: 'Top front left', Rtf: 'Top front right', Ltr: 'Top rear left', Rtr: 'Top rear right' };
+  /**
+   * The places to test for an output: its speakers (with friendly names), or for stereo the two
+   * sides and for headphone 3D five directions around the head.
+   */
+  function testPoints(output) {
+    const o = OUTPUTS[output] || OUTPUTS.stereo;
+    if (o.layout) return o.layout.speakers.map((sp) => ({ label: sp.label, name: NAMES[sp.label] || sp.label, lfe: !!sp.lfe, pos: { x: sp.cart[0], y: sp.cart[1], z: Math.max(0, sp.cart[2]) } }));
+    if (o.id === 'binaural')
+      return [
+        ['Front', 0, 1, 0.1],
+        ['Left', -1, 0, 0.1],
+        ['Right', 1, 0, 0.1],
+        ['Behind', 0, -1, 0.1],
+        ['Above', 0, 0.2, 1],
+      ].map(([name, x, y, z]) => ({ label: name, name, lfe: false, pos: { x, y, z } }));
+    return [
+      { label: 'L', name: 'Left', lfe: false, pos: { x: -1, y: 1, z: 0 } },
+      { label: 'R', name: 'Right', lfe: false, pos: { x: 1, y: 1, z: 0 } },
+    ];
+  }
+
   return {
+    testPoints,
     LAYOUTS,
     OUTPUTS,
     SPEAKERS: SPK,

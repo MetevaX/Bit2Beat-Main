@@ -29,13 +29,14 @@
     // ---------------------------------------------------------------- sources
     /** The source a chapter plays: the studio's own if it is showing it, else an offline copy. */
     function sourceFor(ch) {
-      if (isActive(ch) && app.src) return app.src;
+      if (isActive(ch) && app.src && (!app.src.science || app.src.science.mode === 'sweep')) return app.src;
       if (previews[ch.id]) return previews[ch.id];
       const { mode, src } = ch.scene;
       try {
         if (mode === 'data') previews[ch.id] = B.presets.DATA[src]();
         else if (mode === 'earth') previews[ch.id] = B.sources.earthOffline(src, src === 'quakes' ? st.earth.quakeFeed : st.earth.eonetDays);
         else if (mode === 'video') previews[ch.id] = B.nasaMedia[src].source;
+        else if (mode === 'image' && src === 'sci:sunlight') previews[ch.id] = B.sunlight.source(B.sciSource);
       } catch {
         previews[ch.id] = null;
       }
@@ -211,11 +212,18 @@
 
     /** Put the chapter's scene in the studio: tab, source, settings and audible channels. */
     function load(ch) {
-      const { mode, src, settings, unmute } = ch.scene;
+      const { mode, src, settings, unmute, image } = ch.scene;
       if (settings) Object.assign(st.settings, settings);
+      if (image) {
+        Object.assign(st.image, image);
+        B.dom.pressOne($('scanGroup'), $('scanGroup').querySelector(`[data-scan="${st.image.scan}"]`));
+        $('stepsRange').value = st.image.steps;
+        $('stepsOut').textContent = st.image.steps;
+        document.body.classList.remove('pointer-mode');
+      }
       app.syncControls?.();
       app.persist();
-      if (!isActive(ch) || !app.src) app.choose(mode, src);
+      if (!isActive(ch) || !app.src || src.startsWith('sci:')) app.choose(mode, src); // built-in maps start again from the whole map
       else app.rebuild({ keepPosition: false });
       if (unmute && app.src) {
         app.src.channels.forEach((c, j) => unmute.some((n) => c.name.startsWith(n)) && st.mix[j] && (st.mix[j].mute = false));

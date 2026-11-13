@@ -115,7 +115,7 @@
     if (key)
       return [
         { name: key.name, unit: key.unit, minSpan: (key.max - key.min) / 4, instrument: 'soft', hint: `Mean ${/^[A-Z][a-z]/.test(key.name) ? key.name.toLowerCase() : key.name} shown on screen, read from the visualisation's colour bar (${key.min}–${key.max} ${key.unit}).` },
-        { name: key.coverName, unit: '%', minSpan: 10, instrument: 'strings', hint: 'Share of the picture that shows data colours.' },
+        { name: key.coverName, unit: '%', minSpan: 10, instrument: 'strings', mute: true, hint: 'Share of the picture that shows data colours. Muted at first; press M to hear it.' },
         motion,
       ];
     return [
