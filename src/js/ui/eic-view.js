@@ -120,7 +120,7 @@
         return gallery;
       };
       if (saved?.items?.length && Date.now() - saved.at < 7 * 864e5) return Promise.resolve(use(saved.items));
-      galleryLoading = get('api/eic-gallery?v=2', { timeout: 60000 })
+      galleryLoading = get('api/eic-gallery?v=3', { timeout: 60000 })
         .then((j) => {
           storage.set(GKEY, { at: Date.now(), items: j.items });
           return use(j.items);

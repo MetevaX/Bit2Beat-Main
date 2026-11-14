@@ -84,12 +84,14 @@
   /** File types, as search filters them: pictures, videos and scientific data files. */
   const SCIENCE_EXT = { tif: 'tif', tiff: 'tif', nc: 'nc', nc4: 'nc', cdf: 'nc', h5: 'h5', he5: 'h5', hdf5: 'h5', hdf: 'h5' };
   const extOf = (url) => (String(url || '').match(/\.([a-z0-9]+)(?:$|\?)/i) || [])[1]?.toLowerCase() || '';
-  /** The scientific data files of a page: { tif: path, nc: path, h5: path } (the first of each). */
+  /** A colour bar or legend on its own (not a map that shows one, like "..._w_colorbar_..."): nothing to listen to. */
+  const KEY_ONLY = /(?<!w_|with_)colou?r_?bar|legend|cbar/i;
+  /** The scientific data files of a page: { tif: path, nc: path, h5: path } (the first of each that is not just a colour bar). */
   function scienceFiles(list) {
     const out = {};
     for (const m of list) {
       const k = SCIENCE_EXT[extOf(m.url)];
-      if (k && !out[k]) out[k] = rel(m.url);
+      if (k && !out[k] && !KEY_ONLY.test(String(m.url).split('/').pop())) out[k] = rel(m.url);
     }
     return out;
   }

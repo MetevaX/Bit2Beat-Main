@@ -19,7 +19,7 @@
   'use strict';
 
   const SIZE = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 6: 1, 7: 1, 8: 2, 9: 4, 10: 8, 11: 4, 12: 8, 16: 8, 17: 8, 18: 8 };
-  const WANT = new Set([254, 256, 257, 258, 259, 273, 277, 278, 279, 284, 317, 322, 323, 324, 325, 338, 339, 33550, 33922, 34264, 34735, 42112, 42113]);
+  const WANT = new Set([254, 256, 257, 258, 259, 262, 273, 277, 278, 279, 284, 317, 322, 323, 324, 325, 338, 339, 33550, 33922, 34264, 34735, 42112, 42113]);
   const COMPRESSION = { 6: 'old JPEG', 7: 'JPEG', 34712: 'JPEG 2000', 34887: 'LERC', 34925: 'LZMA', 50000: 'Zstandard', 50001: 'WebP', 50002: 'JPEG XL' };
   const view = (u8) => new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
 
@@ -118,6 +118,7 @@
         le,
         bits: t[258]?.[0] || 1,
         fmt: t[339]?.[0] || 1, // 1 unsigned, 2 signed, 3 float
+        photometric: t[262]?.[0] ?? -1, // 2 = RGB colour
         spp,
         // an alpha sample (ExtraSamples 1 or 2, as the NASA raster API sends) is a no-data mask, not data
         alpha: [1, 2].includes(t[338]?.[t[338].length - 1]) && spp > 1 ? spp - 1 : -1,
@@ -226,7 +227,17 @@
    * A grid of at most width × height values (nearest pixel), as Float32Array with NaN for no data.
    * opts: { width, height, band, signal, progress(done, total) }
    */
-  async function readGrid(reader, t, { width = 720, height = 360, band = 0, window = [0, 0, 1, 1], signal, progress } = {}) {
+  async function readGrid(reader, t, { width = 720, height = 360, band = 0, bands = null, window = [0, 0, 1, 1], signal, progress } = {}) {
+    // bands = [0, 1, 2]: several bands in one pass over the file (a colour picture); data is then a list
+    if (bands) {
+      if (t.main.planar === 2) {
+        const parts = [];
+        for (const b of bands) parts.push(await readGrid(reader, t, { width, height, band: b, window, signal, progress }));
+        return { ...parts[0], data: parts.map((g) => g.data) };
+      }
+      const g = await readGrid(reader, t, { width, height, band: -1, window, signal, progress });
+      return { ...g, data: bands.map((b) => g.data[b]) };
+    }
     // window = [u0, v0, u1, v1]: the part of the picture to read (zoom), 0…1 from the top-left
     const [u0, v0, u1, v1] = window.map((f) => Math.max(0, Math.min(1, f)));
     const fu = Math.max(1e-6, u1 - u0);
@@ -236,10 +247,12 @@
     const h = Math.max(1, Math.min(height, Math.round(img.height * fv)));
     const sppIn = img.planar === 2 ? 1 : img.spp;
     const bps = img.bits / 8;
+    const all = band < 0; // every band of the picture (interleaved samples), in one pass
     const b = img.planar === 2 ? 0 : band;
     const get = getter(img);
     const xs = Array.from({ length: w }, (_, i) => Math.min(img.width - 1, Math.floor((u0 + ((i + 0.5) / w) * fu) * img.width)));
     const out = new Float32Array(w * h).fill(NaN);
+    const outs = all ? Array.from({ length: img.spp }, () => new Float32Array(w * h).fill(NaN)) : null;
     // rows grouped by the strip / tile row that holds them
     const groups = new Map();
     for (let j = 0; j < h; j++) {
@@ -254,7 +267,7 @@
     for (const [by, rows] of groups) {
       for (const bx of cols) {
         if (signal?.aborted) throw new DOMException('Cancelled.', 'AbortError');
-        const blk = await block(reader, img, bx, by, band);
+        const blk = await block(reader, img, bx, by, Math.max(0, band));
         progress?.(++done, total);
         if (!blk) continue;
         for (const [j, ry] of rows) {
@@ -264,13 +277,17 @@
             if (x < 0 || x >= img.tw) continue;
             const at = (ry * img.tw + x) * sppIn;
             if (img.alpha >= 0 && img.planar !== 2 && get(blk.dv, (at + img.alpha) * bps, blk.le) === 0) continue; // masked: no data
+            if (all) {
+              for (let k = 0; k < img.spp; k++) outs[k][j * w + i] = get(blk.dv, (at + k) * bps, blk.le);
+              continue;
+            }
             const v = get(blk.dv, (at + b) * bps, blk.le);
             out[j * w + i] = img.nodata != null && (v === img.nodata || (Number.isNaN(img.nodata) && Number.isNaN(v))) ? NaN : v * img.scale + img.offset;
           }
         }
       }
     }
-    return { data: out, width: w, height: h, from: [t.main.width, t.main.height], overview: img !== t.main, simplified: w < Math.round(t.main.width * fu) - 1 || h < Math.round(t.main.height * fv) - 1 };
+    return { data: outs || out, width: w, height: h, from: [t.main.width, t.main.height], overview: img !== t.main, simplified: w < Math.round(t.main.width * fu) - 1 || h < Math.round(t.main.height * fv) - 1 };
   }
 
   return { open, readGrid, pick, pixel };

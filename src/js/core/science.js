@@ -418,8 +418,12 @@
       title: m.label || '',
       source: '',
       note: m.note,
-      // an ordinary photo saved as TIFF (8-bit colour, no map position): show it as a picture
-      photo: !m.bbox && !/projected/.test(m.note) && m.bits === 8 && m.fmt === 1 && bands >= 3,
+      // a picture saved as TIFF (8 or 16-bit colour, marked RGB or with no map position): show it as a picture.
+      // NASA's visualization studio saves its rendered maps like this: colours, not measured values.
+      photo: m.fmt === 1 && [8, 16].includes(m.bits) && bands >= 3 && (m.photometric === 2 || (!m.bbox && !/projected/.test(m.note))),
+      depth: m.bits,
+      /** The colour picture: red, green and blue read in one pass over the file. */
+      rgb: (o = {}) => tiff.readGrid(reader, t, { ...o, bands: [0, 1, 2] }),
       variables: vars,
       info: async (id) => ({ ...vars.find((x) => x.id === id), bbox: m.bbox, northUp: true, overviews: t.images.length - 1, compression: m.comp }),
       map: (id, o = {}) => grid(id === 'bands' ? o.t || 0 : vars.find((x) => x.id === id)?.band || 0, o),

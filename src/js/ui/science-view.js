@@ -102,7 +102,7 @@
         if (f.photo) {
           const res = await photo(f, { name: fileName }, signal);
           res.meta.name = name;
-          res.meta.origin = origin;
+          res.meta.origin = { ...origin, note: `${origin.note ? origin.note + ' ' : ''}A picture NASA rendered (${f.format}): played by its colours and brightness.` };
           return res;
         }
         const sci = { file: f, fileName, size: reader.size, mode: 'sweep', varId: f.variables[0].id, t: 0, layer: 0, spot: null, info: null };
@@ -146,20 +146,24 @@
       return (builtIns[id] = res);
     }
 
-    /** An ordinary colour photo saved as TIFF: show it as a picture. */
+    /** A colour picture saved as TIFF (a photo, or a map NASA rendered): show it as a picture. */
     async function photo(f, file, signal) {
       const v = f.variables.find((x) => x.id === 'band1');
       const [w, h] = [v.shape[1], v.shape[0]];
       const k = Math.min(1, 1200 / Math.max(w, h));
       const size = { width: Math.round(w * k), height: Math.round(h * k), signal };
-      const bands = [];
-      for (const id of ['band1', 'band2', 'band3']) bands.push((await f.map(id, size)).data);
-      const g = await f.map('band1', size);
+      const pic = await f.rgb(size);
+      const g = pic.data.map((data) => ({ data }));
+      const [W, H] = [pic.width, pic.height];
       const c = document.createElement('canvas');
-      [c.width, c.height] = [g.width, g.height];
-      const img = new ImageData(g.width, g.height);
-      for (let i = 0; i < g.width * g.height; i++) {
-        img.data.set([bands[0][i], bands[1][i], bands[2][i], 255], i * 4);
+      [c.width, c.height] = [W, H];
+      const img = new ImageData(W, H);
+      const s = f.depth === 16 ? 1 / 257 : 1;
+      for (let i = 0; i < W * H; i++) {
+        const r = g[0].data[i];
+        // see-through parts (no data) are shown on white, as on NASA's page
+        if (!Number.isFinite(r)) img.data.set([255, 255, 255, 255], i * 4);
+        else img.data.set([r * s, g[1].data[i] * s, g[2].data[i] * s, 255], i * 4);
       }
       c.getContext('2d').putImageData(img, 0, 0);
       return { canvas: c, meta: { name: file.name.replace(/\.[a-z0-9]+$/i, ''), origin: { source: 'Your picture · ' + file.name, url: '', fetched: '', live: false } } };
