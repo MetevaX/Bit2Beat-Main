@@ -1,0 +1,167 @@
+/**
+ * Bit2Beat ui · Bitty’s card: Bitty the space pup with short notes from the NASA Image and Video Library.
+ * Notes follow what is playing (climate, the Arctic, earthquakes, natural events, pictures): 20 saved
+ * notes work offline, and fresh ones are fetched from images-api.nasa.gov for the current topic.
+ * A new note appears every 20 seconds unless the pointer or keyboard focus is on the card.
+ */
+(function (root) {
+  'use strict';
+  const B = root.Bit2Beat;
+  const { $, storage } = B.dom;
+  const ROTATE_MS = 20000;
+  const ABBR = /(?:\b(?:Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|Mr|Dr|St|Mt|No|vs|approx|U\.S|a\.m|p\.m|[A-Z]))$/;
+
+  /** Clean NASA description text and cut it at a real sentence end (not "Oct." or "7.5"). */
+  function excerpt(raw, max = 300) {
+    let t = String(raw || '').replace(/<[^>]*>/g, ' ');
+    if (typeof document !== 'undefined') {
+      const box = document.createElement('textarea');
+      box.innerHTML = t;
+      t = box.value;
+    }
+    t = t.replace(/^[A-Za-z0-9_-]+\s*\([^)]*\)\s*-{2,}\s*/, '').replace(/\s+/g, ' ').trim();
+    if (t.length <= max) return t;
+    let best = -1;
+    const re = /[.!?](?=\s+["“(]?[A-Z])/g;
+    let m;
+    while ((m = re.exec(t)) && m.index < max) {
+      const before = t.slice(0, m.index);
+      if (!ABBR.test(before) && !/\d$/.test(before)) best = m.index + 1;
+    }
+    if (best >= 60) return t.slice(0, best);
+    return t.slice(0, max).replace(/\s+\S*$/, '') + '…';
+  }
+
+  const TOPIC_NAMES = { climate: 'climate', quakes: 'earthquakes', events: 'natural events', arctic: 'the Arctic', image: 'Earth from space' };
+
+  function create(getPrefs) {
+    const { NOTES, QUERIES } = B.nasaNotes;
+    let pool = NOTES.map((n) => ({ ...n }));
+    let topic = 'climate';
+    let index = 0;
+    let timer = 0;
+    let paused = false;
+    const fetched = new Set();
+    $('bittyFace').innerHTML = B.bittyArt.dog('happy', 'dog');
+
+    const ordered = () => [...pool.filter((n) => n.topic === topic), ...pool.filter((n) => n.topic !== topic)];
+    let list = ordered();
+
+    function show(announce = false) {
+      const f = list[index];
+      if (!f) return;
+      $('bittyFact').textContent = f.text;
+      $('bittySource').href = 'https://images.nasa.gov/details/' + encodeURIComponent(f.id);
+      $('bittySource').textContent = (f.title.length > 44 ? f.title.slice(0, 42) + '…' : f.title) + (f.date ? ` (${f.date.slice(0, 4)})` : '');
+      $('bittySource').title = f.title;
+      $('bittyPage').textContent = `${index + 1}/${list.length}`;
+      $('bittyTitle').textContent = `Bitty · ${TOPIC_NAMES[f.topic] || 'NASA note'}`;
+      if (announce) B.dom.announce(f.text);
+    }
+
+    function hop() {
+      if (getPrefs().reduceMotion) return;
+      const d = $('bittyFace');
+      d.classList.remove('hop');
+      void d.offsetWidth;
+      d.classList.add('hop');
+    }
+
+    function step(delta, announce = false) {
+      index = (index + delta + list.length) % list.length;
+      show(announce);
+    }
+
+    function schedule() {
+      clearInterval(timer);
+      timer = setInterval(() => {
+        if (paused || document.hidden || $('bittyCard').hidden) return;
+        step(1);
+      }, ROTATE_MS);
+    }
+
+    /** Fetch fresh notes for a topic (cached for a day) and merge them in. */
+    async function refresh(t) {
+      const queries = QUERIES[t] || [];
+      const q = queries.find((x) => !fetched.has(x));
+      if (!q || typeof fetch !== 'function') return;
+      fetched.add(q);
+      const key = 'b2b-nasa-' + q;
+      let items = null;
+      const cached = storage.get(key, null);
+      if (cached && Date.now() - cached.time < 86400000) items = cached.items;
+      else {
+        try {
+          const ctl = new AbortController();
+          const timeout = setTimeout(() => ctl.abort(), 9000);
+          const r = await fetch('https://images-api.nasa.gov/search?media_type=image&q=' + encodeURIComponent(q), { signal: ctl.signal, credentials: 'omit' });
+          clearTimeout(timeout);
+          if (!r.ok) throw new Error('unavailable');
+          const body = await r.json();
+          items = (body.collection?.items || [])
+            .map((i) => i.data?.[0])
+            .filter((d) => d && typeof d.description === 'string' && d.description.length > 80)
+            .slice(0, 12)
+            .map((d) => ({ topic: t, id: d.nasa_id, title: String(d.title || d.nasa_id).slice(0, 120), date: String(d.date_created || '').slice(0, 10), text: excerpt(d.description) }))
+            .filter((n) => n.text.length > 60);
+          storage.set(key, { time: Date.now(), items });
+        } catch {
+          fetched.delete(q);
+          return;
+        }
+      }
+      const seenId = new Set(pool.map((n) => n.id));
+      const seenText = new Set(pool.map((n) => n.text));
+      const fresh = items.filter((n) => !seenId.has(n.id) && !seenText.has(n.text));
+      if (!fresh.length) return;
+      const current = list[index];
+      pool = [...pool, ...fresh].slice(-80);
+      list = ordered();
+      index = Math.max(0, list.indexOf(current));
+      show();
+    }
+
+    /** Follow what is playing: 'climate' | 'quakes' | 'events' | 'arctic' | 'image'. */
+    function setTopic(t) {
+      if (!t || t === topic) return;
+      topic = t;
+      list = ordered();
+      index = 0;
+      show();
+      hop();
+      if (getPrefs().pet !== false) refresh(t);
+    }
+
+    function apply() {
+      const on = getPrefs().pet !== false;
+      $('bittyCard').hidden = !on;
+      if (on) refresh(topic);
+    }
+
+    $('bittyNext').onclick = () => {
+      step(1, true);
+      hop();
+      schedule();
+    };
+    $('bittyPrev').onclick = () => {
+      step(-1, true);
+      hop();
+      schedule();
+    };
+    $('bittyFace').onclick = () => {
+      hop();
+      step(1, true);
+      schedule();
+    };
+    const card = $('bittyCard');
+    card.addEventListener('pointerenter', () => (paused = true));
+    card.addEventListener('pointerleave', () => (paused = false));
+    card.addEventListener('focusin', () => (paused = true));
+    card.addEventListener('focusout', () => (paused = false));
+    show();
+    schedule();
+    return { apply, hop, show, setTopic };
+  }
+
+  B.bittyCard = { create, excerpt };
+})(typeof self !== 'undefined' ? self : this);
