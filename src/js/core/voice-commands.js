@@ -51,6 +51,7 @@
     { id: 'theme', say: 'dark mode or light mode', help: 'change the colours', args: ['dark', 'light'] },
     { id: 'help', say: 'help', help: 'hear the list of commands' },
     { id: 'repeat', say: 'repeat', help: 'hear the last answer again' },
+    { id: 'listen', say: 'push to talk or always listen', help: 'listen only while V is held down, or to every phrase', args: ['push', 'always'] },
     { id: 'stop', say: 'stop voice control', help: 'turn voice control off' },
   ];
   const IDS = new Set(COMMANDS.map((c) => c.id));
@@ -76,6 +77,9 @@
     let m;
     // stopping voice control comes first: "stop listening", "stop voice control", "voice off"
     if (/\b(stop|turn off|disable|end|quit|exit)\b.*\b(voice|listening|control|microphone|mic)\b|\bvoice (control )?off\b|\bstop listening\b/.test(t)) return { id: 'stop' };
+    // how to listen: push to talk (hold V) or always listening
+    if (/\b(push|press|hold) (to|and) talk\b|\bwalkie talkie\b/.test(t)) return { id: 'listen', arg: 'push' };
+    if (/\b(always|keep|all time|hands free)\b.*\blisten|\blisten (all|always|every)|\bhands free\b/.test(t)) return { id: 'listen', arg: 'always' };
     if ((m = raw.match(/\b(?:search|look|find|show me)(?: for| up)?\s+(.{2,80})$/))) {
       const q = m[1].replace(/^(the|some|data on|data about|about)\s+/, '').trim();
       if (q && !/^(it|that|this)$/.test(q) && !/^(the )?(data|images?|pictures?|videos?|earth|earth events|events)( tab| page)?$/.test(q)) return { id: 'search', arg: q };

@@ -3,7 +3,12 @@
  *
  * The first time the site opens, a small box asks: "Do you want to turn on voice control?" with
  * five seconds to answer (Enter = yes, Escape = no; it is read by screen readers and, where the
- * browser allows, spoken aloud). V turns voice control on and off at any time.
+ * browser allows, spoken aloud). V turns voice control on.
+ *
+ * Push to talk (the default): the microphone listens only while V (or the Talk button) is held
+ * down, or for one command after a quick tap, so music, talk in the room and the app's own sound
+ * are never taken as commands. Shift+V (or "stop voice control") turns it off. Always listening
+ * (chosen in the voice bar, or by saying "always listen"): every phrase is a command, as before.
  *
  * Listening: the microphone is heard by ui/voice-ear.js, and each phrase goes (as a short WAV) to
  * Gemini through our server (api/voice.js), which writes it out — any language or accent — and
@@ -26,6 +31,40 @@
     let speaking = false;
     let last = '';
     const remember = (patch) => storage.set(KEY, { ...storage.get(KEY, {}), ...patch });
+
+    // ---------------------------------------------------------------- push to talk
+    let ptt = storage.get(KEY, {}).ptt !== false;
+    let talking = 0; // push to talk: 0 not listening, 1 one command (after a tap), 2 held down
+    let talkTimer = 0;
+    const touch = !!root.matchMedia?.('(pointer: coarse)').matches;
+    const holdWord = () => (touch ? 'Hold the Talk button' : 'Hold V');
+    const idleText = () => (ptt ? `${holdWord()} and speak, or tap ${touch ? 'it' : 'V'} for one command.` : 'Listening… say “help” for the commands.');
+    function showMode() {
+      $('voiceStateText').textContent = ptt && !talking ? 'Push to talk' : 'Listening';
+      $('voiceBar').classList.toggle('is-talking', ptt && !!talking);
+      $('voiceTalk').hidden = !ptt;
+      $('voiceTalk').setAttribute('aria-pressed', String(ptt && !!talking));
+      $('voiceMode').textContent = ptt ? 'Always listen' : 'Push to talk';
+      $('voiceMode').title = ptt ? 'Listen to every phrase, without holding a key' : 'Listen only while V or Talk is held';
+    }
+    /** A short soft tone: high when listening starts, low when it stops (heard without a screen). */
+    let tones = null;
+    function tone(up) {
+      try {
+        tones ||= new (root.AudioContext || root.webkitAudioContext)();
+        const t = tones.currentTime;
+        const o = tones.createOscillator();
+        const g = tones.createGain();
+        o.frequency.setValueAtTime(up ? 660 : 520, t);
+        o.frequency.linearRampToValueAtTime(up ? 880 : 390, t + 0.09);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.08, t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+        o.connect(g).connect(tones.destination);
+        o.start(t);
+        o.stop(t + 0.13);
+      } catch {}
+    }
 
     // ---------------------------------------------------------------- speaking back
     function say(text, { quiet = false } = {}) {
@@ -63,6 +102,10 @@
     const online = () => navigator.onLine && /^https?:$/.test(location.protocol);
     function listen() {
       if (!on || speaking || busy) return;
+      if (ptt && !talking) {
+        ear?.pause(true);
+        return showMode();
+      }
       if (ear) return ear.pause(false);
       if (!rec) return;
       try {
@@ -74,6 +117,78 @@
     const status = (t) => ($('voiceHeard').textContent = t);
     function level(v) {
       $('voiceBar').style.setProperty('--level', v.toFixed(2));
+    }
+
+    /** Push to talk: listen now. held: while V or the Talk button is held down; else one command. */
+    function talkStart(held) {
+      if (!on) return;
+      if (speaking) {
+        root.speechSynthesis?.cancel(); // talking over an answer stops it
+        speaking = false;
+      }
+      if (busy) return;
+      clearTimeout(talkTimer);
+      talking = held ? 2 : 1;
+      tone(true);
+      status(held ? 'Listening… let go when you finish.' : 'Listening for one command…');
+      showMode();
+      if (ear) {
+        ear.pause(false);
+        ear.hold(held);
+      } else
+        try {
+          rec?.start();
+        } catch {
+          /* already listening */
+        }
+      if (!held) talkTimer = setTimeout(() => talkEnd('Nothing heard. '), 8000);
+    }
+    /** V or Talk let go: what was said is sent. A quick tap keeps listening for one command instead. */
+    function talkRelease(tap) {
+      if (talking !== 2) return;
+      talking = 1;
+      if (tap) {
+        ear?.hold(false); // listen on: the phrase ends at the first short pause
+        status('Listening for one command…');
+        talkTimer = setTimeout(() => talkEnd('Nothing heard. '), 8000);
+        return;
+      }
+      ear?.send(); // what was said goes now
+      if (!ear)
+        try {
+          rec?.stop();
+        } catch {}
+      talkTimer = setTimeout(() => talkEnd('Nothing heard. '), 1500);
+    }
+    function talkEnd(why = '') {
+      clearTimeout(talkTimer);
+      if (!talking) return;
+      talking = 0;
+      ear?.hold(false);
+      ear?.pause(true);
+      if (!ear)
+        try {
+          rec?.abort();
+        } catch {}
+      tone(false);
+      if (why) status(why + idleText());
+      showMode();
+    }
+    /** A phrase was caught: push to talk stops listening while it is understood and answered. */
+    function caught() {
+      if (!ptt || !talking) return;
+      clearTimeout(talkTimer);
+      talking = 0;
+      ear?.hold(false);
+      tone(false);
+      showMode();
+    }
+    function setMode(push) {
+      ptt = push;
+      remember({ ptt: push });
+      talkEnd();
+      showMode();
+      return say(push ? `Push to talk. ${holdWord()} and speak.` : 'Always listening. Just speak.');
     }
 
     /** The browser's own speech recognition (Chrome, Edge, Safari), used when Gemini cannot be reached. */
@@ -88,6 +203,7 @@
         rec.onresult = (e) => {
           const r = e.results[e.results.length - 1];
           const alts = Array.from(r, (a) => a.transcript.trim()).filter(Boolean);
+          caught();
           if (alts.length) handle(alts, r[0].confidence);
         };
         rec.onerror = (e) => {
@@ -108,6 +224,7 @@
       if (!on || busy || Date.now() - lastSent < 900) return;
       busy = true;
       lastSent = Date.now();
+      caught();
       ear?.pause(true);
       status(`Heard ${seconds.toFixed(1)} s · understanding…`);
       try {
@@ -119,7 +236,7 @@
         const local = j.heard && V.parse(j.heard);
         if (local) return run(local, j.heard);
         if (!j.heard) {
-          status('Listening… say “help” for the commands.'); // only noise or music
+          status(ptt ? 'Nothing heard. ' + idleText() : 'Listening… say “help” for the commands.'); // only noise or music
           return listen();
         }
         return say(j.reply || `Sorry, I did not understand “${j.heard}”. Say help for the commands.`);
@@ -144,12 +261,14 @@
       $('voiceBtn').setAttribute('aria-pressed', 'true');
       $('voiceBar').hidden = false;
       document.body.classList.add('voice-on');
+      showMode();
+      const welcome = `Voice control is on. ${ptt ? `${holdWord()} and speak, or tap ${touch ? 'it' : 'V'} for one command. ` : ''}Say help to hear the commands.`;
       if (online() && B.voiceEar) {
         try {
           ear = B.voiceEar.create({ onPhrase: phrase, onLevel: level });
           await ear.start();
           ear.pause(true); // until the welcome has been said
-          say('Voice control is on. Say help to hear what you can say.');
+          say(welcome);
           return true;
         } catch (e) {
           ear?.stop();
@@ -162,7 +281,7 @@
         }
       }
       if (startNative()) {
-        say('Voice control is on. Say help to hear what you can say.');
+        say(welcome);
         return true;
       }
       stop(false);
@@ -171,6 +290,7 @@
     }
 
     function stop(spoken = true) {
+      talkEnd();
       on = false;
       busy = false;
       remember({ asked: true, on: false });
@@ -387,6 +507,8 @@
           return say(V.helpText());
         case 'repeat':
           return say(last || 'Nothing to repeat yet.');
+        case 'listen':
+          return setMode(arg !== 'always');
         case 'stop':
           return stop();
       }
@@ -442,14 +564,56 @@
     $('voiceBtn').onclick = () => (on ? stop() : start());
     $('voiceOff').onclick = () => stop();
     $('voiceHelp').onclick = () => say(V.helpText());
+    $('voiceMode').onclick = () => setMode(!ptt);
+
+    // V: turns voice control on; then hold it to talk (a tap: one command). Shift+V turns it off.
+    let vDown = 0;
+    const isV = (e) => e.key === 'v' || e.key === 'V';
     document.addEventListener('keydown', (e) => {
-      if ((e.key === 'v' || e.key === 'V') && !e.ctrlKey && !e.metaKey && !e.altKey && !document.querySelector('dialog[open]')) {
-        const tag = e.target.tagName;
-        if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag) || e.target.isContentEditable) return;
-        e.preventDefault();
-        on ? stop() : start();
-      }
+      if (!isV(e) || e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]')) return;
+      const tag = e.target.tagName;
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag) || e.target.isContentEditable) return;
+      e.preventDefault();
+      if (e.repeat) return;
+      if (!on) return start();
+      if (!ptt || e.shiftKey) return stop();
+      vDown = performance.now();
+      talkStart(true);
     });
+    document.addEventListener('keyup', (e) => {
+      if (!vDown || !isV(e)) return;
+      const tap = performance.now() - vDown < 350;
+      vDown = 0;
+      talkRelease(tap);
+    });
+    root.addEventListener('blur', () => {
+      if (!vDown) return;
+      vDown = 0;
+      talkRelease(false);
+    });
+
+    // the Talk button: hold it (mouse, finger), or press it with Enter or Space for one command
+    const talkBtn = $('voiceTalk');
+    let pDown = 0;
+    talkBtn.addEventListener('pointerdown', (e) => {
+      if (e.button > 0) return;
+      e.preventDefault();
+      pDown = performance.now();
+      try {
+        talkBtn.setPointerCapture(e.pointerId);
+      } catch {}
+      talkStart(true);
+    });
+    const up = () => {
+      if (!pDown) return;
+      const tap = performance.now() - pDown < 350;
+      pDown = 0;
+      talkRelease(tap);
+    };
+    talkBtn.addEventListener('pointerup', up);
+    talkBtn.addEventListener('pointercancel', up);
+    talkBtn.addEventListener('click', (e) => e.detail === 0 && talkStart(false));
+    talkBtn.addEventListener('contextmenu', (e) => e.preventDefault());
 
     const saved = storage.get(KEY, {});
     if (!navigator.mediaDevices?.getUserMedia && !Rec) $('voiceBtn').title = 'Voice control needs a microphone.';
@@ -459,8 +623,12 @@
       setTimeout(() => toast('Voice control was on last time.', 7000, { label: 'Turn it on', run: start }), 900);
     }
 
-    return { start, stop, run, get on() {
+    return { start, stop, run, talkStart, talkRelease, get on() {
       return on;
+    }, get pushToTalk() {
+      return ptt;
+    }, get talking() {
+      return talking;
     } };
   }
 

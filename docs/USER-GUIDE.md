@@ -100,7 +100,7 @@ Each chapter shows:
 | **Now playing** (navy panel) | The current step, its note and frequency, the reading behind it and live sound bars. |
 | **Sound** | Instrument, scale, key, range and tempo. **Smart Tuning** picks them from the shape of the data. |
 | **Upload** (in the top bar, next to About the team) | One button for every file: data, picture, video or scientific file (GeoTIFF, NetCDF, HDF5). Bit2Beat looks at the file and opens the right tab. |
-| **Voice** (top right, next to Accessibility) | Voice control (`V`): say *play*, *explain*, *search for sea ice*, *result 2*, *help*… |
+| **Voice** (top right, next to Accessibility) | Voice control (`V`): then hold `V` while you speak (push to talk; a tap listens for one command, `Shift`+`V` turns it off). Say *play*, *explain*, *search for sea ice*, *result 2*, *help*… *Always listen* in the voice bar listens to every phrase instead. |
 | **Channels** | One row per data series: volume, instrument, **M**ute, **S**olo and **⇅** (flip pitch direction). |
 | **Listening aids** | Shared pitch scale, ticks on sudden jumps, reference tone. |
 | **Space & tone** | Output (stereo or binaural for headphones), movement, room and equaliser, and **Reset**. |

@@ -3887,7 +3887,7 @@ body.pointer-mode main {
   left: 50%;
   bottom: 140px;
   transform: translateX(-50%);
-  max-width: min(640px, calc(100vw - 32px));
+  max-width: min(860px, calc(100vw - 32px));
   display: flex;
   align-items: center;
   gap: 10px;
@@ -3902,9 +3902,42 @@ body.pointer-mode main {
   display: none;
 }
 .voice-bar #voiceHeard {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.voice-bar .btn.voice-talk {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--amber);
+  border-color: var(--amber);
+  color: var(--navy);
+  font-weight: 700;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.voice-bar .voice-talk[hidden] {
+  display: none;
+}
+.voice-bar .voice-talk .i {
+  width: 15px;
+  height: 15px;
+}
+/* listening (push to talk): the label says so, and the Talk button turns light */
+.voice-bar.is-talking .btn.voice-talk {
+  background: var(--cream);
+  border-color: var(--cream);
+  color: var(--navy);
+}
+.voice-bar.is-talking .voice-state b {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .voice-bar .btn {
   color: var(--cream);
@@ -3924,6 +3957,23 @@ body.pointer-mode main {
   height: 16px;
 }
 @media (max-width: 760px) {
+  .voice-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: 18px;
+    bottom: 132px;
+    width: calc(100vw - 24px);
+  }
+  .voice-bar #voiceHeard {
+    flex-basis: 100%;
+    order: -1;
+    white-space: normal;
+    text-align: center;
+  }
+  .voice-bar .voice-talk {
+    min-height: 44px;
+    padding-inline: 18px;
+  }
   .topbar .voice-btn span {
     position: absolute;
     width: 1px;
@@ -4453,6 +4503,7 @@ THE SOFTWARE.
       <h2><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg>Without a screen</h2>
       <ul>
         <li><b>Voice</b> (top right, or V): say <i>play</i>, <i>pause</i>, <i>explain</i>, <i>search for sea ice</i>, <i>result 2</i>, <i>violin</i>, <i>default mood</i> or <i>help</i>, in any language.</li>
+        <li><b>Push to talk</b>: once voice is on, it listens only while you <b>hold V</b> (or the <b>Hold to talk</b> button on a phone), so music and talk in the room are not taken as commands. A quick tap listens for one command. A high tone means it is listening, a low tone that it stopped. Prefer it always listening? Press <b>Always listen</b> in the voice bar, or say “always listen”.</li>
         <li><b>Accessibility</b>: bigger text, high contrast, dark theme, calmer motion, larger buttons, mono sound.</li>
         <li>Every control works with the keyboard and a screen reader; captions describe each note.</li>
       </ul>
@@ -4477,7 +4528,7 @@ THE SOFTWARE.
         <dt>T</dt><dd>Readings table</dd>
         <dt>B</dt><dd>Score in braille</dd>
         <dt>L</dt><dd>Repeat on or off</dd>
-        <dt>V</dt><dd>Voice control</dd>
+        <dt>V</dt><dd>Voice on; then hold V and speak (tap: one command). Shift+V: voice off</dd>
         <dt>G</dt><dd>Bitty's guide</dd>
         <dt>?</dt><dd>All shortcuts</dd>
       </dl>
@@ -4577,8 +4628,10 @@ THE SOFTWARE.
   </div>
 </div>
 <div class="voice-bar" id="voiceBar" hidden>
-  <span class="voice-state" aria-hidden="true"><svg class="i"><use href="#i-mic"/></svg><b>Voice on</b></span>
-  <span id="voiceHeard">Listening… say “help” for the commands.</span>
+  <span class="voice-state" aria-hidden="true"><svg class="i"><use href="#i-mic"/></svg><b id="voiceStateText">Push to talk</b></span>
+  <span id="voiceHeard">Hold V and speak, or tap V for one command.</span>
+  <button type="button" class="btn btn-small voice-talk" id="voiceTalk" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg>Hold to talk</button>
+  <button type="button" class="btn btn-quiet btn-small" id="voiceMode">Always listen</button>
   <button type="button" class="btn btn-quiet btn-small" id="voiceHelp">Commands</button>
   <button type="button" class="btn btn-quiet btn-small" id="voiceOff">Turn off</button>
 </div>
@@ -4656,7 +4709,7 @@ THE SOFTWARE.
     <dt><kbd>T</kbd></dt><dd>Readings table</dd>
     <dt><kbd>B</kbd></dt><dd>Download the score in braille music (BRF, for embossers and braille displays)</dd>
     <dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Scientific maps: zoom in, zoom out, whole map (also the mouse wheel; drag to move)</dd>
-    <dt><kbd>V</kbd></dt><dd>Voice control on / off: say “play”, “pause”, “next”, “where am I”, “explain”, “search for sea ice”, “result 2”, “go to video”, “violin”, “default mood”, “how to use”, “help” or “stop voice control”</dd>
+    <dt><kbd>V</kbd></dt><dd>Voice control on. Then <b>hold V</b> while you speak (push to talk; a quick tap listens for one command), and <kbd>Shift</kbd>+<kbd>V</kbd> turns it off. Say “play”, “pause”, “next”, “where am I”, “explain”, “search for sea ice”, “result 2”, “go to video”, “violin”, “default mood”, “how to use”, “help” or “stop voice control”</dd>
     <dt><kbd>Tab</kbd> then <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd></dt><dd>Follow pointer (Image tab): move the pointer over the picture and hear what is under it; Bit2Beat says which data it is and where you are</dd>
     <dt><kbd>?</kbd></dt><dd>This help</dd>
   </dl>
@@ -16217,6 +16270,7 @@ ${m.mouth}
     { id: 'theme', say: 'dark mode or light mode', help: 'change the colours', args: ['dark', 'light'] },
     { id: 'help', say: 'help', help: 'hear the list of commands' },
     { id: 'repeat', say: 'repeat', help: 'hear the last answer again' },
+    { id: 'listen', say: 'push to talk or always listen', help: 'listen only while V is held down, or to every phrase', args: ['push', 'always'] },
     { id: 'stop', say: 'stop voice control', help: 'turn voice control off' },
   ];
   const IDS = new Set(COMMANDS.map((c) => c.id));
@@ -16242,6 +16296,9 @@ ${m.mouth}
     let m;
     // stopping voice control comes first: "stop listening", "stop voice control", "voice off"
     if (/\b(stop|turn off|disable|end|quit|exit)\b.*\b(voice|listening|control|microphone|mic)\b|\bvoice (control )?off\b|\bstop listening\b/.test(t)) return { id: 'stop' };
+    // how to listen: push to talk (hold V) or always listening
+    if (/\b(push|press|hold) (to|and) talk\b|\bwalkie talkie\b/.test(t)) return { id: 'listen', arg: 'push' };
+    if (/\b(always|keep|all time|hands free)\b.*\blisten|\blisten (all|always|every)|\bhands free\b/.test(t)) return { id: 'listen', arg: 'always' };
     if ((m = raw.match(/\b(?:search|look|find|show me)(?: for| up)?\s+(.{2,80})$/))) {
       const q = m[1].replace(/^(the|some|data on|data about|about)\s+/, '').trim();
       if (q && !/^(it|that|this)$/.test(q) && !/^(the )?(data|images?|pictures?|videos?|earth|earth events|events)( tab| page)?$/.test(q)) return { id: 'search', arg: q };
@@ -16382,7 +16439,11 @@ ${m.mouth}
  * Gemini, which writes out what was said in any language or accent.
  *
  *   const ear = B.voiceEar.create({ onPhrase(base64Wav, seconds), onLevel(0…1) });
- *   await ear.start();  ear.pause(true / false);  ear.stop();
+ *   await ear.start();  ear.pause(true / false);  ear.hold(true / false);  ear.send();  ear.stop();
+ *
+ * hold(true) (push to talk: a key is held down): the phrase starts at once and pauses do not end
+ * it. send(): the key was let go, so the phrase ends 0.3 s later. hold(false) alone: it ends at the
+ * next short pause.
  */
 (function (root) {
   'use strict';
@@ -16392,6 +16453,7 @@ ${m.mouth}
   const LEAD = 0.3; // seconds kept before the voice starts
   const QUIET = 0.7; // seconds of quiet that end a phrase
   const LONGEST = 7; // seconds
+  const HELD_LONGEST = 15; // seconds, while a key is held down
   const SHORTEST = 0.25; // seconds of voice; anything shorter is a click or a cough
 
   /** Mean of each group of samples: from the microphone's rate down to 16 kHz. */
@@ -16420,6 +16482,8 @@ ${m.mouth}
     let stream = null;
     let node = null;
     let paused = false;
+    let holding = false;
+    let tail = 0; // seconds left before a sent phrase ends
     let floor = 0.004; // the room's own noise level (RMS)
     let lead = []; // recent blocks, for the lead-in
     let phrase = null; // { blocks, voiced, quiet }
@@ -16427,6 +16491,7 @@ ${m.mouth}
     function finish() {
       const p = phrase;
       phrase = null;
+      tail = 0;
       if (!p || p.voiced < SHORTEST) return;
       const n = p.blocks.reduce((a, b) => a + b.length, 0);
       const all = new Float32Array(n);
@@ -16458,7 +16523,7 @@ ${m.mouth}
         floor = rms < threshold ? floor * 0.97 + rms * 0.03 : floor; // learn the room while nobody speaks
         lead.push(copy);
         while (lead.length * dt > LEAD) lead.shift();
-        if (rms > threshold) phrase = { blocks: [...lead], voiced: dt, quiet: 0, length: lead.length * dt };
+        if (rms > threshold || holding) phrase = { blocks: [...lead], voiced: rms > threshold ? dt : 0, quiet: 0, length: lead.length * dt };
         return;
       }
       phrase.blocks.push(copy);
@@ -16467,7 +16532,7 @@ ${m.mouth}
         phrase.voiced += dt;
         phrase.quiet = 0;
       } else phrase.quiet += dt;
-      if (phrase.quiet >= QUIET || phrase.length >= LONGEST) {
+      if ((tail > 0 && (tail -= dt) <= 0) || (!holding && phrase.quiet >= QUIET) || phrase.length >= (holding ? HELD_LONGEST : LONGEST)) {
         lead = [];
         finish();
       }
@@ -16504,7 +16569,16 @@ ${m.mouth}
       stop,
       pause: (p) => {
         paused = !!p;
-        if (p) phrase = null;
+        if (p) [phrase, holding, tail] = [null, false, 0];
+      },
+      hold: (h) => {
+        holding = !!h;
+        tail = 0;
+        if (h) paused = false;
+      },
+      send: () => {
+        holding = false;
+        if (phrase) tail = 0.3;
       },
       get running() {
         return !!ctx;
@@ -16522,7 +16596,12 @@ ${m.mouth}
  *
  * The first time the site opens, a small box asks: "Do you want to turn on voice control?" with
  * five seconds to answer (Enter = yes, Escape = no; it is read by screen readers and, where the
- * browser allows, spoken aloud). V turns voice control on and off at any time.
+ * browser allows, spoken aloud). V turns voice control on.
+ *
+ * Push to talk (the default): the microphone listens only while V (or the Talk button) is held
+ * down, or for one command after a quick tap, so music, talk in the room and the app's own sound
+ * are never taken as commands. Shift+V (or "stop voice control") turns it off. Always listening
+ * (chosen in the voice bar, or by saying "always listen"): every phrase is a command, as before.
  *
  * Listening: the microphone is heard by ui/voice-ear.js, and each phrase goes (as a short WAV) to
  * Gemini through our server (api/voice.js), which writes it out — any language or accent — and
@@ -16545,6 +16624,40 @@ ${m.mouth}
     let speaking = false;
     let last = '';
     const remember = (patch) => storage.set(KEY, { ...storage.get(KEY, {}), ...patch });
+
+    // ---------------------------------------------------------------- push to talk
+    let ptt = storage.get(KEY, {}).ptt !== false;
+    let talking = 0; // push to talk: 0 not listening, 1 one command (after a tap), 2 held down
+    let talkTimer = 0;
+    const touch = !!root.matchMedia?.('(pointer: coarse)').matches;
+    const holdWord = () => (touch ? 'Hold the Talk button' : 'Hold V');
+    const idleText = () => (ptt ? `${holdWord()} and speak, or tap ${touch ? 'it' : 'V'} for one command.` : 'Listening… say “help” for the commands.');
+    function showMode() {
+      $('voiceStateText').textContent = ptt && !talking ? 'Push to talk' : 'Listening';
+      $('voiceBar').classList.toggle('is-talking', ptt && !!talking);
+      $('voiceTalk').hidden = !ptt;
+      $('voiceTalk').setAttribute('aria-pressed', String(ptt && !!talking));
+      $('voiceMode').textContent = ptt ? 'Always listen' : 'Push to talk';
+      $('voiceMode').title = ptt ? 'Listen to every phrase, without holding a key' : 'Listen only while V or Talk is held';
+    }
+    /** A short soft tone: high when listening starts, low when it stops (heard without a screen). */
+    let tones = null;
+    function tone(up) {
+      try {
+        tones ||= new (root.AudioContext || root.webkitAudioContext)();
+        const t = tones.currentTime;
+        const o = tones.createOscillator();
+        const g = tones.createGain();
+        o.frequency.setValueAtTime(up ? 660 : 520, t);
+        o.frequency.linearRampToValueAtTime(up ? 880 : 390, t + 0.09);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.08, t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+        o.connect(g).connect(tones.destination);
+        o.start(t);
+        o.stop(t + 0.13);
+      } catch {}
+    }
 
     // ---------------------------------------------------------------- speaking back
     function say(text, { quiet = false } = {}) {
@@ -16582,6 +16695,10 @@ ${m.mouth}
     const online = () => navigator.onLine && /^https?:$/.test(location.protocol);
     function listen() {
       if (!on || speaking || busy) return;
+      if (ptt && !talking) {
+        ear?.pause(true);
+        return showMode();
+      }
       if (ear) return ear.pause(false);
       if (!rec) return;
       try {
@@ -16593,6 +16710,78 @@ ${m.mouth}
     const status = (t) => ($('voiceHeard').textContent = t);
     function level(v) {
       $('voiceBar').style.setProperty('--level', v.toFixed(2));
+    }
+
+    /** Push to talk: listen now. held: while V or the Talk button is held down; else one command. */
+    function talkStart(held) {
+      if (!on) return;
+      if (speaking) {
+        root.speechSynthesis?.cancel(); // talking over an answer stops it
+        speaking = false;
+      }
+      if (busy) return;
+      clearTimeout(talkTimer);
+      talking = held ? 2 : 1;
+      tone(true);
+      status(held ? 'Listening… let go when you finish.' : 'Listening for one command…');
+      showMode();
+      if (ear) {
+        ear.pause(false);
+        ear.hold(held);
+      } else
+        try {
+          rec?.start();
+        } catch {
+          /* already listening */
+        }
+      if (!held) talkTimer = setTimeout(() => talkEnd('Nothing heard. '), 8000);
+    }
+    /** V or Talk let go: what was said is sent. A quick tap keeps listening for one command instead. */
+    function talkRelease(tap) {
+      if (talking !== 2) return;
+      talking = 1;
+      if (tap) {
+        ear?.hold(false); // listen on: the phrase ends at the first short pause
+        status('Listening for one command…');
+        talkTimer = setTimeout(() => talkEnd('Nothing heard. '), 8000);
+        return;
+      }
+      ear?.send(); // what was said goes now
+      if (!ear)
+        try {
+          rec?.stop();
+        } catch {}
+      talkTimer = setTimeout(() => talkEnd('Nothing heard. '), 1500);
+    }
+    function talkEnd(why = '') {
+      clearTimeout(talkTimer);
+      if (!talking) return;
+      talking = 0;
+      ear?.hold(false);
+      ear?.pause(true);
+      if (!ear)
+        try {
+          rec?.abort();
+        } catch {}
+      tone(false);
+      if (why) status(why + idleText());
+      showMode();
+    }
+    /** A phrase was caught: push to talk stops listening while it is understood and answered. */
+    function caught() {
+      if (!ptt || !talking) return;
+      clearTimeout(talkTimer);
+      talking = 0;
+      ear?.hold(false);
+      tone(false);
+      showMode();
+    }
+    function setMode(push) {
+      ptt = push;
+      remember({ ptt: push });
+      talkEnd();
+      showMode();
+      return say(push ? `Push to talk. ${holdWord()} and speak.` : 'Always listening. Just speak.');
     }
 
     /** The browser's own speech recognition (Chrome, Edge, Safari), used when Gemini cannot be reached. */
@@ -16607,6 +16796,7 @@ ${m.mouth}
         rec.onresult = (e) => {
           const r = e.results[e.results.length - 1];
           const alts = Array.from(r, (a) => a.transcript.trim()).filter(Boolean);
+          caught();
           if (alts.length) handle(alts, r[0].confidence);
         };
         rec.onerror = (e) => {
@@ -16627,6 +16817,7 @@ ${m.mouth}
       if (!on || busy || Date.now() - lastSent < 900) return;
       busy = true;
       lastSent = Date.now();
+      caught();
       ear?.pause(true);
       status(`Heard ${seconds.toFixed(1)} s · understanding…`);
       try {
@@ -16638,7 +16829,7 @@ ${m.mouth}
         const local = j.heard && V.parse(j.heard);
         if (local) return run(local, j.heard);
         if (!j.heard) {
-          status('Listening… say “help” for the commands.'); // only noise or music
+          status(ptt ? 'Nothing heard. ' + idleText() : 'Listening… say “help” for the commands.'); // only noise or music
           return listen();
         }
         return say(j.reply || `Sorry, I did not understand “${j.heard}”. Say help for the commands.`);
@@ -16663,12 +16854,14 @@ ${m.mouth}
       $('voiceBtn').setAttribute('aria-pressed', 'true');
       $('voiceBar').hidden = false;
       document.body.classList.add('voice-on');
+      showMode();
+      const welcome = `Voice control is on. ${ptt ? `${holdWord()} and speak, or tap ${touch ? 'it' : 'V'} for one command. ` : ''}Say help to hear the commands.`;
       if (online() && B.voiceEar) {
         try {
           ear = B.voiceEar.create({ onPhrase: phrase, onLevel: level });
           await ear.start();
           ear.pause(true); // until the welcome has been said
-          say('Voice control is on. Say help to hear what you can say.');
+          say(welcome);
           return true;
         } catch (e) {
           ear?.stop();
@@ -16681,7 +16874,7 @@ ${m.mouth}
         }
       }
       if (startNative()) {
-        say('Voice control is on. Say help to hear what you can say.');
+        say(welcome);
         return true;
       }
       stop(false);
@@ -16690,6 +16883,7 @@ ${m.mouth}
     }
 
     function stop(spoken = true) {
+      talkEnd();
       on = false;
       busy = false;
       remember({ asked: true, on: false });
@@ -16906,6 +17100,8 @@ ${m.mouth}
           return say(V.helpText());
         case 'repeat':
           return say(last || 'Nothing to repeat yet.');
+        case 'listen':
+          return setMode(arg !== 'always');
         case 'stop':
           return stop();
       }
@@ -16961,14 +17157,56 @@ ${m.mouth}
     $('voiceBtn').onclick = () => (on ? stop() : start());
     $('voiceOff').onclick = () => stop();
     $('voiceHelp').onclick = () => say(V.helpText());
+    $('voiceMode').onclick = () => setMode(!ptt);
+
+    // V: turns voice control on; then hold it to talk (a tap: one command). Shift+V turns it off.
+    let vDown = 0;
+    const isV = (e) => e.key === 'v' || e.key === 'V';
     document.addEventListener('keydown', (e) => {
-      if ((e.key === 'v' || e.key === 'V') && !e.ctrlKey && !e.metaKey && !e.altKey && !document.querySelector('dialog[open]')) {
-        const tag = e.target.tagName;
-        if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag) || e.target.isContentEditable) return;
-        e.preventDefault();
-        on ? stop() : start();
-      }
+      if (!isV(e) || e.ctrlKey || e.metaKey || e.altKey || document.querySelector('dialog[open]')) return;
+      const tag = e.target.tagName;
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tag) || e.target.isContentEditable) return;
+      e.preventDefault();
+      if (e.repeat) return;
+      if (!on) return start();
+      if (!ptt || e.shiftKey) return stop();
+      vDown = performance.now();
+      talkStart(true);
     });
+    document.addEventListener('keyup', (e) => {
+      if (!vDown || !isV(e)) return;
+      const tap = performance.now() - vDown < 350;
+      vDown = 0;
+      talkRelease(tap);
+    });
+    root.addEventListener('blur', () => {
+      if (!vDown) return;
+      vDown = 0;
+      talkRelease(false);
+    });
+
+    // the Talk button: hold it (mouse, finger), or press it with Enter or Space for one command
+    const talkBtn = $('voiceTalk');
+    let pDown = 0;
+    talkBtn.addEventListener('pointerdown', (e) => {
+      if (e.button > 0) return;
+      e.preventDefault();
+      pDown = performance.now();
+      try {
+        talkBtn.setPointerCapture(e.pointerId);
+      } catch {}
+      talkStart(true);
+    });
+    const up = () => {
+      if (!pDown) return;
+      const tap = performance.now() - pDown < 350;
+      pDown = 0;
+      talkRelease(tap);
+    };
+    talkBtn.addEventListener('pointerup', up);
+    talkBtn.addEventListener('pointercancel', up);
+    talkBtn.addEventListener('click', (e) => e.detail === 0 && talkStart(false));
+    talkBtn.addEventListener('contextmenu', (e) => e.preventDefault());
 
     const saved = storage.get(KEY, {});
     if (!navigator.mediaDevices?.getUserMedia && !Rec) $('voiceBtn').title = 'Voice control needs a microphone.';
@@ -16978,8 +17216,12 @@ ${m.mouth}
       setTimeout(() => toast('Voice control was on last time.', 7000, { label: 'Turn it on', run: start }), 900);
     }
 
-    return { start, stop, run, get on() {
+    return { start, stop, run, talkStart, talkRelease, get on() {
       return on;
+    }, get pushToTalk() {
+      return ptt;
+    }, get talking() {
+      return talking;
     } };
   }
 
