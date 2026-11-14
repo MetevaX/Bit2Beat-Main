@@ -1180,3 +1180,23 @@ test('voice control: explain the data, play search results by number or by name'
   assert.match(ui, /case 'result'/);
   assert.match(ui, /readResults/);
 });
+
+test('3.6: default mood, how-to page, presets in the Data tab and in file-type search, follow pointer words', () => {
+  assert.equal(music.moodOf({ ...require('../src/js/core/plan.js').DEFAULTS }), 'normal', 'the starting sound is the Default mood');
+  assert.equal(music.MOODS.normal.name, 'Default');
+  const V = require('../src/js/core/voice-commands.js');
+  assert.deepEqual(V.parse('default mood'), { id: 'mood', arg: 'normal' });
+  assert.deepEqual(V.parse('how do I use this'), { id: 'howto' });
+  assert.equal(V.answer({ id: 'mood', arg: 'normal' }).arg, 'normal');
+  const svs = require('../src/js/core/svs.js');
+  const entries = [{ id: 3912, t: 'Sea surface currents', s: 'a.jpg', f: { tif: 'a/b.tif' } }, { id: 7000, t: 'Other', s: 'b.jpg' }];
+  assert.deepEqual(svs.catalogue(entries).map((c) => c.id), ['svs:7000'], 'presets stay out of normal search');
+  assert.deepEqual(svs.catalogue(entries, { presets: true }).map((c) => c.id), ['svs:3912', 'svs:7000'], 'but their files are searchable');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  for (const id of ['howto', 'helpHowto', 'pointerSpeak', 'pointerSays', 'pointerRow']) assert.ok(html.includes(`id="${id}"`), id);
+  assert.ok(html.includes('data-mood="normal"'));
+  assert.ok(html.includes('data-page="howto"'));
+  assert.ok(!/voice-dot|rec-dot/.test(html), 'no dots: icons and words instead');
+  const css = fs.readdirSync(path.join(root, 'src/styles')).map((f) => fs.readFileSync(path.join(root, 'src/styles', f), 'utf8')).join('\n');
+  assert.ok(!/launch-glow|bt-pulse|voice-pulse|@keyframes bt-attn|@keyframes bt-ring/.test(css), 'no glowing or pulsing effects');
+});

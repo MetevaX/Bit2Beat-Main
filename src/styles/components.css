@@ -725,12 +725,6 @@ input[type='range'] {
 .volume {
   width: 110px;
 }
-.rec-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #e0644a;
-}
 #recBtn[aria-pressed='true'] {
   border-color: #e0644a;
   background: none;
@@ -867,3 +861,15 @@ input[type='range'] {
 }
 
 .modes { flex-wrap: wrap; }
+
+/* Follow pointer: what is under the pointer, in words */
+.pointer-says {
+  flex-basis: 100%;
+  display: grid;
+  gap: 4px;
+}
+.pointer-says .card-note {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text);
+}

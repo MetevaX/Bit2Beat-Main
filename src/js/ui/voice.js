@@ -352,7 +352,7 @@
           return say(`${arg[0].toUpperCase() + arg.slice(1)}.`);
         case 'mood':
           document.querySelector(`[data-mood="${arg}"]`)?.click();
-          return say(`${arg[0].toUpperCase() + arg.slice(1)} mood.`);
+          return say(arg === 'normal' ? 'Default sound.' : `${arg[0].toUpperCase() + arg.slice(1)} mood.`);
         case 'tuning':
           click('autoTuneBtn');
           return say($('autoTuneNote').textContent || 'Smart Tuning done.');
@@ -372,6 +372,9 @@
         case 'upload':
           click('uploadBtn');
           return say('Opening the file chooser. If nothing opens, press the Upload button at the top.');
+        case 'howto':
+          app.showPage?.('howto');
+          return say('How to use Bit2Beat. Each part is explained briefly. Say go to image, or another tab, to come back.');
         case 'story':
           app.showPage?.('story');
           return say('Bitty’s story.');

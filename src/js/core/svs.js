@@ -160,10 +160,11 @@
     return [...t];
   }
 
-  /** Gallery entries → search catalogue entries (presets left out). */
-  function catalogue(entries) {
+  /** Gallery entries → search catalogue entries (presets left out, unless `presets`: their
+   *  scientific files are not in the menus, so the file-type search lists them). */
+  function catalogue(entries, { presets = false } = {}) {
     return (entries || [])
-      .filter((e) => e && e.id && e.s && !PRESET_IDS.has(+e.id))
+      .filter((e) => e && e.id && (e.s || e.f) && (presets || !PRESET_IDS.has(+e.id)))
       .map((e) => ({
         id: `svs:${e.id}`,
         title: e.t,

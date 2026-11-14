@@ -281,3 +281,94 @@ main:focus {
     padding-bottom: 130px;
   }
 }
+
+/* How to use: every part of the app in a few words */
+.howto {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 36px 24px 56px;
+}
+.howto:focus {
+  outline: none;
+}
+.howto .lead {
+  font-size: 1.1rem;
+  margin: 12px 0 18px;
+  max-width: 70ch;
+}
+.howto-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-bottom: 18px;
+  font-size: 0.9rem;
+}
+.howto-sec {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  scroll-margin-top: 80px;
+}
+.howto-sec h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.15rem;
+  margin: 0 0 8px;
+}
+.howto-sec h2 .i {
+  width: 22px;
+  height: 22px;
+  color: var(--amber-ink);
+}
+.howto-sec ul,
+.howto-sec ol {
+  margin: 0;
+  padding-left: 20px;
+}
+.howto-sec li + li {
+  margin-top: 5px;
+}
+.howto-sec dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0;
+}
+.howto-sec dt {
+  font-weight: 700;
+}
+.howto-sec dd {
+  margin: 0;
+}
+.howto-keys dt {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+@media (max-width: 600px) {
+  .howto-sec dl {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .howto-sec dd {
+    margin-bottom: 6px;
+  }
+}
+
+/* the award, on the About page */
+.award {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 1rem;
+}
+.award-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}

@@ -99,7 +99,10 @@
         pressOne($('scanGroup'), b);
         state.image.scan = b.dataset.scan;
         state.pointer = null;
-        if (b.dataset.scan === 'pointer') toast('Move the pointer over the picture to hear it. The player comes back when you choose another scan.', 4500);
+        if (b.dataset.scan === 'pointer') {
+          toast('Move the pointer over the picture (or press Tab to reach it and use the arrow keys) to hear it; Bit2Beat says what is under it. The player comes back when you choose another scan.', 6000);
+          B.dom.announce('Follow pointer. Press Tab to reach the picture, then use the arrow keys: you hear the data and Bit2Beat says what it is and where you are.');
+        }
         syncPointer();
         h.analyseImage();
       };
@@ -126,6 +129,7 @@
     function syncPointer() {
       const on = state.mode === 'image' && state.image.scan === 'pointer' && app.page?.() !== 'about';
       document.body.classList.toggle('pointer-mode', on);
+      $('pointerRow').hidden = !on;
       if (on && app.player.playing) app.player.pause();
     }
     root.addEventListener('b2b:mode', syncPointer);

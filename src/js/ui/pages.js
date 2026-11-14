@@ -1,5 +1,5 @@
 /**
- * Bit2Beat ui · the three pages: Studio, Story and About the team.
+ * Bit2Beat ui · the pages: Studio, Story, How to use and About the team.
  * Only one page is visible at a time; the player bar stays on Studio and Story (so you can follow
  * a chapter while you read) and hides on About, which also pauses the sound.
  */
@@ -7,7 +7,7 @@
   'use strict';
   const B = root.Bit2Beat;
   const { $, $$ } = B.dom;
-  const PAGES = ['studio', 'story', 'about'];
+  const PAGES = ['studio', 'story', 'howto', 'about'];
 
   /** Returns showPage(page). `redraw` repaints the studio canvases after it becomes visible. */
   function init(app, redraw) {
@@ -17,7 +17,7 @@
       const from = current;
       current = page;
       PAGES.forEach((p) => ($(p).hidden = p !== page));
-      document.querySelector('.transport').hidden = page === 'about';
+      document.querySelector('.transport').hidden = page === 'about' || page === 'howto';
       document.documentElement.dataset.page = page;
       $$('.topnav-link').forEach((b) => (b.dataset.page === page ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
       if (page === 'about') app.player.pause();

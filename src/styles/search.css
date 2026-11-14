@@ -55,16 +55,7 @@
   color: var(--muted);
 }
 .eic-search.is-thinking .search-status::after {
-  content: '';
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-left: 8px;
-  border: 2px solid var(--amber);
-  border-right-color: transparent;
-  border-radius: 50%;
-  vertical-align: -1px;
-  animation: spin 0.8s linear infinite;
+  content: ' (working…)';
 }
 @keyframes spin {
   to {
@@ -113,19 +104,21 @@
   right: 10px;
   top: 10px;
   font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--amber-ink);
+  font-weight: 600;
+  color: var(--muted);
 }
 .result:hover,
 .result:focus-visible {
   border-color: var(--amber);
 }
 .result[aria-current='true'] {
-  border-color: var(--amber);
-  background: var(--surface-2);
+  border-color: var(--text);
+}
+.result[aria-current='true'] .result-go {
+  color: var(--text);
 }
 .result[aria-current='true'] .result-go::before {
-  content: 'Playing · ';
+  content: '✓ Playing · ';
 }
 .eic-search .eic-more {
   margin-top: 8px;
@@ -654,26 +647,18 @@ body.pointer-mode main {
   color: var(--cream);
   border-color: rgba(246, 241, 231, 0.35);
 }
-.voice-dot {
+.voice-state {
   flex: none;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #e5484d;
-  animation: voice-pulse 1.4s ease-in-out infinite;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  padding-right: 8px;
+  border-right: 1px solid rgba(246, 241, 231, 0.3);
 }
-@keyframes voice-pulse {
-  50% {
-    opacity: 0.35;
-  }
-}
-:root.reduce-motion .voice-dot {
-  animation: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .voice-dot {
-    animation: none;
-  }
+.voice-state .i {
+  width: 16px;
+  height: 16px;
 }
 @media (max-width: 760px) {
   .topbar .voice-btn span {
@@ -718,8 +703,4 @@ body.pointer-mode main {
 #sourceCanvas.is-panning {
   cursor: grabbing;
 }
-/* the red dot grows with the sound the microphone hears */
-.voice-bar .voice-dot {
-  transform: scale(calc(0.8 + var(--level, 0) * 0.9));
-  transition: transform 0.08s linear;
-}
+

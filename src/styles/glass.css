@@ -48,7 +48,7 @@
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.7),
     inset 0 -3px 6px rgba(120, 70, 0, 0.25),
-    0 6px 16px rgba(232, 163, 61, 0.45);
+    0 3px 8px rgba(0, 0, 0, 0.25);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 .play-btn::after {
@@ -69,13 +69,7 @@
 .play-btn:active {
   transform: translateY(0) scale(0.97);
 }
-.play-btn.is-playing {
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.7),
-    inset 0 -3px 6px rgba(120, 70, 0, 0.25),
-    0 0 0 6px rgba(232, 163, 61, 0.18),
-    0 6px 18px rgba(232, 163, 61, 0.55);
-}
+
 
 /* glass buttons on the bar */
 .transport .btn-ghost {
@@ -88,7 +82,7 @@
 }
 .transport .btn-primary {
   background: linear-gradient(180deg, #f2b65a, #e8a33d);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 4px 12px rgba(232, 163, 61, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
   border-color: rgba(255, 255, 255, 0.2);
 }
 

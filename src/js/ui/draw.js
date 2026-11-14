@@ -402,10 +402,17 @@
       g.beginPath();
       g.arc(x, y, 13, 0, Math.PI * 2);
       g.stroke();
-      g.strokeStyle = t.amber;
-      g.beginPath();
-      g.arc(x, y, 17, 0, Math.PI * 2);
-      g.stroke();
+      // the event playing now is named in words next to it, not by a glow
+      const name = String(src.details?.[pos] || src.labels?.[pos] || '').split(' · ')[0].slice(0, 40);
+      if (name) {
+        g.font = '600 11px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+        const tw = g.measureText('▶ ' + name).width + 12;
+        const bx = Math.min(Math.max(R.x + 2, x + 18), R.x + R.w - tw - 2);
+        const by = Math.max(R.y + 2, Math.min(y - 11, R.y + R.h - 24));
+        g.fillStyle = 'rgba(20, 33, 61, 0.88)';
+        g.fillRect(bx, by, tw, 22);
+        text(g, '▶ ' + name, bx + 6, by + 15, { size: 11, color: '#f6f1e7', weight: 600 });
+      }
     }
     return R;
   }

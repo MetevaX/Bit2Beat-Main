@@ -172,7 +172,7 @@
       });
       const p = B.story.progress(heard);
       $('storyProgress').replaceChildren(
-        el('span', { class: 'story-dots', 'aria-hidden': 'true' }, ...CHAPTERS.map((c) => el('i', { class: (heard[c.id] ? 'on' : '') + (active === c ? ' now' : '') }))),
+        el('span', { class: 'story-dots', 'aria-hidden': 'true' }, ...CHAPTERS.map((c, k) => el('i', { class: (heard[c.id] ? 'on' : '') + (active === c ? ' now' : ''), text: heard[c.id] ? '✓' : active === c ? '▶' : String(k + 1) }))),
         el('span', { text: p.done ? 'All chapters heard. You earned the badge!' : `${p.n} of ${p.total} chapters heard` }),
       );
       $('storyPlayAll').textContent = auto ? 'Stop the story' : p.n && !p.done ? 'Continue the story' : 'Play the whole story';

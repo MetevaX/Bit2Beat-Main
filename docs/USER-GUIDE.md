@@ -111,6 +111,10 @@ Each chapter shows:
 | **Guide** (top bar) | Bitty’s guide menu (`G`). |
 | **Player bar** | Restart, Play/Pause, Repeat, position, volume, **Record**, **Readings** table and **Export**. |
 
+## How to use (page)
+
+**How to use** in the top bar explains every part of the app in a few words, with the keyboard keys. Voice: say "how to use".
+
 ## Searching the Earth Information Center
 
 Above the Image, Video and Data tabs is one search for the NASA Earth Information Center. Each tab finds its own kind of thing: **Image** finds pictures (the EIC gallery and 26 NASA satellite images of the whole Earth), **Video** finds videos (the EIC gallery), **Data** finds data sets (the EIC data API). The challenge's own data sets are in the menus, not in search.

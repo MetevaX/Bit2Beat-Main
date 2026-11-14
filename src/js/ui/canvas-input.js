@@ -85,16 +85,44 @@
       tip.style.top = Math.max(4, hit.y - 40) + 'px';
     }
 
+    // ------------------------------------------------------------------ say what is under the pointer
+    // For listeners who cannot see the picture: when the pointer rests, the data set, the measure,
+    // its value and where the pointer is are announced (screen readers) and, with "Say what is
+    // under the pointer" on, spoken aloud.
+    const area = (u, v) => {
+      const col = u < 0.34 ? 'left' : u > 0.66 ? 'right' : 'centre';
+      const row = v < 0.34 ? 'top' : v > 0.66 ? 'bottom' : 'middle';
+      const where = row === 'middle' && col === 'centre' ? 'centre' : row === 'middle' ? `middle ${col}` : col === 'centre' ? `${row} centre` : `${row} ${col}`;
+      return `${where[0].toUpperCase() + where.slice(1)}, ${Math.round(u * 100)}% across, ${Math.round(v * 100)}% down`;
+    };
+    let said = '';
+    let sayTimer = 0;
+    let entered = true;
+    function describe(pt, text) {
+      clearTimeout(sayTimer);
+      sayTimer = setTimeout(() => {
+        const full = (entered ? `${(app.src?.name || '').replace(/^NASA (EIC|satellite) · /, '')}. ` : '') + text;
+        if (text === said) return;
+        said = text;
+        entered = false;
+        $('pointerSays').textContent = text;
+        B.dom.announce(full);
+        if ($('pointerSpeak').checked && B.speech?.supported) B.speech.speak(full, { label: 'Under the pointer', owner: 'pointer' });
+      }, 450);
+    }
+
     /** Pointer mode: sound the data under the pointer. Only the data channel plays (the value read
      *  through the colour key, or brightness / red), and only where the picture shows data. */
     function probe(pt) {
       const src = app.src;
       const plan = app.plan;
       const vals = src.science ? [app.sci.readout(src, pt.x, pt.y, state.position).value] : B.image.probe(src.pixels, src.canvas.width, src.canvas.height, pt.x, pt.y, state.image.analysis, src.key);
+      const place = src.science ? (app.sci.readout(src, pt.x, pt.y, state.position).text.split(' · ').slice(1).join(' · ') || area(pt.x, pt.y)) : area(pt.x, pt.y);
       if (!vals || !Number.isFinite(vals[0])) {
         $('nowNote').textContent = '—';
         $('nowHz').textContent = '';
         $('nowDetail').textContent = src.science ? 'No data here: this place has no value in the file.' : 'No data here: move over the coloured part of the picture.';
+        describe(pt, `No data here. ${place}.`);
         return;
       }
       const list = [];
@@ -110,7 +138,16 @@
         $('nowNote').textContent = music.noteName(list[0].midi);
         $('nowHz').textContent = music.freq(list[0].midi).toFixed(1) + ' Hz';
         $('nowDetail').textContent = `${plan.channels[0].name} ${stats.fmtNum(vals[0], plan.channels[0].unit)}`;
+        describe(pt, `${plan.channels[0].name} ${stats.fmtNum(vals[0], plan.channels[0].unit)}, note ${music.noteName(list[0].midi)}. ${place}.`);
       }
+    }
+
+    // keyboard: with Follow pointer, the arrow keys move the pointer over the picture (Shift: bigger steps)
+    function movePointer(dx, dy) {
+      const p = state.pointer || { x: 0.5, y: 0.5 };
+      state.pointer = { x: Math.max(0, Math.min(1, p.x + dx)), y: Math.max(0, Math.min(1, p.y + dy)) };
+      drawAll();
+      probe(state.pointer);
     }
 
     // canvas
@@ -128,6 +165,31 @@
     // a zoomed scientific map can be dragged, so it acts on click (not on press) and never after a drag
     canvas.addEventListener('pointerdown', (e) => !(app.src?.science && app.sci.zoomed()) && press(e));
     canvas.addEventListener('click', (e) => app.src?.science && app.sci.zoomed() && !app.sci.wasDragged() && press(e));
+    // the choice to speak is remembered in this browser
+    try {
+      $('pointerSpeak').checked = localStorage.getItem('b2b-pointer-speak') !== '0';
+    } catch {}
+    $('pointerSpeak').onchange = (e) => {
+      try {
+        localStorage.setItem('b2b-pointer-speak', e.target.checked ? '1' : '0');
+      } catch {}
+      if (!e.target.checked && B.speech?.owner?.() === 'pointer') B.speech.stop();
+    };
+    const pointerMode = () => app.src?.kind === 'image' && state.image.scan === 'pointer' && (!app.src.science || app.src.science.mode === 'sweep');
+    canvas.addEventListener('keydown', (e) => {
+      if (!pointerMode()) return;
+      const d = e.shiftKey ? 0.2 : 0.05;
+      const move = { ArrowLeft: [-d, 0], ArrowRight: [d, 0], ArrowUp: [0, -d], ArrowDown: [0, d] }[e.key];
+      if (!move) return;
+      e.preventDefault();
+      e.stopPropagation();
+      movePointer(...move);
+    });
+    canvas.addEventListener('pointerenter', () => (entered = true));
+    canvas.addEventListener('focus', () => {
+      entered = true;
+      if (pointerMode()) B.dom.announce('Follow pointer: move the mouse or your finger over the picture, or use the arrow keys, to hear the data under it.');
+    });
     canvas.addEventListener('pointerleave', () => {
       $('hoverTip').hidden = true;
       if (state.pointer) {
@@ -136,7 +198,7 @@
       }
     });
 
-    return {};
+    return { movePointer, describeArea: area };
   }
 
   B.canvasInput = { init };

@@ -308,6 +308,10 @@
       $('helpDialog').close();
       app.showPage('story');
     };
+    $('helpHowto').onclick = () => {
+      $('helpDialog').close();
+      app.showPage('howto');
+    };
     $('bittyTour').onclick = () => open('hub');
     $('bittyTipBtn').onclick = () => tipFor && open(tipFor);
     $('bittyTipNo').onclick = () => {

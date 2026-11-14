@@ -12,7 +12,7 @@
       const tag = e.target.tagName;
       const typing = ['INPUT', 'SELECT', 'TEXTAREA'].includes(tag) || e.target.isContentEditable;
       if (typing && !(tag === 'INPUT' && e.target.type === 'range' && e.code === 'Space')) return;
-      if (!$('about').hidden) return;
+      if (!$('about').hidden || !$('howto').hidden) return;
       const k = e.key;
       if (e.code === 'Space' && tag !== 'BUTTON') {
         e.preventDefault();

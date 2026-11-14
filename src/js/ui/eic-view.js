@@ -104,6 +104,7 @@
     // ---------------------------------------------------------------- EIC content database (SVS)
     const SV = B.svs;
     let gallery = [];
+    let galleryAll = []; // with the presets: their scientific files (e.g. the 3912 GeoTIFF) are searchable by file type
     let galleryLoading = null;
     const GKEY = 'b2b-eic-gallery2'; // 2: entries list their file types (search filter)
     /** Image and Video search the content database, unless another catalogue was chosen. */
@@ -114,6 +115,7 @@
       const saved = storage.get(GKEY, null);
       const use = (items) => {
         gallery = SV.catalogue(items);
+        galleryAll = SV.catalogue(items, { presets: true });
         root.dispatchEvent(new CustomEvent('b2b:catalogue', { detail: { count: gallery.length } }));
         return gallery;
       };
@@ -175,6 +177,27 @@
         storage.set(key, s);
       }
       return { ...s, name: `NASA EIC · ${it.title}`, videoUrl: url, origin: { ...originOf(it), note: `${it.about ? it.about + ' ' : ''}${s.labels.length} samples, two per second: brightness, colour and motion of the picture.` } };
+    }
+
+    /**
+     * A challenge preset in the Data tab: what it measures, played as numbers on a chart. A video
+     * gives its brightness, colour and motion over time; a picture its bands from left to right.
+     */
+    async function presetData(id) {
+      const it = SV.item(id);
+      if (!it) return null;
+      let s;
+      let how;
+      if (it.video && B.svsClips?.[it.id]) {
+        s = await svsVideo(it);
+        how = `${s.labels.length} samples over the first ${Math.round(s.duration)} seconds of NASA's video, two per second: brightness, colour and motion.`;
+      } else {
+        const res = await svsStill(it);
+        s = B.sources.fromCanvas(res.canvas, res.meta, { analysis: 'light', scan: 'line', steps: 48 });
+        how = `NASA's picture cut into ${s.labels.length} bands from left to right: brightness, detail and where the bright parts are.`;
+      }
+      const { canvas, pixels, videoUrl, bounds, key, ...rest } = s;
+      return { ...rest, kind: 'data', view: 'chart', name: it.title, origin: { ...s.origin, note: `${it.about ? it.about + ' ' : ''}Played as data: ${how}` } };
     }
 
     /** Presets (Image and Video menus): `id` = 'svs:5313'. */
@@ -254,7 +277,8 @@
         const [, type, ref] = file;
         let res;
         if (/^svs-/.test(ref)) {
-          const entry = (await fillGallery().catch(() => gallery)).find((c) => c.id === `svs:${ref.slice(4)}`);
+          await fillGallery().catch(() => gallery);
+          const entry = galleryAll.find((c) => c.id === `svs:${ref.slice(4)}`);
           const path = entry?.svs.f?.[type];
           if (!path) return toast('That file is no longer in the gallery.'), null;
           const it = SV.item(entry.svs);
@@ -364,7 +388,7 @@
     const asFile = (c, type) => ({ ...c, id: `${type}:${c.svs ? 'svs-' + c.svs.id : c.id}`, kind: `${FILE_NAME[type]} file (.${type})`, exts: [type], file: type });
     function catalogueFor(mode = S.mode, type = 'any') {
       if (FILE_NAME[type]) {
-        const own = gallery.filter((c) => c.svs.f?.[type]).map((c) => asFile(c, type));
+        const own = galleryAll.filter((c) => c.svs.f?.[type]).map((c) => asFile(c, type));
         return type === 'tif' && api.stac === E.ENDPOINTS.stac ? [...own, ...list.map((c) => asFile({ ...c, exts: ['tif'] }, 'tif'))] : own;
       }
       if (!usesGallery(mode)) return list;
@@ -386,7 +410,7 @@
         },
       );
     }
-    Object.assign(B.eicView, { load, loadImage, loadVideo, fill: fillFor, catalogue: (type) => catalogueFor(S.mode, type), typeCounts, FILE_NAME, api: () => api, usesGallery, presetStill, presetVideo });
+    Object.assign(B.eicView, { load, loadImage, loadVideo, presetData, fill: fillFor, catalogue: (type) => catalogueFor(S.mode, type), typeCounts, FILE_NAME, api: () => api, usesGallery, presetStill, presetVideo });
     $('eicUse').onclick = () => {
       const stac = $('eicStac').value.trim();
       const raster = $('eicRaster').value.trim();

@@ -481,6 +481,97 @@ main:focus {
   }
 }
 
+/* How to use: every part of the app in a few words */
+.howto {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 36px 24px 56px;
+}
+.howto:focus {
+  outline: none;
+}
+.howto .lead {
+  font-size: 1.1rem;
+  margin: 12px 0 18px;
+  max-width: 70ch;
+}
+.howto-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-bottom: 18px;
+  font-size: 0.9rem;
+}
+.howto-sec {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  scroll-margin-top: 80px;
+}
+.howto-sec h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.15rem;
+  margin: 0 0 8px;
+}
+.howto-sec h2 .i {
+  width: 22px;
+  height: 22px;
+  color: var(--amber-ink);
+}
+.howto-sec ul,
+.howto-sec ol {
+  margin: 0;
+  padding-left: 20px;
+}
+.howto-sec li + li {
+  margin-top: 5px;
+}
+.howto-sec dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0;
+}
+.howto-sec dt {
+  font-weight: 700;
+}
+.howto-sec dd {
+  margin: 0;
+}
+.howto-keys dt {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+@media (max-width: 600px) {
+  .howto-sec dl {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .howto-sec dd {
+    margin-bottom: 6px;
+  }
+}
+
+/* the award, on the About page */
+.award {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 1rem;
+}
+.award-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
 </style>
 <style>
 /* Bit2Beat · components */
@@ -1210,12 +1301,6 @@ input[type='range'] {
 .volume {
   width: 110px;
 }
-.rec-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #e0644a;
-}
 #recBtn[aria-pressed='true'] {
   border-color: #e0644a;
   background: none;
@@ -1352,6 +1437,18 @@ input[type='range'] {
 }
 
 .modes { flex-wrap: wrap; }
+
+/* Follow pointer: what is under the pointer, in words */
+.pointer-says {
+  flex-basis: 100%;
+  display: grid;
+  gap: 4px;
+}
+.pointer-says .card-note {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text);
+}
 
 </style>
 <style>
@@ -1544,7 +1641,7 @@ tbody tr:focus {
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.7),
     inset 0 -3px 6px rgba(120, 70, 0, 0.25),
-    0 6px 16px rgba(232, 163, 61, 0.45);
+    0 3px 8px rgba(0, 0, 0, 0.25);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 .play-btn::after {
@@ -1565,13 +1662,7 @@ tbody tr:focus {
 .play-btn:active {
   transform: translateY(0) scale(0.97);
 }
-.play-btn.is-playing {
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.7),
-    inset 0 -3px 6px rgba(120, 70, 0, 0.25),
-    0 0 0 6px rgba(232, 163, 61, 0.18),
-    0 6px 18px rgba(232, 163, 61, 0.55);
-}
+
 
 /* glass buttons on the bar */
 .transport .btn-ghost {
@@ -1584,7 +1675,7 @@ tbody tr:focus {
 }
 .transport .btn-primary {
   background: linear-gradient(180deg, #f2b65a, #e8a33d);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 4px 12px rgba(232, 163, 61, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
   border-color: rgba(255, 255, 255, 0.2);
 }
 
@@ -1986,19 +2077,26 @@ main {
 }
 .story-dots {
   display: inline-flex;
-  gap: 6px;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
 }
 .story-dots i {
-  width: 22px;
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(246, 241, 231, 0.22);
+  font-style: normal;
+  min-width: 1.6em;
+  text-align: center;
+  padding: 1px 3px;
+  border-radius: 4px;
+  border: 1px solid rgba(246, 241, 231, 0.3);
+  color: rgba(246, 241, 231, 0.75);
 }
 .story-dots i.on {
-  background: var(--amber);
+  border-color: var(--amber);
+  color: var(--cream);
 }
 .story-dots i.now {
-  box-shadow: 0 0 0 2px var(--cream);
+  border-color: var(--cream);
+  font-weight: 700;
 }
 
 /* chapters: a timeline */
@@ -2046,15 +2144,11 @@ main {
   content: '✓';
 }
 .chapter.is-current .chapter-node {
-  border-color: var(--amber);
-  box-shadow: 0 0 0 4px rgba(232, 163, 61, 0.28);
+  border-color: var(--text);
 }
-.chapter[data-state='playing'] .chapter-node {
-  animation: bt-pulse 1.4s ease-in-out infinite;
-}
-@keyframes bt-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(232, 163, 61, 0.3); }
-  50% { box-shadow: 0 0 0 9px rgba(232, 163, 61, 0.08); }
+.chapter[data-state='playing'] .chapter-node::after {
+  content: '▶';
+  font-size: 0.7rem;
 }
 .reduce-motion .chapter-node {
   animation: none !important;
@@ -2302,11 +2396,7 @@ main {
 }
 .bt-ring.bt-live {
   pointer-events: none;
-  animation: bt-ring 1.6s ease-in-out infinite;
-}
-@keyframes bt-ring {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.55); }
-  50% { box-shadow: 0 0 0 8px rgba(232, 163, 61, 0); }
+  border-style: dashed;
 }
 .bt-still .bt-ring,
 .bt-still .bt-bubble {
@@ -2468,15 +2558,8 @@ main {
   order: 3;
   flex-basis: 100%;
 }
-.bt-attn {
-  animation: bt-attn 1.2s ease-in-out 3;
-}
-@keyframes bt-attn {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.6); }
-  50% { box-shadow: 0 0 0 7px rgba(232, 163, 61, 0); }
-}
-.bt-still .bt-attn {
-  animation: none;
+.bt-attn::after {
+  content: ' →';
 }
 .help-bitty {
   margin-top: 14px;
@@ -2797,12 +2880,8 @@ main {
   }
 }
 @keyframes ring {
-  from {
-    box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.7);
-  }
-  to {
-    box-shadow: 0 0 0 16px rgba(232, 163, 61, 0);
-  }
+  from { opacity: 1; }
+  to { opacity: 1; }
 }
 
 /* each of us is a note */
@@ -2923,8 +3002,6 @@ main {
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
-  box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.5);
-  animation: launch-glow 2.4s ease-in-out infinite;
   transition: transform 0.2s ease;
 }
 .launch-btn:hover {
@@ -2965,15 +3042,6 @@ main {
     height: 20px;
   }
 }
-@keyframes launch-glow {
-  50% {
-    box-shadow: 0 0 0 10px rgba(232, 163, 61, 0);
-  }
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.45);
-  }
-}
 .launch-btn.is-launching {
   animation: launch-go 0.65s cubic-bezier(0.5, 0, 0.75, 0) both;
 }
@@ -2981,15 +3049,11 @@ main {
   animation-duration: 0.18s;
 }
 @keyframes launch-go {
-  0% {
-    box-shadow: 0 0 0 0 rgba(232, 163, 61, 0.7);
-  }
   40% {
-    transform: scale(1.08);
+    transform: scale(1.04);
   }
   100% {
-    transform: scale(1.12);
-    box-shadow: 0 0 0 40px rgba(232, 163, 61, 0);
+    transform: scale(1.06);
   }
 }
 
@@ -3254,16 +3318,7 @@ select.combo-native {
   color: var(--muted);
 }
 .eic-search.is-thinking .search-status::after {
-  content: '';
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-left: 8px;
-  border: 2px solid var(--amber);
-  border-right-color: transparent;
-  border-radius: 50%;
-  vertical-align: -1px;
-  animation: spin 0.8s linear infinite;
+  content: ' (working…)';
 }
 @keyframes spin {
   to {
@@ -3312,19 +3367,21 @@ select.combo-native {
   right: 10px;
   top: 10px;
   font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--amber-ink);
+  font-weight: 600;
+  color: var(--muted);
 }
 .result:hover,
 .result:focus-visible {
   border-color: var(--amber);
 }
 .result[aria-current='true'] {
-  border-color: var(--amber);
-  background: var(--surface-2);
+  border-color: var(--text);
+}
+.result[aria-current='true'] .result-go {
+  color: var(--text);
 }
 .result[aria-current='true'] .result-go::before {
-  content: 'Playing · ';
+  content: '✓ Playing · ';
 }
 .eic-search .eic-more {
   margin-top: 8px;
@@ -3853,26 +3910,18 @@ body.pointer-mode main {
   color: var(--cream);
   border-color: rgba(246, 241, 231, 0.35);
 }
-.voice-dot {
+.voice-state {
   flex: none;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #e5484d;
-  animation: voice-pulse 1.4s ease-in-out infinite;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  padding-right: 8px;
+  border-right: 1px solid rgba(246, 241, 231, 0.3);
 }
-@keyframes voice-pulse {
-  50% {
-    opacity: 0.35;
-  }
-}
-:root.reduce-motion .voice-dot {
-  animation: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .voice-dot {
-    animation: none;
-  }
+.voice-state .i {
+  width: 16px;
+  height: 16px;
 }
 @media (max-width: 760px) {
   .topbar .voice-btn span {
@@ -3917,11 +3966,7 @@ body.pointer-mode main {
 #sourceCanvas.is-panning {
   cursor: grabbing;
 }
-/* the red dot grows with the sound the microphone hears */
-.voice-bar .voice-dot {
-  transform: scale(calc(0.8 + var(--level, 0) * 0.9));
-  transition: transform 0.08s linear;
-}
+
 
 </style>
 <!-- abcjs licence:
@@ -3966,6 +4011,10 @@ THE SOFTWARE.
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></symbol>
   <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3c.6 4.6 3.4 7.4 8 8-4.6.6-7.4 3.4-8 8-.6-4.6-3.4-7.4-8-8 4.6-.6 7.4-3.4 8-8z" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21m-3.5 0h7"/></symbol>
+  <symbol id="i-rec" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10.5 5-3v9l-5-3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+  <symbol id="i-ear" viewBox="0 0 24 24"><path d="M7 9a5 5 0 1 1 10 0c0 3-3 4-3 7a3 3 0 0 1-5.5 1.6M10 9.5a2 2 0 1 1 4 0"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5zM4 5.5v16M8 7h8M8 11h8"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5m0 0-4 6m4-6 4 6"/></symbol>
 </svg>
@@ -3975,6 +4024,7 @@ THE SOFTWARE.
   <nav class="topnav" aria-label="Pages">
     <button type="button" class="topnav-link" data-page="studio" aria-current="page">Studio</button>
     <button type="button" class="topnav-link" data-page="story">Story</button>
+    <button type="button" class="topnav-link" data-page="howto">How to use</button>
     <button type="button" class="topnav-link" data-page="about">About the team</button>
   </nav>
   <button type="button" class="top-btn upload-btn" id="uploadBtn" aria-label="Upload a file: data, picture or video" title="Open any file: data (CSV, TSV, TXT, JSON, GeoJSON, Excel, OpenDocument), a picture (PNG, JPG, WebP, GIF, SVG…), a video (MP4, WebM, MOV, MKV…) or a scientific Earth-data file (GeoTIFF / COG, NetCDF, HDF5, up to 5 GB). Bit2Beat opens the right tab by itself. Your files stay on your device."><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Upload</span></button>
@@ -4050,7 +4100,7 @@ THE SOFTWARE.
           <span class="video-chip" aria-hidden="true">Muted · follows the music</span>
         </div>
         <div class="canvas-wrap" id="dropZone">
-          <canvas id="sourceCanvas" width="1200" height="560" role="img" aria-label="Source preview"></canvas>
+          <canvas id="sourceCanvas" width="1200" height="560" role="img" aria-label="Source preview" tabindex="0"></canvas>
           <div class="hover-tip" id="hoverTip" hidden></div>
           <div class="drop-hint" id="dropHint" hidden>Drop any data file, picture or video</div>
         </div>
@@ -4140,6 +4190,10 @@ THE SOFTWARE.
             <button type="button" data-scan="radar" aria-pressed="false" title="A beam turns around the centre like a radar, covering the whole picture">Radar</button>
             <button type="button" data-scan="pointer" aria-pressed="false">Follow pointer</button>
           </div>
+          <div class="pointer-says" id="pointerRow" hidden>
+            <label class="check"><input type="checkbox" id="pointerSpeak" checked> Say what is under the pointer</label>
+            <p class="card-note" id="pointerSays" aria-hidden="true">Move over the picture, or press Tab to reach it and use the arrow keys.</p>
+          </div>
           <label class="field field-range">Steps <output id="stepsOut">48</output>
             <input type="range" id="stepsRange" min="16" max="160" step="8" value="48">
           </label>
@@ -4208,6 +4262,7 @@ THE SOFTWARE.
         <div class="mood-row">
           <span class="mood-label" id="moodLabel">Mood</span>
           <div class="seg seg-small" role="group" aria-labelledby="moodLabel" id="moods">
+            <button type="button" data-mood="normal" aria-pressed="false" title="Back to the starting sound: major pentatonic in C, piano, 96 BPM">Default</button>
             <button type="button" data-mood="sad" aria-pressed="false" title="Minor pentatonic, slow strings, big warm room">Sad</button>
             <button type="button" data-mood="happy" aria-pressed="false" title="Major pentatonic, marimba, walking pace">Happy</button>
             <button type="button" data-mood="excited" aria-pressed="false" title="Major pentatonic, fast electric piano, three octaves">Excited</button>
@@ -4325,8 +4380,115 @@ THE SOFTWARE.
   </section>
 </section>
 
+<section id="howto" class="howto" hidden tabindex="-1" aria-labelledby="howtoTitle">
+  <div class="howto-inner">
+    <h1 id="howtoTitle">How to use Bit2Beat</h1>
+    <p class="lead">Bit2Beat turns Earth data into music: every number becomes a note, and a higher value plays a higher note. Here is every part, in a few words. <a href="#" data-page="studio" class="howto-start">Open the studio →</a></p>
+    <nav class="howto-toc" aria-label="On this page">
+      <a href="#how-start">First steps</a><a href="#how-tabs">The four tabs</a><a href="#how-search">Search</a><a href="#how-listen">Listening</a><a href="#how-sound">Sound</a><a href="#how-science">Scientific files</a><a href="#how-access">Without a screen</a><a href="#how-export">Export</a><a href="#how-keys">Keys</a>
+    </nav>
+
+    <section class="howto-sec" id="how-start">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-play"/></svg>First steps</h2>
+      <ol>
+        <li><b>Pick a tab</b> (Image, Video, Earth events or Data) and a source from the menu next to it.</li>
+        <li><b>Press Play</b> (or the Space key). The line on the picture or chart shows where you are.</li>
+        <li><b>Change the sound</b> in the Sound card: a mood, an instrument, a scale, the tempo.</li>
+        <li><b>Need help?</b> Press <b>Guide</b> (or G): Bitty points at the real buttons. The <b>Story</b> page plays eight chapters of real data.</li>
+      </ol>
+    </section>
+
+    <section class="howto-sec" id="how-tabs">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-table"/></svg>The four tabs</h2>
+      <dl>
+        <dt>Image</dt><dd>A picture or map is cut into bands; each band is a note. Choose what to hear (<b>Light</b>, <b>Colour</b>, or <b>Colour key</b> for real values) and how to scan (left to right, top to bottom, radar, or <b>Follow pointer</b>).</dd>
+        <dt>Video</dt><dd>Two notes a second: the brightness, colour and motion of the picture. The video follows the music.</dd>
+        <dt>Earth events</dt><dd>Wildfires, storms, floods, ice and earthquakes, played from west to east. Further north is a higher note and a bigger circle; bigger events are louder.</dd>
+        <dt>Data</dt><dd>Climate series, NASA POWER for any place, the challenge's data sets as numbers, or your own spreadsheet (Upload).</dd>
+      </dl>
+      <p class="card-note">The <b>Space Apps challenge data</b> (seven NASA data sets) is in every menu and works without the internet.</p>
+    </section>
+
+    <section class="howto-sec" id="how-search">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Search</h2>
+      <ul>
+        <li>Type a subject (rain, sea ice, fires): results appear as you type, even with a typo.</li>
+        <li>Each tab finds its own kind of thing: <b>pictures</b> in Image, <b>videos</b> in Video, <b>data sets</b> in Data.</li>
+        <li><b>File type</b> (Image tab) finds scientific files: GeoTIFF, NetCDF and HDF5.</li>
+        <li>Choose a result to play it. <b>Reload</b> gets the newest data again.</li>
+      </ul>
+    </section>
+
+    <section class="howto-sec" id="how-listen">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-ear"/></svg>Listening and reading</h2>
+      <ul>
+        <li><b>Now playing</b> (navy card): the step, its note and the real value behind it.</li>
+        <li><b>What the data says</b>: the trend, highs and lows and sudden jumps in plain words; <b>Read aloud</b> (or D) speaks them.</li>
+        <li><b>Melody</b> shows every note; <b>Score</b> is the sheet music; <b>Readings</b> (or T) lists every value.</li>
+        <li><b>Channels</b>: one row per series; M mutes, S plays it alone, ⇅ flips its pitch.</li>
+        <li><b>Follow pointer</b> (Image tab): move over the picture, or Tab to it and use the arrow keys. You hear the data under the pointer, and Bit2Beat says which data it is, its value and where you are.</li>
+      </ul>
+    </section>
+
+    <section class="howto-sec" id="how-sound">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-volume"/></svg>Sound</h2>
+      <ul>
+        <li><b>Mood</b>: Default, Sad, Happy or Excited sets the whole sound in one click. <b>Default</b> brings back the starting sound.</li>
+        <li><b>Smart Tuning</b> picks the scale, tempo and instrument from the shape of the data. Every change can be undone from the message that appears.</li>
+        <li><b>Space and tone</b>: stereo, headphone 3D, and 5.1, 7.1 or 7.1.4 surround for scientific maps; room, tone and movement.</li>
+        <li><b>Listening aids</b>: a reference tone, a tick on sudden jumps, and an optional drum beat.</li>
+      </ul>
+    </section>
+
+    <section class="howto-sec" id="how-science">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg>Scientific files and your own files</h2>
+      <ul>
+        <li><b>Upload</b> (top bar) opens any file and picks the tab: spreadsheets (CSV, Excel), pictures, videos, and GeoTIFF, NetCDF or HDF5 maps up to 5 GB.</li>
+        <li><b>What's inside</b> lists the layers. Listen to the whole map, one spot over time, or a time-lapse; zoom with + and −.</li>
+        <li>Your files stay on your device.</li>
+      </ul>
+    </section>
+
+    <section class="howto-sec" id="how-access">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg>Without a screen</h2>
+      <ul>
+        <li><b>Voice</b> (top right, or V): say <i>play</i>, <i>pause</i>, <i>explain</i>, <i>search for sea ice</i>, <i>result 2</i>, <i>violin</i>, <i>default mood</i> or <i>help</i>, in any language.</li>
+        <li><b>Accessibility</b>: bigger text, high contrast, dark theme, calmer motion, larger buttons, mono sound.</li>
+        <li>Every control works with the keyboard and a screen reader; captions describe each note.</li>
+      </ul>
+    </section>
+
+    <section class="howto-sec" id="how-export">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Export and share</h2>
+      <ul>
+        <li><b>Export</b>: audio (stereo, headphone 3D, surround, Dolby Atmos ADM), the notes as CSV, the score as ABC or PNG, and the score in <b>braille</b> (BRF) for embossers and braille displays.</li>
+        <li><b>Record</b> captures what you play. <b>Sessions</b> saves your setup.</li>
+        <li>The address bar remembers everything: a shared link opens the same view.</li>
+      </ul>
+    </section>
+
+    <section class="howto-sec" id="how-keys">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Keys</h2>
+      <dl class="howto-keys">
+        <dt>Space</dt><dd>Play or pause</dd>
+        <dt>← →</dt><dd>One step (Shift: one bar)</dd>
+        <dt>Home / End</dt><dd>Start / end</dd>
+        <dt>D</dt><dd>Read what the data says</dd>
+        <dt>T</dt><dd>Readings table</dd>
+        <dt>B</dt><dd>Score in braille</dd>
+        <dt>L</dt><dd>Repeat on or off</dd>
+        <dt>V</dt><dd>Voice control</dd>
+        <dt>G</dt><dd>Bitty's guide</dd>
+        <dt>?</dt><dd>All shortcuts</dd>
+      </dl>
+    </section>
+    <p><button type="button" class="btn btn-primary" data-page="studio">Open the studio</button></p>
+  </div>
+</section>
+
 <section id="about" class="about" hidden tabindex="-1" aria-labelledby="aboutTitle">
   <div class="about-inner">
+    <p class="award"><span class="award-icon" aria-hidden="true">🏆</span><span><b>First place</b> · NASA Space Apps Challenge 2026, Assiut local event, <i>The Earth Information Jukebox</i></span></p>
     <h1 id="aboutTitle">About Bit2Beat</h1>
     <p class="lead">Bit2Beat is our entry to the NASA Space Apps Challenge “Earth Information Jukebox”. It turns Earth data into sound, so anyone, including people who are blind or have low vision, can follow how our planet changes by listening.</p>
     <div class="about-cols">
@@ -4386,7 +4548,7 @@ THE SOFTWARE.
   <div class="transport-right">
     <button type="button" class="round-btn" id="muteBtn" aria-label="Mute" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-volume" id="volIcon"/></svg></button>
     <input type="range" id="volume" min="0" max="100" value="70" aria-label="Volume" class="volume">
-    <button type="button" class="btn btn-ghost" id="recBtn" aria-pressed="false"><span class="rec-dot" aria-hidden="true"></span><span id="recLabel">Record</span></button>
+    <button type="button" class="btn btn-ghost" id="recBtn" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-rec"/></svg><span id="recLabel">Record</span></button>
     <button type="button" class="btn btn-ghost" id="tableBtn"><svg class="i" aria-hidden="true"><use href="#i-table"/></svg>Readings</button>
     <button type="button" class="btn btn-primary" id="exportBtn"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Export</button>
   </div>
@@ -4415,7 +4577,7 @@ THE SOFTWARE.
   </div>
 </div>
 <div class="voice-bar" id="voiceBar" hidden>
-  <span class="voice-dot" aria-hidden="true"></span>
+  <span class="voice-state" aria-hidden="true"><svg class="i"><use href="#i-mic"/></svg><b>Voice on</b></span>
   <span id="voiceHeard">Listening… say “help” for the commands.</span>
   <button type="button" class="btn btn-quiet btn-small" id="voiceHelp">Commands</button>
   <button type="button" class="btn btn-quiet btn-small" id="voiceOff">Turn off</button>
@@ -4476,12 +4638,12 @@ THE SOFTWARE.
 <dialog id="helpDialog" aria-labelledby="helpTitle">
   <div class="dlg-head"><h2 id="helpTitle">How to use Bit2Beat</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
   <ol class="help-steps">
-    <li><b>Find something to hear.</b> Search NASA’s Earth Information Center above the tabs (turn on AI mode to ask in your own words), or pick from the menu. Image turns a map or picture into sound, Video follows a NASA animation or time-lapse, Earth events plays natural events and earthquakes across the map, Data plays climate series and your own CSV.</li>
+    <li><b>Find something to hear.</b> Search NASA’s Earth Information Center above the tabs, or pick from the menu (the Space Apps challenge data works offline). Image turns a map or picture into sound, Video follows a NASA animation or time-lapse, Earth events plays natural events and earthquakes across the map, Data plays climate series and your own CSV.</li>
     <li><b>Press Play.</b> Higher values play higher. The Melody panel and the score show the same notes.</li>
-    <li><b>Shape the sound.</b> Pick a mood (sad, happy or excited), change instrument, scale and tempo, mute or solo channels, or press Smart Tuning.</li>
-    <li><b>Export.</b> Download audio, the notes as CSV or the score.</li>
+    <li><b>Shape the sound.</b> Pick a mood (default, sad, happy or excited), change instrument, scale and tempo, mute or solo channels, or press Smart Tuning.</li>
+    <li><b>Export.</b> Download audio, the notes as CSV, the score, or the score in braille.</li>
   </ol>
-  <div class="btn-row help-bitty"><button type="button" class="btn btn-primary" id="helpTour">Let Bitty guide me</button><button type="button" class="btn" id="helpStory">Listen to Bitty’s story</button></div>
+  <div class="btn-row help-bitty"><button type="button" class="btn btn-primary" id="helpTour">Let Bitty guide me</button><button type="button" class="btn" id="helpStory">Listen to Bitty’s story</button><button type="button" class="btn" id="helpHowto">The How to use page</button></div>
   <h3>Keyboard</h3>
   <dl class="keys">
     <dt><kbd>Space</kbd></dt><dd>Play / pause</dd>
@@ -4494,7 +4656,8 @@ THE SOFTWARE.
     <dt><kbd>T</kbd></dt><dd>Readings table</dd>
     <dt><kbd>B</kbd></dt><dd>Download the score in braille music (BRF, for embossers and braille displays)</dd>
     <dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Scientific maps: zoom in, zoom out, whole map (also the mouse wheel; drag to move)</dd>
-    <dt><kbd>V</kbd></dt><dd>Voice control on / off: say “play”, “pause”, “next”, “where am I”, “search for sea ice”, “go to video”, “violin”, “7.1”, “help” or “stop voice control”</dd>
+    <dt><kbd>V</kbd></dt><dd>Voice control on / off: say “play”, “pause”, “next”, “where am I”, “explain”, “search for sea ice”, “result 2”, “go to video”, “violin”, “default mood”, “how to use”, “help” or “stop voice control”</dd>
+    <dt><kbd>Tab</kbd> then <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd></dt><dd>Follow pointer (Image tab): move the pointer over the picture and hear what is under it; Bit2Beat says which data it is and where you are</dd>
     <dt><kbd>?</kbd></dt><dd>This help</dd>
   </dl>
 </dialog>
@@ -4726,8 +4889,10 @@ THE SOFTWARE.
   /**
    * Sound moods: one click sets scale, key, tempo, instrument, range, room and tone. Every mood
    * stays pentatonic, so any data sounds consonant: sad is minor pentatonic, happy and excited major.
+   * Default brings back the sound Bit2Beat starts with.
    */
   const MOODS = Object.freeze({
+    normal: { name: 'Default', scale: 'pent', key: 0, range: 24, tempo: 96, instrument: 'soft', room: 0.22, eq: 'flat', hint: 'major pentatonic in C, piano at 96 BPM, as Bit2Beat starts' },
     sad: { name: 'Sad', scale: 'pentmin', key: 9, range: 24, tempo: 66, instrument: 'strings', room: 0.45, eq: 'warm', hint: 'minor pentatonic in A, slow violin in a big warm room' },
     happy: { name: 'Happy', scale: 'pent', key: 0, range: 24, tempo: 112, instrument: 'marimba', room: 0.2, eq: 'bright', hint: 'major pentatonic in C, marimba at a walking pace' },
     excited: { name: 'Excited', scale: 'pent', key: 7, range: 36, tempo: 160, instrument: 'electric', room: 0.12, eq: 'bright', hint: 'major pentatonic in G over three octaves, fast electric piano' },
@@ -10497,10 +10662,11 @@ THE SOFTWARE.
     return [...t];
   }
 
-  /** Gallery entries → search catalogue entries (presets left out). */
-  function catalogue(entries) {
+  /** Gallery entries → search catalogue entries (presets left out, unless `presets`: their
+   *  scientific files are not in the menus, so the file-type search lists them). */
+  function catalogue(entries, { presets = false } = {}) {
     return (entries || [])
-      .filter((e) => e && e.id && e.s && !PRESET_IDS.has(+e.id))
+      .filter((e) => e && e.id && (e.s || e.f) && (presets || !PRESET_IDS.has(+e.id)))
       .map((e) => ({
         id: `svs:${e.id}`,
         title: e.t,
@@ -13040,10 +13206,17 @@ THE SOFTWARE.
       g.beginPath();
       g.arc(x, y, 13, 0, Math.PI * 2);
       g.stroke();
-      g.strokeStyle = t.amber;
-      g.beginPath();
-      g.arc(x, y, 17, 0, Math.PI * 2);
-      g.stroke();
+      // the event playing now is named in words next to it, not by a glow
+      const name = String(src.details?.[pos] || src.labels?.[pos] || '').split(' · ')[0].slice(0, 40);
+      if (name) {
+        g.font = '600 11px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+        const tw = g.measureText('▶ ' + name).width + 12;
+        const bx = Math.min(Math.max(R.x + 2, x + 18), R.x + R.w - tw - 2);
+        const by = Math.max(R.y + 2, Math.min(y - 11, R.y + R.h - 24));
+        g.fillStyle = 'rgba(20, 33, 61, 0.88)';
+        g.fillRect(bx, by, tw, 22);
+        text(g, '▶ ' + name, bx + 6, by + 15, { size: 11, color: '#f6f1e7', weight: 600 });
+      }
     }
     return R;
   }
@@ -13789,6 +13962,8 @@ ${m.mouth}
   // the Space Apps challenge's data sets (core/svs.js), bundled with the app: they work offline.
   // GEDI and CO₂ (the first bundled videos) play only in Bitty's story.
   const VIDEO_MENU = B.svs.PRESETS.filter((p) => !p.bundled && p.video).map((p) => [`svs:${p.id}`, p.name]);
+  // the same data sets in the Data tab: what each video or picture measures, played as numbers
+  const DATA_PRESETS = B.svs.PRESETS.filter((p) => !p.bundled).map((p) => [`svs:${p.id}`, p.name]);
   const STORY_VIDEOS = { gedi: 'GEDI forest height (Bitty’s story)', co2: 'Global carbon dioxide (Bitty’s story)' };
   function earthSample(id) {
     const source = B.feeds.offline[id.slice(7)]();
@@ -14042,7 +14217,7 @@ ${m.mouth}
     sel.replaceChildren();
     const add = (parent, [v, t]) => parent.append(new Option(t, v));
     if (state.mode === 'data') {
-      B.presets.DATA_MENU.forEach(([label, items]) => {
+      [...B.presets.DATA_MENU, ['Space Apps challenge data (works offline)', DATA_PRESETS]].forEach(([label, items]) => {
         const og = document.createElement('optgroup');
         og.label = label;
         items.forEach((it) => add(og, it));
@@ -14080,7 +14255,7 @@ ${m.mouth}
     sel.value = state.choice[state.mode];
   }
 
-  B.sources = { inflate, fillSourceSelect, EARTH_MENU, IMAGE_MENU, VIDEO_MENU, earthSample, videoPreset, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile, fromVideoFile, fromVideo };
+  B.sources = { inflate, fillSourceSelect, EARTH_MENU, IMAGE_MENU, VIDEO_MENU, DATA_PRESETS, earthSample, videoPreset, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile, fromVideoFile, fromVideo };
 })(typeof self !== 'undefined' ? self : this);
 
 </script>
@@ -14914,16 +15089,44 @@ ${m.mouth}
       tip.style.top = Math.max(4, hit.y - 40) + 'px';
     }
 
+    // ------------------------------------------------------------------ say what is under the pointer
+    // For listeners who cannot see the picture: when the pointer rests, the data set, the measure,
+    // its value and where the pointer is are announced (screen readers) and, with "Say what is
+    // under the pointer" on, spoken aloud.
+    const area = (u, v) => {
+      const col = u < 0.34 ? 'left' : u > 0.66 ? 'right' : 'centre';
+      const row = v < 0.34 ? 'top' : v > 0.66 ? 'bottom' : 'middle';
+      const where = row === 'middle' && col === 'centre' ? 'centre' : row === 'middle' ? `middle ${col}` : col === 'centre' ? `${row} centre` : `${row} ${col}`;
+      return `${where[0].toUpperCase() + where.slice(1)}, ${Math.round(u * 100)}% across, ${Math.round(v * 100)}% down`;
+    };
+    let said = '';
+    let sayTimer = 0;
+    let entered = true;
+    function describe(pt, text) {
+      clearTimeout(sayTimer);
+      sayTimer = setTimeout(() => {
+        const full = (entered ? `${(app.src?.name || '').replace(/^NASA (EIC|satellite) · /, '')}. ` : '') + text;
+        if (text === said) return;
+        said = text;
+        entered = false;
+        $('pointerSays').textContent = text;
+        B.dom.announce(full);
+        if ($('pointerSpeak').checked && B.speech?.supported) B.speech.speak(full, { label: 'Under the pointer', owner: 'pointer' });
+      }, 450);
+    }
+
     /** Pointer mode: sound the data under the pointer. Only the data channel plays (the value read
      *  through the colour key, or brightness / red), and only where the picture shows data. */
     function probe(pt) {
       const src = app.src;
       const plan = app.plan;
       const vals = src.science ? [app.sci.readout(src, pt.x, pt.y, state.position).value] : B.image.probe(src.pixels, src.canvas.width, src.canvas.height, pt.x, pt.y, state.image.analysis, src.key);
+      const place = src.science ? (app.sci.readout(src, pt.x, pt.y, state.position).text.split(' · ').slice(1).join(' · ') || area(pt.x, pt.y)) : area(pt.x, pt.y);
       if (!vals || !Number.isFinite(vals[0])) {
         $('nowNote').textContent = '—';
         $('nowHz').textContent = '';
         $('nowDetail').textContent = src.science ? 'No data here: this place has no value in the file.' : 'No data here: move over the coloured part of the picture.';
+        describe(pt, `No data here. ${place}.`);
         return;
       }
       const list = [];
@@ -14939,7 +15142,16 @@ ${m.mouth}
         $('nowNote').textContent = music.noteName(list[0].midi);
         $('nowHz').textContent = music.freq(list[0].midi).toFixed(1) + ' Hz';
         $('nowDetail').textContent = `${plan.channels[0].name} ${stats.fmtNum(vals[0], plan.channels[0].unit)}`;
+        describe(pt, `${plan.channels[0].name} ${stats.fmtNum(vals[0], plan.channels[0].unit)}, note ${music.noteName(list[0].midi)}. ${place}.`);
       }
+    }
+
+    // keyboard: with Follow pointer, the arrow keys move the pointer over the picture (Shift: bigger steps)
+    function movePointer(dx, dy) {
+      const p = state.pointer || { x: 0.5, y: 0.5 };
+      state.pointer = { x: Math.max(0, Math.min(1, p.x + dx)), y: Math.max(0, Math.min(1, p.y + dy)) };
+      drawAll();
+      probe(state.pointer);
     }
 
     // canvas
@@ -14957,6 +15169,31 @@ ${m.mouth}
     // a zoomed scientific map can be dragged, so it acts on click (not on press) and never after a drag
     canvas.addEventListener('pointerdown', (e) => !(app.src?.science && app.sci.zoomed()) && press(e));
     canvas.addEventListener('click', (e) => app.src?.science && app.sci.zoomed() && !app.sci.wasDragged() && press(e));
+    // the choice to speak is remembered in this browser
+    try {
+      $('pointerSpeak').checked = localStorage.getItem('b2b-pointer-speak') !== '0';
+    } catch {}
+    $('pointerSpeak').onchange = (e) => {
+      try {
+        localStorage.setItem('b2b-pointer-speak', e.target.checked ? '1' : '0');
+      } catch {}
+      if (!e.target.checked && B.speech?.owner?.() === 'pointer') B.speech.stop();
+    };
+    const pointerMode = () => app.src?.kind === 'image' && state.image.scan === 'pointer' && (!app.src.science || app.src.science.mode === 'sweep');
+    canvas.addEventListener('keydown', (e) => {
+      if (!pointerMode()) return;
+      const d = e.shiftKey ? 0.2 : 0.05;
+      const move = { ArrowLeft: [-d, 0], ArrowRight: [d, 0], ArrowUp: [0, -d], ArrowDown: [0, d] }[e.key];
+      if (!move) return;
+      e.preventDefault();
+      e.stopPropagation();
+      movePointer(...move);
+    });
+    canvas.addEventListener('pointerenter', () => (entered = true));
+    canvas.addEventListener('focus', () => {
+      entered = true;
+      if (pointerMode()) B.dom.announce('Follow pointer: move the mouse or your finger over the picture, or use the arrow keys, to hear the data under it.');
+    });
     canvas.addEventListener('pointerleave', () => {
       $('hoverTip').hidden = true;
       if (state.pointer) {
@@ -14965,7 +15202,7 @@ ${m.mouth}
       }
     });
 
-    return {};
+    return { movePointer, describeArea: area };
   }
 
   B.canvasInput = { init };
@@ -15055,7 +15292,7 @@ ${m.mouth}
     const q = new URLSearchParams(search);
     const out = { settings: {}, audio: {}, image: {}, earth: {} };
     const has = (k) => q.has(k) && q.get(k) !== '';
-    if (has('page')) out.page = oneOf(q.get('page'), ['studio', 'story', 'about']);
+    if (has('page')) out.page = oneOf(q.get('page'), ['studio', 'story', 'howto', 'about']);
     if (q.has('tour')) out.tour = true;
     if (q.has('notour')) out.tour = false;
     if (has('mode')) out.mode = oneOf(q.get('mode'), MODES);
@@ -15116,7 +15353,7 @@ ${m.mouth}
     const st = app.state;
     const D = B.plan.DEFAULTS;
     const q = new URLSearchParams();
-    if (page === 'about' || page === 'story') q.set('page', page);
+    if (page === 'about' || page === 'story' || page === 'howto') q.set('page', page);
     q.set('mode', st.mode);
     const choice = st.choice[st.mode];
     if (choice !== 'upload' && choice !== 'custom') q.set('src', choice);
@@ -15918,7 +16155,7 @@ ${m.mouth}
 
   const TABS = ['image', 'video', 'earth', 'data'];
   const INSTRUMENTS = { piano: 'soft', 'electric piano': 'electric', guitar: 'guitar', marimba: 'marimba', flute: 'flute', violin: 'strings' };
-  const MOODS = ['sad', 'happy', 'excited'];
+  const MOODS = ['normal', 'sad', 'happy', 'excited'];
   const OUTPUTS = { stereo: 'stereo', headphones: 'binaural', binaural: 'binaural', '5.1': '5.1', '7.1': '7.1', '7.1.4': '7.1.4' };
 
   /** Every command, with what to say and what it does (also the spoken help list). */
@@ -15941,7 +16178,7 @@ ${m.mouth}
     { id: 'search', say: 'search for …', help: 'search NASA Earth data, for example: search for sea ice' },
     { id: 'result', say: 'result 1, result 2 … or play the first one', help: 'play one of the search results', args: ['1', '2', '3', '4', '5', '6'] },
     { id: 'instrument', say: 'piano, guitar, marimba, flute, violin or electric piano', help: 'change the instrument', args: Object.keys(INSTRUMENTS) },
-    { id: 'mood', say: 'happy, sad or excited mood', help: 'change the mood', args: MOODS },
+    { id: 'mood', say: 'default, happy, sad or excited mood', help: 'change the mood (default goes back to the starting sound)', args: MOODS },
     { id: 'tuning', say: 'smart tuning', help: 'let Bit2Beat choose the sound' },
     { id: 'output', say: 'stereo, headphones, 5.1, 7.1 or 7.1.4', help: 'change the sound output', args: Object.keys(OUTPUTS) },
     { id: 'drums', say: 'drums on or drums off', help: 'add or remove the beat', args: ['on', 'off'] },
@@ -15949,6 +16186,7 @@ ${m.mouth}
     { id: 'export', say: 'export', help: 'save the music as a file' },
     { id: 'upload', say: 'open a file', help: 'choose a file from your device' },
     { id: 'story', say: 'story', help: 'hear Bitty’s story' },
+    { id: 'howto', say: 'how to use', help: 'open the page that explains every part briefly' },
     { id: 'theme', say: 'dark mode or light mode', help: 'change the colours', args: ['dark', 'light'] },
     { id: 'help', say: 'help', help: 'hear the list of commands' },
     { id: 'repeat', say: 'repeat', help: 'hear the last answer again' },
@@ -15996,6 +16234,7 @@ ${m.mouth}
     }
     if ((m = t.match(/\b(electric piano|piano|guitar|marimba|flute|violin)\b/))) return { id: 'instrument', arg: m[1] };
     if ((m = t.match(/\b(happy|sad|excited)\b/))) return { id: 'mood', arg: m[1] };
+    if (/\b(default|normal|neutral|reset (the )?(sound|mood)|no mood)\b/.test(t)) return { id: 'mood', arg: 'normal' };
     if ((m = t.match(/\b(dark|light)\b.*\b(mode|theme|colou?rs?)\b|\b(dark|light) mode\b/))) return { id: 'theme', arg: m[1] || m[3] };
     if ((m = t.match(/\b(headphones?|binaural|stereo|7\s?1\s?4|7\s?1|5\s?1|7\.1\.4|7\.1|5\.1)\b/))) {
       const k = m[1].replace(/\s/g, '').replace(/^(\d)(\d)(\d)?$/, (_, a, b, c) => [a, b, c].filter(Boolean).join('.')).replace(/^headphone$/, 'headphones');
@@ -16019,6 +16258,7 @@ ${m.mouth}
     if (/\breadings?\b|\btable\b/.test(t)) return { id: 'readings' };
     if (/\b(export|save|download)\b/.test(t)) return { id: 'export' };
     if (/\b(open|upload|choose|load)\b.*\bfile\b|\bupload\b/.test(t)) return { id: 'upload' };
+    if (/\bhow (to|do i|can i) use\b|\binstructions\b|\btutorial\b|\bmanual\b/.test(t)) return { id: 'howto' };
     if (/\bstory\b|\bbitty\b/.test(raw)) return { id: 'story' };
     if (/^(open )?help$/.test(t)) return { id: 'help' };
     // "play hurricanes": play the search result with that name (or search for it)
@@ -16604,7 +16844,7 @@ ${m.mouth}
           return say(`${arg[0].toUpperCase() + arg.slice(1)}.`);
         case 'mood':
           document.querySelector(`[data-mood="${arg}"]`)?.click();
-          return say(`${arg[0].toUpperCase() + arg.slice(1)} mood.`);
+          return say(arg === 'normal' ? 'Default sound.' : `${arg[0].toUpperCase() + arg.slice(1)} mood.`);
         case 'tuning':
           click('autoTuneBtn');
           return say($('autoTuneNote').textContent || 'Smart Tuning done.');
@@ -16624,6 +16864,9 @@ ${m.mouth}
         case 'upload':
           click('uploadBtn');
           return say('Opening the file chooser. If nothing opens, press the Upload button at the top.');
+        case 'howto':
+          app.showPage?.('howto');
+          return say('How to use Bit2Beat. Each part is explained briefly. Say go to image, or another tab, to come back.');
         case 'story':
           app.showPage?.('story');
           return say('Bitty’s story.');
@@ -16896,7 +17139,7 @@ ${m.mouth}
       const tag = e.target.tagName;
       const typing = ['INPUT', 'SELECT', 'TEXTAREA'].includes(tag) || e.target.isContentEditable;
       if (typing && !(tag === 'INPUT' && e.target.type === 'range' && e.code === 'Space')) return;
-      if (!$('about').hidden) return;
+      if (!$('about').hidden || !$('howto').hidden) return;
       const k = e.key;
       if (e.code === 'Space' && tag !== 'BUTTON') {
         e.preventDefault();
@@ -16923,7 +17166,7 @@ ${m.mouth}
 </script>
 <script>/* src/js/ui/pages.js */
 /**
- * Bit2Beat ui · the three pages: Studio, Story and About the team.
+ * Bit2Beat ui · the pages: Studio, Story, How to use and About the team.
  * Only one page is visible at a time; the player bar stays on Studio and Story (so you can follow
  * a chapter while you read) and hides on About, which also pauses the sound.
  */
@@ -16931,7 +17174,7 @@ ${m.mouth}
   'use strict';
   const B = root.Bit2Beat;
   const { $, $$ } = B.dom;
-  const PAGES = ['studio', 'story', 'about'];
+  const PAGES = ['studio', 'story', 'howto', 'about'];
 
   /** Returns showPage(page). `redraw` repaints the studio canvases after it becomes visible. */
   function init(app, redraw) {
@@ -16941,7 +17184,7 @@ ${m.mouth}
       const from = current;
       current = page;
       PAGES.forEach((p) => ($(p).hidden = p !== page));
-      document.querySelector('.transport').hidden = page === 'about';
+      document.querySelector('.transport').hidden = page === 'about' || page === 'howto';
       document.documentElement.dataset.page = page;
       $$('.topnav-link').forEach((b) => (b.dataset.page === page ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
       if (page === 'about') app.player.pause();
@@ -17309,7 +17552,7 @@ ${m.mouth}
       });
       const p = B.story.progress(heard);
       $('storyProgress').replaceChildren(
-        el('span', { class: 'story-dots', 'aria-hidden': 'true' }, ...CHAPTERS.map((c) => el('i', { class: (heard[c.id] ? 'on' : '') + (active === c ? ' now' : '') }))),
+        el('span', { class: 'story-dots', 'aria-hidden': 'true' }, ...CHAPTERS.map((c, k) => el('i', { class: (heard[c.id] ? 'on' : '') + (active === c ? ' now' : ''), text: heard[c.id] ? '✓' : active === c ? '▶' : String(k + 1) }))),
         el('span', { text: p.done ? 'All chapters heard. You earned the badge!' : `${p.n} of ${p.total} chapters heard` }),
       );
       $('storyPlayAll').textContent = auto ? 'Stop the story' : p.n && !p.done ? 'Continue the story' : 'Play the whole story';
@@ -17697,6 +17940,7 @@ ${m.mouth}
     // ---------------------------------------------------------------- EIC content database (SVS)
     const SV = B.svs;
     let gallery = [];
+    let galleryAll = []; // with the presets: their scientific files (e.g. the 3912 GeoTIFF) are searchable by file type
     let galleryLoading = null;
     const GKEY = 'b2b-eic-gallery2'; // 2: entries list their file types (search filter)
     /** Image and Video search the content database, unless another catalogue was chosen. */
@@ -17707,6 +17951,7 @@ ${m.mouth}
       const saved = storage.get(GKEY, null);
       const use = (items) => {
         gallery = SV.catalogue(items);
+        galleryAll = SV.catalogue(items, { presets: true });
         root.dispatchEvent(new CustomEvent('b2b:catalogue', { detail: { count: gallery.length } }));
         return gallery;
       };
@@ -17768,6 +18013,27 @@ ${m.mouth}
         storage.set(key, s);
       }
       return { ...s, name: `NASA EIC · ${it.title}`, videoUrl: url, origin: { ...originOf(it), note: `${it.about ? it.about + ' ' : ''}${s.labels.length} samples, two per second: brightness, colour and motion of the picture.` } };
+    }
+
+    /**
+     * A challenge preset in the Data tab: what it measures, played as numbers on a chart. A video
+     * gives its brightness, colour and motion over time; a picture its bands from left to right.
+     */
+    async function presetData(id) {
+      const it = SV.item(id);
+      if (!it) return null;
+      let s;
+      let how;
+      if (it.video && B.svsClips?.[it.id]) {
+        s = await svsVideo(it);
+        how = `${s.labels.length} samples over the first ${Math.round(s.duration)} seconds of NASA's video, two per second: brightness, colour and motion.`;
+      } else {
+        const res = await svsStill(it);
+        s = B.sources.fromCanvas(res.canvas, res.meta, { analysis: 'light', scan: 'line', steps: 48 });
+        how = `NASA's picture cut into ${s.labels.length} bands from left to right: brightness, detail and where the bright parts are.`;
+      }
+      const { canvas, pixels, videoUrl, bounds, key, ...rest } = s;
+      return { ...rest, kind: 'data', view: 'chart', name: it.title, origin: { ...s.origin, note: `${it.about ? it.about + ' ' : ''}Played as data: ${how}` } };
     }
 
     /** Presets (Image and Video menus): `id` = 'svs:5313'. */
@@ -17847,7 +18113,8 @@ ${m.mouth}
         const [, type, ref] = file;
         let res;
         if (/^svs-/.test(ref)) {
-          const entry = (await fillGallery().catch(() => gallery)).find((c) => c.id === `svs:${ref.slice(4)}`);
+          await fillGallery().catch(() => gallery);
+          const entry = galleryAll.find((c) => c.id === `svs:${ref.slice(4)}`);
           const path = entry?.svs.f?.[type];
           if (!path) return toast('That file is no longer in the gallery.'), null;
           const it = SV.item(entry.svs);
@@ -17957,7 +18224,7 @@ ${m.mouth}
     const asFile = (c, type) => ({ ...c, id: `${type}:${c.svs ? 'svs-' + c.svs.id : c.id}`, kind: `${FILE_NAME[type]} file (.${type})`, exts: [type], file: type });
     function catalogueFor(mode = S.mode, type = 'any') {
       if (FILE_NAME[type]) {
-        const own = gallery.filter((c) => c.svs.f?.[type]).map((c) => asFile(c, type));
+        const own = galleryAll.filter((c) => c.svs.f?.[type]).map((c) => asFile(c, type));
         return type === 'tif' && api.stac === E.ENDPOINTS.stac ? [...own, ...list.map((c) => asFile({ ...c, exts: ['tif'] }, 'tif'))] : own;
       }
       if (!usesGallery(mode)) return list;
@@ -17979,7 +18246,7 @@ ${m.mouth}
         },
       );
     }
-    Object.assign(B.eicView, { load, loadImage, loadVideo, fill: fillFor, catalogue: (type) => catalogueFor(S.mode, type), typeCounts, FILE_NAME, api: () => api, usesGallery, presetStill, presetVideo });
+    Object.assign(B.eicView, { load, loadImage, loadVideo, presetData, fill: fillFor, catalogue: (type) => catalogueFor(S.mode, type), typeCounts, FILE_NAME, api: () => api, usesGallery, presetStill, presetVideo });
     $('eicUse').onclick = () => {
       const stac = $('eicStac').value.trim();
       const raster = $('eicRaster').value.trim();
@@ -18066,8 +18333,7 @@ ${m.mouth}
       $('searchType').replaceChildren(
         new Option('Pictures (.jpg, .png)', 'any'),
         ...['tif', 'nc', 'h5'].map((t) => {
-          const o = new Option(`${{ tif: 'GeoTIFF (.tif)', nc: 'NetCDF (.nc)', h5: 'HDF5 (.h5, .he5)' }[t]}${n[t] != null ? ' · ' + n[t] : ''}`, t);
-          o.disabled = n[t] === 0 && t !== keep;
+          const o = new Option(`${{ tif: 'GeoTIFF (.tif)', nc: 'NetCDF (.nc)', h5: 'HDF5 (.h5, .he5)' }[t]}${n[t] ? ' · ' + n[t] : ''}`, t);
           return o;
         }),
       );
@@ -18117,7 +18383,7 @@ ${m.mouth}
             { type: 'button', class: 'result', 'data-id': c.id, title: c.text.slice(0, 300) },
             el('b', { text: c.title }),
             el('small', { text: r.why ? `${years} · ${r.why}` : `${years} · ${c.text.slice(0, 110)}${c.text.length > 110 ? '…' : ''}` }),
-            el('span', { class: 'result-go', 'aria-hidden': 'true', text: k === 0 ? 'Listen ▶' : '▶' }),
+            el('span', { class: 'result-go', 'aria-hidden': 'true', text: '▶ Listen' }),
           );
           b.onclick = () => choose(c.id);
           return el('li', {}, b);
@@ -18253,7 +18519,14 @@ ${m.mouth}
       return keywords(q);
     }
     function listAll() {
-      return catalogue().then((list) => list && show([...list].sort((p, q) => p.title.localeCompare(q.title)).map((c) => ({ id: c.id })), `${list.length} ${what(kindNow(), list.length)}, A to Z. Type to narrow them.`));
+      return catalogue().then(
+        (list) =>
+          list &&
+          show(
+            [...list].sort((p, q) => p.title.localeCompare(q.title)).map((c) => ({ id: c.id })),
+            list.length ? `${list.length} ${what(kindNow(), list.length)}, A to Z. Type to narrow them.` : `NASA's Earth Information Center has no ${what(kindNow(), 2)} right now. Open your own with Upload (top bar).`,
+          ),
+      );
     }
     function clear() {
       ++token;
@@ -18441,7 +18714,10 @@ ${m.mouth}
         pressOne($('scanGroup'), b);
         state.image.scan = b.dataset.scan;
         state.pointer = null;
-        if (b.dataset.scan === 'pointer') toast('Move the pointer over the picture to hear it. The player comes back when you choose another scan.', 4500);
+        if (b.dataset.scan === 'pointer') {
+          toast('Move the pointer over the picture (or press Tab to reach it and use the arrow keys) to hear it; Bit2Beat says what is under it. The player comes back when you choose another scan.', 6000);
+          B.dom.announce('Follow pointer. Press Tab to reach the picture, then use the arrow keys: you hear the data and Bit2Beat says what it is and where you are.');
+        }
         syncPointer();
         h.analyseImage();
       };
@@ -18468,6 +18744,7 @@ ${m.mouth}
     function syncPointer() {
       const on = state.mode === 'image' && state.image.scan === 'pointer' && app.page?.() !== 'about';
       document.body.classList.toggle('pointer-mode', on);
+      $('pointerRow').hidden = !on;
       if (on && app.player.playing) app.player.pause();
     }
     root.addEventListener('b2b:mode', syncPointer);
@@ -18791,6 +19068,10 @@ ${m.mouth}
       $('helpDialog').close();
       app.showPage('story');
     };
+    $('helpHowto').onclick = () => {
+      $('helpDialog').close();
+      app.showPage('howto');
+    };
     $('bittyTour').onclick = () => open('hub');
     $('bittyTipBtn').onclick = () => tipFor && open(tipFor);
     $('bittyTipNo').onclick = () => {
@@ -18862,7 +19143,7 @@ ${m.mouth}
   if (fromUrl.mode) state.mode = fromUrl.mode;
   if (fromUrl.choice) {
     const valid = {
-      data: [...B.presets.DATA_MENU.flatMap(([, items]) => items.map((it) => it[0])), 'power', 'eic'],
+      data: [...B.presets.DATA_MENU.flatMap(([, items]) => items.map((it) => it[0])), ...B.sources.DATA_PRESETS.map((it) => it[0]), 'power', 'eic'],
       earth: [...B.sources.EARTH_MENU.map((it) => it[0]), 'eonet', 'quakes', 'sample:eonet', 'sample:quakes'],
       video: [...B.sources.VIDEO_MENU.map((it) => it[0]), 'eic', 'gedi', 'co2'],
       image: [...B.sources.IMAGE_MENU.flatMap(([, items]) => items.map((it) => it[0])), 'eic', 'nasa:gedi', 'nasa:co2'],
@@ -19127,6 +19408,7 @@ ${m.mouth}
         if (id === 'upload' && uploads.data) return setSource(uploads.data);
         if (B.presets.DATA[id]) return setSource(B.presets.DATA[id]());
         if (id === 'power' && state.power) return options.loadPower(state.power);
+        if (id.startsWith('svs:')) return B.eicView.presetData(id).then((s) => s && token === loadToken && setSource(s));
         if (id === 'eic') return B.eicView.load(state.eic || {}).then((s) => s || app.choose('data', 'gistemp'));
         state.choice.data = 'gistemp';
         fillSourceSelect();

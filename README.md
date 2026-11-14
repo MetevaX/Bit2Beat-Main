@@ -1,5 +1,7 @@
 # Bit2Beat
 
+> **🏆 First place: NASA Space Apps Challenge 2026, Assiut local event, *The Earth Information Jukebox*.** Thank you to the judges, the organisers and everyone who listened.
+
 **Listen to Earth data.** Bit2Beat turns NASA Earth data (the Earth Information Center's pictures, videos and maps, satellite images, climate records, live natural events and scientific files) and your own spreadsheets, pictures and videos into music you can hear, follow as a score (also in braille), and export as stereo, binaural or surround audio. It can be used entirely by voice, with a keyboard or with a screen reader.
 
 Built for the NASA Space Apps Challenge 2026, *The Earth Information Jukebox*, by Team Bit2Beat (see [Team](#team)).
@@ -45,8 +47,11 @@ One **search** above the Image, Video and Data tabs: Image and Video search the 
 
 - **What the data says** – trend (least-squares slope, R² check), highest/lowest with labels, and sudden jumps, in plain sentences you can have read aloud (`D`), with Pause / Resume and Stop.
 - **Tick on sudden jumps** – a quiet click on readings that jump away from their neighbours. Detection uses a leave-one-out local line and the modified z-score (|z| ≥ 3.5, Iglewicz & Hoaglin), refitted without the flagged points, so smooth curves, seasons and steady trends are not flagged.
+- **Moods** – Default, Sad, Happy or Excited set the whole sound in one click; Default brings back the starting sound.
 - **Reference tone** – a soft drone at the data’s baseline (e.g. GISTEMP’s 1951–1980 average) or its mean, so you hear above vs. below.
 - **Links remember everything** – mode, source, sound settings, mix and play position live in the address bar, so a refresh or a shared link opens the same view.
+- **Follow pointer, in words** – in the Image tab, Bit2Beat says which data is under the pointer, its value and where you are; move with the mouse, a finger, or the arrow keys.
+- **How to use** – a page in the top bar that explains every part briefly.
 - **Voice control** – the *Voice* button sits at the top right, next to *Accessibility*. On the first visit Bit2Beat asks (five seconds, Enter = yes) whether to turn it on; `V` toggles it. Say *play*, *pause*, *next*, *where am I*, *explain*, *search for sea ice* (the results are read out), *result 2*, *play ozone*, *go to video*, *violin*, *7.1*, *help*, *stop voice control*… Bit2Beat listens to the microphone itself and sends each phrase as a short clip to Gemini (`api/voice.js`), which understands any language or accent and may only answer with one of these commands; it works in every browser. If the newest Gemini model is slow, the next one is asked after 3 seconds and the first answer wins; models that failed lately are asked last.
 - Keyboard scrubbing (`←` `→`, `Shift` for bars, `Home`/`End`), live captions, screen-reader updates, high contrast, dark theme, text size, larger buttons, reduced motion, mono audio.
 

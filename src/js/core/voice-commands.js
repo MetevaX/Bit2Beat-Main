@@ -16,7 +16,7 @@
 
   const TABS = ['image', 'video', 'earth', 'data'];
   const INSTRUMENTS = { piano: 'soft', 'electric piano': 'electric', guitar: 'guitar', marimba: 'marimba', flute: 'flute', violin: 'strings' };
-  const MOODS = ['sad', 'happy', 'excited'];
+  const MOODS = ['normal', 'sad', 'happy', 'excited'];
   const OUTPUTS = { stereo: 'stereo', headphones: 'binaural', binaural: 'binaural', '5.1': '5.1', '7.1': '7.1', '7.1.4': '7.1.4' };
 
   /** Every command, with what to say and what it does (also the spoken help list). */
@@ -39,7 +39,7 @@
     { id: 'search', say: 'search for …', help: 'search NASA Earth data, for example: search for sea ice' },
     { id: 'result', say: 'result 1, result 2 … or play the first one', help: 'play one of the search results', args: ['1', '2', '3', '4', '5', '6'] },
     { id: 'instrument', say: 'piano, guitar, marimba, flute, violin or electric piano', help: 'change the instrument', args: Object.keys(INSTRUMENTS) },
-    { id: 'mood', say: 'happy, sad or excited mood', help: 'change the mood', args: MOODS },
+    { id: 'mood', say: 'default, happy, sad or excited mood', help: 'change the mood (default goes back to the starting sound)', args: MOODS },
     { id: 'tuning', say: 'smart tuning', help: 'let Bit2Beat choose the sound' },
     { id: 'output', say: 'stereo, headphones, 5.1, 7.1 or 7.1.4', help: 'change the sound output', args: Object.keys(OUTPUTS) },
     { id: 'drums', say: 'drums on or drums off', help: 'add or remove the beat', args: ['on', 'off'] },
@@ -47,6 +47,7 @@
     { id: 'export', say: 'export', help: 'save the music as a file' },
     { id: 'upload', say: 'open a file', help: 'choose a file from your device' },
     { id: 'story', say: 'story', help: 'hear Bitty’s story' },
+    { id: 'howto', say: 'how to use', help: 'open the page that explains every part briefly' },
     { id: 'theme', say: 'dark mode or light mode', help: 'change the colours', args: ['dark', 'light'] },
     { id: 'help', say: 'help', help: 'hear the list of commands' },
     { id: 'repeat', say: 'repeat', help: 'hear the last answer again' },
@@ -94,6 +95,7 @@
     }
     if ((m = t.match(/\b(electric piano|piano|guitar|marimba|flute|violin)\b/))) return { id: 'instrument', arg: m[1] };
     if ((m = t.match(/\b(happy|sad|excited)\b/))) return { id: 'mood', arg: m[1] };
+    if (/\b(default|normal|neutral|reset (the )?(sound|mood)|no mood)\b/.test(t)) return { id: 'mood', arg: 'normal' };
     if ((m = t.match(/\b(dark|light)\b.*\b(mode|theme|colou?rs?)\b|\b(dark|light) mode\b/))) return { id: 'theme', arg: m[1] || m[3] };
     if ((m = t.match(/\b(headphones?|binaural|stereo|7\s?1\s?4|7\s?1|5\s?1|7\.1\.4|7\.1|5\.1)\b/))) {
       const k = m[1].replace(/\s/g, '').replace(/^(\d)(\d)(\d)?$/, (_, a, b, c) => [a, b, c].filter(Boolean).join('.')).replace(/^headphone$/, 'headphones');
@@ -117,6 +119,7 @@
     if (/\breadings?\b|\btable\b/.test(t)) return { id: 'readings' };
     if (/\b(export|save|download)\b/.test(t)) return { id: 'export' };
     if (/\b(open|upload|choose|load)\b.*\bfile\b|\bupload\b/.test(t)) return { id: 'upload' };
+    if (/\bhow (to|do i|can i) use\b|\binstructions\b|\btutorial\b|\bmanual\b/.test(t)) return { id: 'howto' };
     if (/\bstory\b|\bbitty\b/.test(raw)) return { id: 'story' };
     if (/^(open )?help$/.test(t)) return { id: 'help' };
     // "play hurricanes": play the search result with that name (or search for it)

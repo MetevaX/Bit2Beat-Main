@@ -17,6 +17,8 @@ Bit2Beat exists to make Earth data available to people who cannot see a chart, s
 - **Bitty’s guide** (`G`) is a non-modal dialog that takes focus, names each control in words, works with `Tab`/`Enter`, closes with `Esc`, and never blocks the page: *Skip* is always one click. Its menu explains the whole studio or one tab at a time. It says hello once and can be reopened at any time.
 - **Videos** are described by their data (forest height, CO₂) rather than only by brightness, and every sample can be stepped through with the keyboard while the picture shows the matching frame.
 
+- **Follow pointer, in words.** In the Image tab, choose *Follow pointer*, press Tab to reach the picture and move with the arrow keys (Shift for bigger steps), or move the mouse or a finger over it. You hear the data under the pointer, and when the pointer rests Bit2Beat says which data set it is, the measure and its value, the note, and where you are (for example "Top left, 20% across, 30% down", or the latitude and longitude on a scientific map). Screen readers hear it through a live region; *Say what is under the pointer* also speaks it aloud.
+- **No visual-only signals.** Nothing glows or blinks: states are shown with words and icons ("Voice on", "✓ Playing", the name of the event playing on the map).
 - **Score in braille.** *Score in braille* (export window, next to the score, or key `B`) saves a BRF file in braille music code for an embosser or a braille display: grade 1 title page, tempo, one part per sound, one eighth note per reading, octave marks, rests, accidentals and 4/4 bars, 40 × 25 cells a page.
 
 ## Seeing more clearly

@@ -17,6 +17,8 @@
   // the Space Apps challenge's data sets (core/svs.js), bundled with the app: they work offline.
   // GEDI and CO₂ (the first bundled videos) play only in Bitty's story.
   const VIDEO_MENU = B.svs.PRESETS.filter((p) => !p.bundled && p.video).map((p) => [`svs:${p.id}`, p.name]);
+  // the same data sets in the Data tab: what each video or picture measures, played as numbers
+  const DATA_PRESETS = B.svs.PRESETS.filter((p) => !p.bundled).map((p) => [`svs:${p.id}`, p.name]);
   const STORY_VIDEOS = { gedi: 'GEDI forest height (Bitty’s story)', co2: 'Global carbon dioxide (Bitty’s story)' };
   function earthSample(id) {
     const source = B.feeds.offline[id.slice(7)]();
@@ -270,7 +272,7 @@
     sel.replaceChildren();
     const add = (parent, [v, t]) => parent.append(new Option(t, v));
     if (state.mode === 'data') {
-      B.presets.DATA_MENU.forEach(([label, items]) => {
+      [...B.presets.DATA_MENU, ['Space Apps challenge data (works offline)', DATA_PRESETS]].forEach(([label, items]) => {
         const og = document.createElement('optgroup');
         og.label = label;
         items.forEach((it) => add(og, it));
@@ -308,5 +310,5 @@
     sel.value = state.choice[state.mode];
   }
 
-  B.sources = { inflate, fillSourceSelect, EARTH_MENU, IMAGE_MENU, VIDEO_MENU, earthSample, videoPreset, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile, fromVideoFile, fromVideo };
+  B.sources = { inflate, fillSourceSelect, EARTH_MENU, IMAGE_MENU, VIDEO_MENU, DATA_PRESETS, earthSample, videoPreset, earthOffline, earthLive, fromCsv, fromCanvas, imageCanvas, fromImageFile, fromVideoFile, fromVideo };
 })(typeof self !== 'undefined' ? self : this);

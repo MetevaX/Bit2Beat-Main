@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.6.0 — 14 November 2026 · 🏆 first place
+- **Bit2Beat won first place at the NASA Space Apps Challenge 2026 Assiut local event** (*The Earth Information Jukebox*). The award is on the About page and at the top of this README.
+- **Follow pointer says what is under it** (asked for by the judges, for blind listeners). When the pointer rests on the picture, Bit2Beat says which data set it is, the measure and its value, the note, and where you are ("Top left, 20% across, 30% down", or the latitude and longitude on a scientific map). Screen readers hear it; *Say what is under the pointer* also speaks it aloud. Press Tab to reach the picture and move the pointer with the arrow keys (Shift for bigger steps).
+- **Default mood.** A *Default* button next to Sad, Happy and Excited brings back the starting sound (major pentatonic in C, piano, 96 BPM). Voice: "default mood".
+- **The challenge's data sets in the Data tab too.** The seven NASA data sets play as numbers on a chart: a video's brightness, colour and motion over time, or a picture's bands from left to right.
+- **Their scientific files are searchable.** *File type → GeoTIFF* now lists the challenge data sets' own GeoTIFF files (for example the sea surface currents map of SVS 3912), and file types are never greyed out before the lists have loaded.
+- **How to use**, a new page in the top bar, explains every part of the app in a few words, with the keys. Voice: "how to use". The Help window links to it.
+- **Words and icons instead of glows and dots.** No more glowing, pulsing or blinking effects. The voice bar shows a microphone and "Voice on", Record has a camera icon, the event playing on the Earth map is named next to it ("▶ Wildfire in Mozambique"), the story shows chapter numbers and ✓ for chapters heard, and the result playing says "✓ Playing".
+- Help text updated (no more "AI mode").
+
 ## 3.5.0 — 13 November 2026 (delivery)
 - **The challenge's data sets work offline and open at once.** Each of the seven Space Apps data sets is bundled with the app: a picture, and for the five videos a 45-second clip (640 pixels wide, H.264) with its analysis already done. Before, the videos came from NASA at full size (Perpetual Ocean 2 is a 1.3 GB file, the air-quality video is 3840 × 1080), so they took minutes to read or did not open at all. The Image and Video menus open on *Sea surface currents and temperature*.
 - **GEDI forest height and Global carbon dioxide are gone from the menus** (they still play in Bitty's story, chapters 6 and 7).

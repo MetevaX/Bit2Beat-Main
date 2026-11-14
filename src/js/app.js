@@ -41,7 +41,7 @@
   if (fromUrl.mode) state.mode = fromUrl.mode;
   if (fromUrl.choice) {
     const valid = {
-      data: [...B.presets.DATA_MENU.flatMap(([, items]) => items.map((it) => it[0])), 'power', 'eic'],
+      data: [...B.presets.DATA_MENU.flatMap(([, items]) => items.map((it) => it[0])), ...B.sources.DATA_PRESETS.map((it) => it[0]), 'power', 'eic'],
       earth: [...B.sources.EARTH_MENU.map((it) => it[0]), 'eonet', 'quakes', 'sample:eonet', 'sample:quakes'],
       video: [...B.sources.VIDEO_MENU.map((it) => it[0]), 'eic', 'gedi', 'co2'],
       image: [...B.sources.IMAGE_MENU.flatMap(([, items]) => items.map((it) => it[0])), 'eic', 'nasa:gedi', 'nasa:co2'],
@@ -306,6 +306,7 @@
         if (id === 'upload' && uploads.data) return setSource(uploads.data);
         if (B.presets.DATA[id]) return setSource(B.presets.DATA[id]());
         if (id === 'power' && state.power) return options.loadPower(state.power);
+        if (id.startsWith('svs:')) return B.eicView.presetData(id).then((s) => s && token === loadToken && setSource(s));
         if (id === 'eic') return B.eicView.load(state.eic || {}).then((s) => s || app.choose('data', 'gistemp'));
         state.choice.data = 'gistemp';
         fillSourceSelect();

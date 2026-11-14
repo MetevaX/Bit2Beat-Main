@@ -57,8 +57,7 @@
       $('searchType').replaceChildren(
         new Option('Pictures (.jpg, .png)', 'any'),
         ...['tif', 'nc', 'h5'].map((t) => {
-          const o = new Option(`${{ tif: 'GeoTIFF (.tif)', nc: 'NetCDF (.nc)', h5: 'HDF5 (.h5, .he5)' }[t]}${n[t] != null ? ' · ' + n[t] : ''}`, t);
-          o.disabled = n[t] === 0 && t !== keep;
+          const o = new Option(`${{ tif: 'GeoTIFF (.tif)', nc: 'NetCDF (.nc)', h5: 'HDF5 (.h5, .he5)' }[t]}${n[t] ? ' · ' + n[t] : ''}`, t);
           return o;
         }),
       );
@@ -108,7 +107,7 @@
             { type: 'button', class: 'result', 'data-id': c.id, title: c.text.slice(0, 300) },
             el('b', { text: c.title }),
             el('small', { text: r.why ? `${years} · ${r.why}` : `${years} · ${c.text.slice(0, 110)}${c.text.length > 110 ? '…' : ''}` }),
-            el('span', { class: 'result-go', 'aria-hidden': 'true', text: k === 0 ? 'Listen ▶' : '▶' }),
+            el('span', { class: 'result-go', 'aria-hidden': 'true', text: '▶ Listen' }),
           );
           b.onclick = () => choose(c.id);
           return el('li', {}, b);
@@ -244,7 +243,14 @@
       return keywords(q);
     }
     function listAll() {
-      return catalogue().then((list) => list && show([...list].sort((p, q) => p.title.localeCompare(q.title)).map((c) => ({ id: c.id })), `${list.length} ${what(kindNow(), list.length)}, A to Z. Type to narrow them.`));
+      return catalogue().then(
+        (list) =>
+          list &&
+          show(
+            [...list].sort((p, q) => p.title.localeCompare(q.title)).map((c) => ({ id: c.id })),
+            list.length ? `${list.length} ${what(kindNow(), list.length)}, A to Z. Type to narrow them.` : `NASA's Earth Information Center has no ${what(kindNow(), 2)} right now. Open your own with Upload (top bar).`,
+          ),
+      );
     }
     function clear() {
       ++token;

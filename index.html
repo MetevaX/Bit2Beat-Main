@@ -38,6 +38,10 @@
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></symbol>
   <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3c.6 4.6 3.4 7.4 8 8-4.6.6-7.4 3.4-8 8-.6-4.6-3.4-7.4-8-8 4.6-.6 7.4-3.4 8-8z" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21m-3.5 0h7"/></symbol>
+  <symbol id="i-rec" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10.5 5-3v9l-5-3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+  <symbol id="i-ear" viewBox="0 0 24 24"><path d="M7 9a5 5 0 1 1 10 0c0 3-3 4-3 7a3 3 0 0 1-5.5 1.6M10 9.5a2 2 0 1 1 4 0"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5zM4 5.5v16M8 7h8M8 11h8"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5m0 0-4 6m4-6 4 6"/></symbol>
 </svg>
@@ -47,6 +51,7 @@
   <nav class="topnav" aria-label="Pages">
     <button type="button" class="topnav-link" data-page="studio" aria-current="page">Studio</button>
     <button type="button" class="topnav-link" data-page="story">Story</button>
+    <button type="button" class="topnav-link" data-page="howto">How to use</button>
     <button type="button" class="topnav-link" data-page="about">About the team</button>
   </nav>
   <button type="button" class="top-btn upload-btn" id="uploadBtn" aria-label="Upload a file: data, picture or video" title="Open any file: data (CSV, TSV, TXT, JSON, GeoJSON, Excel, OpenDocument), a picture (PNG, JPG, WebP, GIF, SVG…), a video (MP4, WebM, MOV, MKV…) or a scientific Earth-data file (GeoTIFF / COG, NetCDF, HDF5, up to 5 GB). Bit2Beat opens the right tab by itself. Your files stay on your device."><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg><span id="uploadLabel">Upload</span></button>
@@ -122,7 +127,7 @@
           <span class="video-chip" aria-hidden="true">Muted · follows the music</span>
         </div>
         <div class="canvas-wrap" id="dropZone">
-          <canvas id="sourceCanvas" width="1200" height="560" role="img" aria-label="Source preview"></canvas>
+          <canvas id="sourceCanvas" width="1200" height="560" role="img" aria-label="Source preview" tabindex="0"></canvas>
           <div class="hover-tip" id="hoverTip" hidden></div>
           <div class="drop-hint" id="dropHint" hidden>Drop any data file, picture or video</div>
         </div>
@@ -212,6 +217,10 @@
             <button type="button" data-scan="radar" aria-pressed="false" title="A beam turns around the centre like a radar, covering the whole picture">Radar</button>
             <button type="button" data-scan="pointer" aria-pressed="false">Follow pointer</button>
           </div>
+          <div class="pointer-says" id="pointerRow" hidden>
+            <label class="check"><input type="checkbox" id="pointerSpeak" checked> Say what is under the pointer</label>
+            <p class="card-note" id="pointerSays" aria-hidden="true">Move over the picture, or press Tab to reach it and use the arrow keys.</p>
+          </div>
           <label class="field field-range">Steps <output id="stepsOut">48</output>
             <input type="range" id="stepsRange" min="16" max="160" step="8" value="48">
           </label>
@@ -280,6 +289,7 @@
         <div class="mood-row">
           <span class="mood-label" id="moodLabel">Mood</span>
           <div class="seg seg-small" role="group" aria-labelledby="moodLabel" id="moods">
+            <button type="button" data-mood="normal" aria-pressed="false" title="Back to the starting sound: major pentatonic in C, piano, 96 BPM">Default</button>
             <button type="button" data-mood="sad" aria-pressed="false" title="Minor pentatonic, slow strings, big warm room">Sad</button>
             <button type="button" data-mood="happy" aria-pressed="false" title="Major pentatonic, marimba, walking pace">Happy</button>
             <button type="button" data-mood="excited" aria-pressed="false" title="Major pentatonic, fast electric piano, three octaves">Excited</button>
@@ -397,8 +407,115 @@
   </section>
 </section>
 
+<section id="howto" class="howto" hidden tabindex="-1" aria-labelledby="howtoTitle">
+  <div class="howto-inner">
+    <h1 id="howtoTitle">How to use Bit2Beat</h1>
+    <p class="lead">Bit2Beat turns Earth data into music: every number becomes a note, and a higher value plays a higher note. Here is every part, in a few words. <a href="#" data-page="studio" class="howto-start">Open the studio →</a></p>
+    <nav class="howto-toc" aria-label="On this page">
+      <a href="#how-start">First steps</a><a href="#how-tabs">The four tabs</a><a href="#how-search">Search</a><a href="#how-listen">Listening</a><a href="#how-sound">Sound</a><a href="#how-science">Scientific files</a><a href="#how-access">Without a screen</a><a href="#how-export">Export</a><a href="#how-keys">Keys</a>
+    </nav>
+
+    <section class="howto-sec" id="how-start">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-play"/></svg>First steps</h2>
+      <ol>
+        <li><b>Pick a tab</b> (Image, Video, Earth events or Data) and a source from the menu next to it.</li>
+        <li><b>Press Play</b> (or the Space key). The line on the picture or chart shows where you are.</li>
+        <li><b>Change the sound</b> in the Sound card: a mood, an instrument, a scale, the tempo.</li>
+        <li><b>Need help?</b> Press <b>Guide</b> (or G): Bitty points at the real buttons. The <b>Story</b> page plays eight chapters of real data.</li>
+      </ol>
+    </section>
+
+    <section class="howto-sec" id="how-tabs">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-table"/></svg>The four tabs</h2>
+      <dl>
+        <dt>Image</dt><dd>A picture or map is cut into bands; each band is a note. Choose what to hear (<b>Light</b>, <b>Colour</b>, or <b>Colour key</b> for real values) and how to scan (left to right, top to bottom, radar, or <b>Follow pointer</b>).</dd>
+        <dt>Video</dt><dd>Two notes a second: the brightness, colour and motion of the picture. The video follows the music.</dd>
+        <dt>Earth events</dt><dd>Wildfires, storms, floods, ice and earthquakes, played from west to east. Further north is a higher note and a bigger circle; bigger events are louder.</dd>
+        <dt>Data</dt><dd>Climate series, NASA POWER for any place, the challenge's data sets as numbers, or your own spreadsheet (Upload).</dd>
+      </dl>
+      <p class="card-note">The <b>Space Apps challenge data</b> (seven NASA data sets) is in every menu and works without the internet.</p>
+    </section>
+
+    <section class="howto-sec" id="how-search">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>Search</h2>
+      <ul>
+        <li>Type a subject (rain, sea ice, fires): results appear as you type, even with a typo.</li>
+        <li>Each tab finds its own kind of thing: <b>pictures</b> in Image, <b>videos</b> in Video, <b>data sets</b> in Data.</li>
+        <li><b>File type</b> (Image tab) finds scientific files: GeoTIFF, NetCDF and HDF5.</li>
+        <li>Choose a result to play it. <b>Reload</b> gets the newest data again.</li>
+      </ul>
+    </section>
+
+    <section class="howto-sec" id="how-listen">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-ear"/></svg>Listening and reading</h2>
+      <ul>
+        <li><b>Now playing</b> (navy card): the step, its note and the real value behind it.</li>
+        <li><b>What the data says</b>: the trend, highs and lows and sudden jumps in plain words; <b>Read aloud</b> (or D) speaks them.</li>
+        <li><b>Melody</b> shows every note; <b>Score</b> is the sheet music; <b>Readings</b> (or T) lists every value.</li>
+        <li><b>Channels</b>: one row per series; M mutes, S plays it alone, ⇅ flips its pitch.</li>
+        <li><b>Follow pointer</b> (Image tab): move over the picture, or Tab to it and use the arrow keys. You hear the data under the pointer, and Bit2Beat says which data it is, its value and where you are.</li>
+      </ul>
+    </section>
+
+    <section class="howto-sec" id="how-sound">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-volume"/></svg>Sound</h2>
+      <ul>
+        <li><b>Mood</b>: Default, Sad, Happy or Excited sets the whole sound in one click. <b>Default</b> brings back the starting sound.</li>
+        <li><b>Smart Tuning</b> picks the scale, tempo and instrument from the shape of the data. Every change can be undone from the message that appears.</li>
+        <li><b>Space and tone</b>: stereo, headphone 3D, and 5.1, 7.1 or 7.1.4 surround for scientific maps; room, tone and movement.</li>
+        <li><b>Listening aids</b>: a reference tone, a tick on sudden jumps, and an optional drum beat.</li>
+      </ul>
+    </section>
+
+    <section class="howto-sec" id="how-science">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg>Scientific files and your own files</h2>
+      <ul>
+        <li><b>Upload</b> (top bar) opens any file and picks the tab: spreadsheets (CSV, Excel), pictures, videos, and GeoTIFF, NetCDF or HDF5 maps up to 5 GB.</li>
+        <li><b>What's inside</b> lists the layers. Listen to the whole map, one spot over time, or a time-lapse; zoom with + and −.</li>
+        <li>Your files stay on your device.</li>
+      </ul>
+    </section>
+
+    <section class="howto-sec" id="how-access">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg>Without a screen</h2>
+      <ul>
+        <li><b>Voice</b> (top right, or V): say <i>play</i>, <i>pause</i>, <i>explain</i>, <i>search for sea ice</i>, <i>result 2</i>, <i>violin</i>, <i>default mood</i> or <i>help</i>, in any language.</li>
+        <li><b>Accessibility</b>: bigger text, high contrast, dark theme, calmer motion, larger buttons, mono sound.</li>
+        <li>Every control works with the keyboard and a screen reader; captions describe each note.</li>
+      </ul>
+    </section>
+
+    <section class="howto-sec" id="how-export">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Export and share</h2>
+      <ul>
+        <li><b>Export</b>: audio (stereo, headphone 3D, surround, Dolby Atmos ADM), the notes as CSV, the score as ABC or PNG, and the score in <b>braille</b> (BRF) for embossers and braille displays.</li>
+        <li><b>Record</b> captures what you play. <b>Sessions</b> saves your setup.</li>
+        <li>The address bar remembers everything: a shared link opens the same view.</li>
+      </ul>
+    </section>
+
+    <section class="howto-sec" id="how-keys">
+      <h2><svg class="i" aria-hidden="true"><use href="#i-book"/></svg>Keys</h2>
+      <dl class="howto-keys">
+        <dt>Space</dt><dd>Play or pause</dd>
+        <dt>← →</dt><dd>One step (Shift: one bar)</dd>
+        <dt>Home / End</dt><dd>Start / end</dd>
+        <dt>D</dt><dd>Read what the data says</dd>
+        <dt>T</dt><dd>Readings table</dd>
+        <dt>B</dt><dd>Score in braille</dd>
+        <dt>L</dt><dd>Repeat on or off</dd>
+        <dt>V</dt><dd>Voice control</dd>
+        <dt>G</dt><dd>Bitty's guide</dd>
+        <dt>?</dt><dd>All shortcuts</dd>
+      </dl>
+    </section>
+    <p><button type="button" class="btn btn-primary" data-page="studio">Open the studio</button></p>
+  </div>
+</section>
+
 <section id="about" class="about" hidden tabindex="-1" aria-labelledby="aboutTitle">
   <div class="about-inner">
+    <p class="award"><span class="award-icon" aria-hidden="true">🏆</span><span><b>First place</b> · NASA Space Apps Challenge 2026, Assiut local event, <i>The Earth Information Jukebox</i></span></p>
     <h1 id="aboutTitle">About Bit2Beat</h1>
     <p class="lead">Bit2Beat is our entry to the NASA Space Apps Challenge “Earth Information Jukebox”. It turns Earth data into sound, so anyone, including people who are blind or have low vision, can follow how our planet changes by listening.</p>
     <div class="about-cols">
@@ -458,7 +575,7 @@
   <div class="transport-right">
     <button type="button" class="round-btn" id="muteBtn" aria-label="Mute" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-volume" id="volIcon"/></svg></button>
     <input type="range" id="volume" min="0" max="100" value="70" aria-label="Volume" class="volume">
-    <button type="button" class="btn btn-ghost" id="recBtn" aria-pressed="false"><span class="rec-dot" aria-hidden="true"></span><span id="recLabel">Record</span></button>
+    <button type="button" class="btn btn-ghost" id="recBtn" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-rec"/></svg><span id="recLabel">Record</span></button>
     <button type="button" class="btn btn-ghost" id="tableBtn"><svg class="i" aria-hidden="true"><use href="#i-table"/></svg>Readings</button>
     <button type="button" class="btn btn-primary" id="exportBtn"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Export</button>
   </div>
@@ -487,7 +604,7 @@
   </div>
 </div>
 <div class="voice-bar" id="voiceBar" hidden>
-  <span class="voice-dot" aria-hidden="true"></span>
+  <span class="voice-state" aria-hidden="true"><svg class="i"><use href="#i-mic"/></svg><b>Voice on</b></span>
   <span id="voiceHeard">Listening… say “help” for the commands.</span>
   <button type="button" class="btn btn-quiet btn-small" id="voiceHelp">Commands</button>
   <button type="button" class="btn btn-quiet btn-small" id="voiceOff">Turn off</button>
@@ -548,12 +665,12 @@
 <dialog id="helpDialog" aria-labelledby="helpTitle">
   <div class="dlg-head"><h2 id="helpTitle">How to use Bit2Beat</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
   <ol class="help-steps">
-    <li><b>Find something to hear.</b> Search NASA’s Earth Information Center above the tabs (turn on AI mode to ask in your own words), or pick from the menu. Image turns a map or picture into sound, Video follows a NASA animation or time-lapse, Earth events plays natural events and earthquakes across the map, Data plays climate series and your own CSV.</li>
+    <li><b>Find something to hear.</b> Search NASA’s Earth Information Center above the tabs, or pick from the menu (the Space Apps challenge data works offline). Image turns a map or picture into sound, Video follows a NASA animation or time-lapse, Earth events plays natural events and earthquakes across the map, Data plays climate series and your own CSV.</li>
     <li><b>Press Play.</b> Higher values play higher. The Melody panel and the score show the same notes.</li>
-    <li><b>Shape the sound.</b> Pick a mood (sad, happy or excited), change instrument, scale and tempo, mute or solo channels, or press Smart Tuning.</li>
-    <li><b>Export.</b> Download audio, the notes as CSV or the score.</li>
+    <li><b>Shape the sound.</b> Pick a mood (default, sad, happy or excited), change instrument, scale and tempo, mute or solo channels, or press Smart Tuning.</li>
+    <li><b>Export.</b> Download audio, the notes as CSV, the score, or the score in braille.</li>
   </ol>
-  <div class="btn-row help-bitty"><button type="button" class="btn btn-primary" id="helpTour">Let Bitty guide me</button><button type="button" class="btn" id="helpStory">Listen to Bitty’s story</button></div>
+  <div class="btn-row help-bitty"><button type="button" class="btn btn-primary" id="helpTour">Let Bitty guide me</button><button type="button" class="btn" id="helpStory">Listen to Bitty’s story</button><button type="button" class="btn" id="helpHowto">The How to use page</button></div>
   <h3>Keyboard</h3>
   <dl class="keys">
     <dt><kbd>Space</kbd></dt><dd>Play / pause</dd>
@@ -566,7 +683,8 @@
     <dt><kbd>T</kbd></dt><dd>Readings table</dd>
     <dt><kbd>B</kbd></dt><dd>Download the score in braille music (BRF, for embossers and braille displays)</dd>
     <dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Scientific maps: zoom in, zoom out, whole map (also the mouse wheel; drag to move)</dd>
-    <dt><kbd>V</kbd></dt><dd>Voice control on / off: say “play”, “pause”, “next”, “where am I”, “search for sea ice”, “go to video”, “violin”, “7.1”, “help” or “stop voice control”</dd>
+    <dt><kbd>V</kbd></dt><dd>Voice control on / off: say “play”, “pause”, “next”, “where am I”, “explain”, “search for sea ice”, “result 2”, “go to video”, “violin”, “default mood”, “how to use”, “help” or “stop voice control”</dd>
+    <dt><kbd>Tab</kbd> then <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd></dt><dd>Follow pointer (Image tab): move the pointer over the picture and hear what is under it; Bit2Beat says which data it is and where you are</dd>
     <dt><kbd>?</kbd></dt><dd>This help</dd>
   </dl>
 </dialog>

@@ -21,7 +21,7 @@
     const q = new URLSearchParams(search);
     const out = { settings: {}, audio: {}, image: {}, earth: {} };
     const has = (k) => q.has(k) && q.get(k) !== '';
-    if (has('page')) out.page = oneOf(q.get('page'), ['studio', 'story', 'about']);
+    if (has('page')) out.page = oneOf(q.get('page'), ['studio', 'story', 'howto', 'about']);
     if (q.has('tour')) out.tour = true;
     if (q.has('notour')) out.tour = false;
     if (has('mode')) out.mode = oneOf(q.get('mode'), MODES);
@@ -82,7 +82,7 @@
     const st = app.state;
     const D = B.plan.DEFAULTS;
     const q = new URLSearchParams();
-    if (page === 'about' || page === 'story') q.set('page', page);
+    if (page === 'about' || page === 'story' || page === 'howto') q.set('page', page);
     q.set('mode', st.mode);
     const choice = st.choice[st.mode];
     if (choice !== 'upload' && choice !== 'custom') q.set('src', choice);
