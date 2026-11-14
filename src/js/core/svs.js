@@ -33,7 +33,9 @@
    * (assets/nasa/svs-<id>.jpg) and, for the videos, a short clip of its first 45 seconds
    * (assets/nasa/svs-<id>.mp4, 640 pixels wide) whose analysis is in data/svs-clips.js.
    * still / video: the originals under svs.gsfc.nasa.gov/vis/ (linked as the source).
-   * GEDI and DYAMOND CO₂ (bundled long ago) are kept for Bitty's story only.
+   * GEDI and DYAMOND CO₂ (bundled long ago, assets/nasa/gedi.mp4 and co2.mp4) play in the Video menu
+   * and in Bitty's story. videoOnly: in the Video and Data menus, not the Image menu (its picture is
+   * a frame of the clip).
    */
   const PRESETS = [
     { id: 4950, key: 'gedi', name: 'GEDI forest height', bundled: true, story: true },
@@ -41,8 +43,9 @@
     { id: 3912, name: 'Sea surface currents and temperature', still: 'a000000/a003900/a003912/flat_global_ecco2_2028x1024.25000.jpg', video: 'a000000/a003900/a003912/ecco2_sst_flow.m4v', credit: 'Greg Shirah', about: 'Ocean surface currents from the ECCO2 model, coloured by sea surface temperature.' },
     { id: 5425, name: 'Perpetual Ocean 2: western boundary currents', still: 'a000000/a005400/a005425/perpetual_ocean2_CLOSE_093_4k_clean_noDate.00000_print.jpg', video: 'a000000/a005400/a005425/perpetual_ocean2_CLOSE_093_clean_noDate_1080p30.mp4', credit: 'Greg Shirah', about: 'Strong ocean currents along the western edges of the oceans, such as the Gulf Stream and the Kuroshio, from a NASA ocean model.' },
     { id: 5669, name: 'GEOS aerosols (smoke, dust, sea salt)', still: 'a000000/a005600/a005669/Aerosols_2025-08-19T20_00_00_1920x1080.png', about: 'Smoke, dust, sea salt and other particles in the air from the GEOS model, each type in its own colour.' },
+    { id: 5572, name: 'GEOS aerosols moving, 1 Aug – 14 Sep 2024', videoOnly: true, still: 'a000000/a005500/a005572/Aerosols_2048x1024_30p_0000.png', video: 'a000000/a005500/a005572/Aerosols_1920x540_30p.mp4', credit: 'Joseph V. Ardizzone, Helen-Nicole Kostis; science: Lesley Ott', about: 'Smoke, dust, sea salt and other particles carried around the world by the winds from 1 August to 14 September 2024, from NASA’s GEOS model.' },
     { id: 5533, name: 'Air quality model runs', still: 'a000000/a005500/a005533/AirQuality_WithLabels_1920x1080_0000.png', video: 'a000000/a005500/a005533/EIC_AirQuality_Preview_3840x1080.mp4', credit: 'Helen-Nicole Kostis, Joseph V. Ardizzone; science: Lesley Ott', about: 'Air pollution forecasts from NASA’s GEOS model.' },
-    { id: 5313, name: 'Night lights 2012–2023', still: 'a000000/a005300/a005313/nightlights_flat_series_and_change_wZooms_13_EIC.02599_print.jpg', credit: 'Kel Elkins', about: 'City lights at night seen by the VIIRS instrument (Black Marble), and how they changed between 2012 and 2023.' },
+    { id: 5313, name: 'Night lights 2012–2023', still: 'a000000/a005300/a005313/nightlights_flat_series_and_change_wZooms_13_EIC.02599_print.jpg', video: 'a000000/a005300/a005313/nightlights_flat_series_and_change_wZooms_13_EIC_2160p30_h265.mp4', credit: 'Kel Elkins', about: 'City lights at night seen by the VIIRS instrument (Black Marble), and how they changed between 2012 and 2023.' },
     { id: 5011, name: 'Lightning seen from the ISS 2017–2023', still: 'a000000/a005000/a005011/iss_lightning_preview.jpg', video: 'a000000/a005000/a005011/iss_lightning_sphere_07312023.mp4', credit: 'Michala Garrison', about: 'Lightning flashes detected by the Lightning Imaging Sensor on the International Space Station.' },
     { id: 4960, name: 'An atmospheric river in 3D', still: 'a000000/a004900/a004960/atmos_rivers_narrated_4k.00090_print.jpg', video: 'a000000/a004900/a004960/atmos_river_HD.mp4', credit: 'Greg Shirah; produced by Jefferson Beck', about: 'A long band of water vapour carried across the Pacific in a NASA Earth system model.' },
   ];

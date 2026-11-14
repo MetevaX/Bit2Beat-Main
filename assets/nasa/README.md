@@ -22,3 +22,7 @@ Information Center: [3912](https://svs.gsfc.nasa.gov/3912/), [5425](https://svs.
 [5313](https://svs.gsfc.nasa.gov/5313/) (picture), [5011](https://svs.gsfc.nasa.gov/5011/) and
 [4960](https://svs.gsfc.nasa.gov/4960/). The analysis of each clip (two samples a second of
 brightness, colour and motion, made by the app's own code) is in `src/js/data/svs-clips.js`.
+
+## The challenge's data sets (`svs-<id>.jpg`, `svs-<id>.mp4`)
+
+A print still of each Space Apps challenge data set, and for the videos the first 45 seconds (or the whole video when shorter) as a silent H.264 clip: 640 px wide, or 768 × 216 for the wide flat maps of night lights 2012–2023 ([SVS 5313](https://svs.gsfc.nasa.gov/5313/), H.265 only at NASA) and GEOS aerosols 1 Aug – 14 Sep 2024 ([SVS 5572](https://svs.gsfc.nasa.gov/5572/); `svs-5572.jpg` is a frame of that clip). The clips were recorded from NASA's own files in a browser and re-encoded; their analyses (made by the app's own video code) are in `src/js/data/svs-clips.js`.
