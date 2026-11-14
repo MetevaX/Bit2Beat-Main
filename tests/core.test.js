@@ -364,7 +364,9 @@ test('NASA presets: offline video assets, measured channels, CSV and event plans
   assert.equal(B.urlState.read('?mode=video&src=co2').mode, 'video');
   assert.equal(B.urlState.DEFAULT_CHOICE.video, 'svs:3912');
   assert.equal(B.urlState.DEFAULT_CHOICE.image, 'svs:3912');
-  assert.ok(!B.sources.VIDEO_MENU.some(([k]) => k === 'gedi' || k === 'co2'), 'GEDI and CO₂ only play in the story');
+  assert.ok(['gedi', 'co2'].every((id) => B.sources.VIDEO_MENU.some(([k]) => k === id)), 'GEDI and CO₂ are in the Video menu too (and in the story)');
+  for (const id of [5313, 5572, 5669, 4950, 5196]) assert.ok(B.sources.VIDEO_MENU.some(([k]) => k === `svs:${id}` || (id === 4950 && k === 'gedi') || (id === 5196 && k === 'co2')) || id === 5669, `video preset for SVS ${id}`);
+  assert.ok(!B.sources.IMAGE_MENU.flat(2).includes('svs:5572'), 'the moving aerosols are a video only');
   assert.ok(!B.sources.IMAGE_MENU.flat(2).includes('nasa:gedi'));
   // the challenge's data sets are bundled: a picture each, and a clip with its analysis for the videos
   const clips = require('../src/js/data/svs-clips.js');
@@ -1105,9 +1107,9 @@ test('EIC content database: gallery walk, playable media, presets kept out of se
   assert.equal(sl.v, 'a000000/a000700/a000777/sl_1080p30.mp4', 'the smallest video a browser plays (no H.265)');
   const cat = svs.catalogue(list);
   assert.deepEqual(cat.map((c) => c.id), ['svs:777'], 'presets (night lights is one) never appear in search');
-  assert.equal(svs.PRESETS.length, 9, 'the nine Earth data sets of the challenge');
+  assert.equal(svs.PRESETS.length, 10, 'the Earth data sets of the challenge (GEOS aerosols as a picture and as a video)');
   assert.ok(svs.PRESETS.every((p) => p.bundled || p.still), 'every preset has a picture');
-  assert.equal(svs.item('svs:5313').video, '', 'night lights exists only as an H.265 video: offered as a picture');
+  assert.match(svs.item('svs:5313').video, /h265\.mp4$/, 'night lights: NASA has only an H.265 video, so its bundled clip is H.264');
   assert.equal(svs.media('a/b.jpg'), 'svs/vis/a/b.jpg', 'pictures and videos come through the site’s own address');
   const vercel = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
   assert.ok(vercel.rewrites.some((r) => r.source === '/svs/:path*' && r.destination === 'https://svs.gsfc.nasa.gov/:path*'));

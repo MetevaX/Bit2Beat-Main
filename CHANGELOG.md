@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.8.0 — 14 November 2026
+- **Every challenge video is in the Video menu**, bundled and offline: *Night lights 2012–2023* (SVS 5313; NASA only has it as an H.265 video, so the bundled clip is H.264 and plays everywhere), *GEOS aerosols moving, 1 Aug – 14 Sep 2024* (SVS 5572, the moving version of the 5669 picture), *GEDI forest height* (4950) and *DYAMOND global carbon dioxide* (5196). GEDI and CO₂ still tell their two chapters of Bitty's story. The new videos are in the Data tab too.
+- **Smoother sound in the story (and everywhere).** Notes are now queued a quarter of a second ahead (was 0.12 s), so loading a chapter, a video seeking or speech starting can no longer make them late, and the audio uses the browser's *playback* buffer size, which stops crackles and drop-outs on slower computers. The playhead allows for the extra delay, so what you see still matches what you hear.
+- **Push to talk closes the microphone between commands.** It opens when you hold V (a high tone when it is ready) and closes as soon as the phrase is caught. An open microphone could make the music stutter: Bluetooth headphones switch to their low-quality call mode, and echo cancellation works on everything being played.
+
 ## 3.7.0 — 14 November 2026
 - **Push to talk.** Voice control no longer listens all the time. Once it is on (`V`), hold `V` while you speak and let go to send it; a quick tap listens for one command (up to 8 seconds). On phones and with a mouse, hold the new **Hold to talk** button in the voice bar (Enter or Space on it: one command). A short high tone means it is listening and a low tone that it stopped, so it works without a screen. Talking over an answer stops the answer. `Shift`+`V` turns voice control off.
 - **Always listen** in the voice bar (or saying “always listen”) brings back the old way, listening to every phrase; “push to talk” switches back. The choice is remembered.

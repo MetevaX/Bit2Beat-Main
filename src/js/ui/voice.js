@@ -100,13 +100,30 @@
     let ear = null; // the microphone + Gemini (ui/voice-ear.js)
     let busy = false; // a phrase is being understood
     const online = () => navigator.onLine && /^https?:$/.test(location.protocol);
+    // Push to talk opens the microphone only while it listens and closes it after: an open
+    // microphone can make the music stutter (Bluetooth headphones switch to their low-quality call
+    // mode, and echo cancellation works on everything being played).
+    let opening = null;
+    async function micOn() {
+      if (!ear || ear.running) return !!ear;
+      try {
+        await (opening ||= ear.start());
+        return true;
+      } catch {
+        return false;
+      } finally {
+        opening = null;
+      }
+    }
+    const micOff = () => ptt && ear?.running && ear.stop();
     function listen() {
       if (!on || speaking || busy) return;
       if (ptt && !talking) {
         ear?.pause(true);
+        micOff();
         return showMode();
       }
-      if (ear) return ear.pause(false);
+      if (ear) return ear.running ? ear.pause(false) : micOn().then(() => on && !speaking && !busy && ear?.pause(false));
       if (!rec) return;
       try {
         rec.start();
@@ -120,7 +137,7 @@
     }
 
     /** Push to talk: listen now. held: while V or the Talk button is held down; else one command. */
-    function talkStart(held) {
+    async function talkStart(held) {
       if (!on) return;
       if (speaking) {
         root.speechSynthesis?.cancel(); // talking over an answer stops it
@@ -129,12 +146,17 @@
       if (busy) return;
       clearTimeout(talkTimer);
       talking = held ? 2 : 1;
-      tone(true);
-      status(held ? 'Listening… let go when you finish.' : 'Listening for one command…');
       showMode();
+      if (ear && !ear.running) {
+        status('Opening the microphone…');
+        if (!(await micOn())) return talkEnd('The microphone could not be opened. ');
+        if (!on || !talking) return micOff(); // let go before it was ready
+      }
+      tone(true);
+      status(talking === 2 ? 'Listening… let go when you finish.' : 'Listening for one command…');
       if (ear) {
         ear.pause(false);
-        ear.hold(held);
+        ear.hold(talking === 2);
       } else
         try {
           rec?.start();
@@ -166,6 +188,7 @@
       talking = 0;
       ear?.hold(false);
       ear?.pause(true);
+      micOff();
       if (!ear)
         try {
           rec?.abort();
@@ -180,13 +203,16 @@
       clearTimeout(talkTimer);
       talking = 0;
       ear?.hold(false);
+      micOff(); // the phrase is already cut out
       tone(false);
       showMode();
     }
-    function setMode(push) {
+    async function setMode(push) {
       ptt = push;
       remember({ ptt: push });
       talkEnd();
+      if (push) micOff();
+      else if (await micOn()) ear?.pause(true); // opened now; listening starts after the answer
       showMode();
       return say(push ? `Push to talk. ${holdWord()} and speak.` : 'Always listening. Just speak.');
     }
@@ -266,8 +292,9 @@
       if (online() && B.voiceEar) {
         try {
           ear = B.voiceEar.create({ onPhrase: phrase, onLevel: level });
-          await ear.start();
+          await ear.start(); // asks for the microphone once
           ear.pause(true); // until the welcome has been said
+          micOff(); // push to talk: opened again only while listening
           say(welcome);
           return true;
         } catch (e) {

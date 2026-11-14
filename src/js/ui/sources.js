@@ -15,11 +15,10 @@
     ['sample:events', 'Natural events and earthquakes · offline sample'],
   ];
   // the Space Apps challenge's data sets (core/svs.js), bundled with the app: they work offline.
-  // GEDI and CO₂ (the first bundled videos) play only in Bitty's story.
-  const VIDEO_MENU = B.svs.PRESETS.filter((p) => !p.bundled && p.video).map((p) => [`svs:${p.id}`, p.name]);
+  // GEDI and CO₂ (the first bundled videos) also tell two chapters of Bitty's story.
+  const VIDEO_MENU = [...B.svs.PRESETS.filter((p) => !p.bundled && p.video).map((p) => [`svs:${p.id}`, p.name]), ['gedi', 'GEDI forest height'], ['co2', 'DYAMOND global carbon dioxide']];
   // the same data sets in the Data tab: what each video or picture measures, played as numbers
   const DATA_PRESETS = B.svs.PRESETS.filter((p) => !p.bundled).map((p) => [`svs:${p.id}`, p.name]);
-  const STORY_VIDEOS = { gedi: 'GEDI forest height (Bitty’s story)', co2: 'Global carbon dioxide (Bitty’s story)' };
   function earthSample(id) {
     const source = B.feeds.offline[id.slice(7)]();
     source.name += ' · sample';
@@ -35,7 +34,7 @@
     return source;
   }
   const IMAGE_MENU = [
-    ['Space Apps challenge data (works offline)', B.svs.PRESETS.filter((p) => !p.bundled && p.still).map((p) => [`svs:${p.id}`, p.name])],
+    ['Space Apps challenge data (works offline)', B.svs.PRESETS.filter((p) => !p.bundled && p.still && !p.videoOnly).map((p) => [`svs:${p.id}`, p.name])],
     ['Live NASA satellite view', [['sat:world', 'Whole Earth today (VIIRS NOAA-20)'], ['sat:lights', 'Earth at night, city lights (VIIRS Black Marble)'], ['sat:amazon', 'Amazon rainforest (MODIS)'], ['sat:himalaya', 'Himalaya and Tibetan Plateau (MODIS)'], ['sat:greenland', 'Greenland ice sheet (MODIS)'], ['sat:sahara', 'Western Sahara desert (MODIS)']]],
     ['Works offline', [['sci:sunlight', 'Sunlight on Earth, 21 June (worked out from astronomy)'], ['map:world', 'World relief map'], ['gen:storm', 'Storm spiral (generated illustration)'], ['gen:aurora', 'Aurora (generated illustration)']]],
   ];
@@ -287,7 +286,6 @@
       og.label = 'Space Apps challenge data (works offline)';
       B.sources.VIDEO_MENU.forEach((it) => add(og, it));
       sel.append(og);
-      if (STORY_VIDEOS[state.choice.video]) add(sel, [state.choice.video, STORY_VIDEOS[state.choice.video]]);
       if (uploads.video) add(sel, ['upload', 'Your video: ' + uploads.video.name]);
       if (state.choice.video === 'custom') add(sel, ['custom', src?.name || 'Saved video analysis']);
       if (state.choice.video === 'eic') add(sel, ['eic', B.eicView?.video?.name || 'NASA Earth Information Center time-lapse']);

@@ -1,8 +1,10 @@
 /**
  * Bit2Beat audio · live player.
  *
- * Look-ahead scheduler: notes are queued on the audio clock 120 ms ahead (sample-accurate, no
- * timer drift) and the UI is told which step is audible as each one starts.
+ * Look-ahead scheduler: notes are queued on the audio clock 250 ms ahead (sample-accurate, no
+ * timer drift), so a busy page (a story chapter loading, a video seeking) never makes them late,
+ * and the UI is told which step is audible as each one starts. The audio runs with the browser's
+ * 'playback' buffer size, which avoids crackles and drop-outs on slower computers.
  * Graph: renderer → master gain → 3-band EQ → limiter → speakers (+ analyser, + recorder tap).
  */
 (function (root, factory) {
@@ -11,7 +13,7 @@
   else (root.Bit2Beat = root.Bit2Beat || {}).player = mod;
 })(typeof self !== 'undefined' ? self : this, function (ns) {
   'use strict';
-  const LOOKAHEAD = 0.12;
+  const LOOKAHEAD = 0.25;
 
   /**
    * @param {object} o
@@ -84,7 +86,7 @@
       if (!ctx) {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) throw new Error('This browser cannot play Web Audio.');
-        ctx = new AC({ latencyHint: 'interactive' });
+        ctx = new AC({ latencyHint: 'playback' });
         master = ctx.createGain();
         eq = engine.createEqChain(ctx, {});
         master.connect(eq.input);
@@ -152,7 +154,9 @@
         }
       }
       let due = null;
-      while (sched.queue.length && sched.queue[0].t <= now + 0.01) due = sched.queue.shift();
+      // the step being heard now: the larger 'playback' buffers reach the speakers a little later
+      const heard = now - Math.min(0.2, (ctx.baseLatency || 0) + (ctx.outputLatency || 0));
+      while (sched.queue.length && sched.queue[0].t <= heard + 0.01) due = sched.queue.shift();
       if (due) {
         position = due.i;
         onStep(due.i);
