@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.6.1 — 14 November 2026
+- **NASA's TIFF files open as pictures.** The GeoTIFFs in NASA's visualization gallery are rendered maps (colours, not measured values). Those saved with 16 bits per colour, like GEDI forest height and the Dixie fire, opened as grey bands of numbers; they now show as the picture and play like one. See-through parts show as white, as on NASA's page, and the three colours are read in one pass over the file, so large files open about three times faster.
+- **No more colour bars on their own.** File type search skipped past a page's maps to its colour bar file (GEDI forest height opened "GEDI_colorbar_0to50_01.tif"). It now opens the map with the colour bar, and a page that only has a colour bar file is not listed.
+
 ## 3.6.0 — 14 November 2026 · 🏆 first place
 - **Bit2Beat won first place at the NASA Space Apps Challenge 2026 Assiut local event** (*The Earth Information Jukebox*). The award is on the About page and at the top of this README.
 - **Follow pointer says what is under it** (asked for by the judges, for blind listeners). When the pointer rests on the picture, Bit2Beat says which data set it is, the measure and its value, the note, and where you are ("Top left, 20% across, 30% down", or the latitude and longitude on a scientific map). Screen readers hear it; *Say what is under the pointer* also speaks it aloud. Press Tab to reach the picture and move the pointer with the arrow keys (Shift for bigger steps).

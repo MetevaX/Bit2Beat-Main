@@ -891,6 +891,41 @@ test('scientific files: Cloud-Optimized GeoTIFF with an overview and GDAL no-dat
   assert.equal(s.values.length, 1);
 });
 
+// a tiny 16-bit RGBA TIFF, as NASA's visualization studio saves its rendered maps and colour bars
+function rgbaTiff16(w, h, px) {
+  const tags = [[256, 3, [w]], [257, 3, [h]], [258, 3, [16, 16, 16, 16]], [259, 3, [1]], [262, 3, [2]], [273, 4, [0]], [277, 3, [4]], [278, 3, [h]], [279, 4, [w * h * 8]], [284, 3, [1]], [338, 3, [2]]];
+  const ifd = 8, extra = ifd + 2 + tags.length * 12 + 4, data = extra + 8;
+  const buf = new DataView(new ArrayBuffer(data + w * h * 8));
+  buf.setUint16(0, 0x4949); buf.setUint16(2, 42, true); buf.setUint32(4, ifd, true); buf.setUint16(ifd, tags.length, true);
+  tags.forEach(([tag, type, vals], k) => {
+    const o = ifd + 2 + k * 12;
+    buf.setUint16(o, tag, true); buf.setUint16(o + 2, type, true); buf.setUint32(o + 4, vals.length, true);
+    if (tag === 273) vals = [data];
+    if (vals.length === 4) { buf.setUint32(o + 8, extra, true); vals.forEach((v, i) => buf.setUint16(extra + i * 2, v, true)); }
+    else if (type === 3) buf.setUint16(o + 8, vals[0], true); else buf.setUint32(o + 8, vals[0], true);
+  });
+  px.forEach((v, i) => buf.setUint16(data + i * 2, v, true));
+  return new Uint8Array(buf.buffer);
+}
+
+test('3.6.1: NASA colour pictures saved as 16-bit TIFF open as pictures; colour bars alone are not offered', async () => {
+  // 2 × 1: an opaque red pixel and a see-through one
+  const f = await science.open(bytesMod.bufferReader(rgbaTiff16(2, 1, [65535, 0, 0, 65535, 0, 0, 0, 0])));
+  assert.equal(f.photo, true, 'a 16-bit RGB picture is shown as a picture, not as bands of numbers');
+  assert.equal(f.depth, 16);
+  const r = await f.map('band1', { width: 2, height: 1 });
+  assert.equal(r.data[0], 65535);
+  assert.ok(Number.isNaN(r.data[1]), 'the see-through pixel is no data');
+  const pic = await f.rgb({ width: 2, height: 1 });
+  assert.deepEqual([pic.data.length, pic.data[0][0], pic.data[1][0], pic.data[2][0]], [3, 65535, 0, 0], 'red, green and blue in one pass');
+  assert.ok(Number.isNaN(pic.data[0][1]));
+  const svs = require('../src/js/core/svs.js');
+  const files = svs.compact({ id: 4950, title: 'GEDI Forest Height', media_groups: [{ items: [{ instance: { url: 'https://svs.gsfc.nasa.gov/vis/a000000/a004900/a004950/GEDI_colorbar_0to50_01.tif' } }, { instance: { url: 'https://svs.gsfc.nasa.gov/vis/a000000/a004900/a004950/GEDI_global_w_colorbar_0230_print.tif' } }] }] }).f;
+  assert.deepEqual(files, { tif: 'a000000/a004900/a004950/GEDI_global_w_colorbar_0230_print.tif' }, 'the map with a colour bar, not the colour bar alone');
+  const only = svs.compact({ id: 1, title: 'x', media_groups: [{ items: [{ instance: { url: 'https://svs.gsfc.nasa.gov/vis/a000000/a000000/a000001/legend.tif' } }] }] });
+  assert.equal(only.f, undefined, 'a page with only a colour bar file has no file to open');
+});
+
 test('scientific files: HDF5 (latest format, chunked, shuffle + Deflate, unlimited time)', async () => {
   const f = await science.open(fixture('tiny.h5'));
   assert.deepEqual(f.variables.map((v) => [v.id, v.kind, v.units]), [['/sst', 'maps over time', '°C'], ['/mask', 'map', '']]);
