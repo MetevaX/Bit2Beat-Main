@@ -1235,3 +1235,21 @@ test('3.6: default mood, how-to page, presets in the Data tab and in file-type s
   const css = fs.readdirSync(path.join(root, 'src/styles')).map((f) => fs.readFileSync(path.join(root, 'src/styles', f), 'utf8')).join('\n');
   assert.ok(!/launch-glow|bt-pulse|voice-pulse|@keyframes bt-attn|@keyframes bt-ring/.test(css), 'no glowing or pulsing effects');
 });
+
+test('3.7: push to talk — hold V to speak, tap for one command, or always listen', () => {
+  const V = require('../src/js/core/voice-commands.js');
+  assert.deepEqual(V.parse('push to talk'), { id: 'listen', arg: 'push' });
+  assert.deepEqual(V.parse('hold to talk'), { id: 'listen', arg: 'push' });
+  assert.deepEqual(V.parse('always listen'), { id: 'listen', arg: 'always' });
+  assert.deepEqual(V.parse('keep listening please'), { id: 'listen', arg: 'always' });
+  assert.deepEqual(V.parse('stop listening'), { id: 'stop' }, 'stopping still wins');
+  assert.deepEqual(V.answer({ id: 'listen', arg: 'always' }).arg, 'always');
+  assert.equal(V.answer({ id: 'listen', arg: 'sometimes' }).id, 'none');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  for (const id of ['voiceTalk', 'voiceMode', 'voiceStateText']) assert.ok(html.includes(`id="${id}"`), id);
+  const ui = fs.readFileSync(path.join(root, 'src/js/ui/voice.js'), 'utf8');
+  assert.match(ui, /ptt !== false/, 'push to talk is the default');
+  assert.match(ui, /keyup/, 'letting go of V sends the phrase');
+  const ear = fs.readFileSync(path.join(root, 'src/js/ui/voice-ear.js'), 'utf8');
+  assert.match(ear, /hold: \(h\)/);
+});

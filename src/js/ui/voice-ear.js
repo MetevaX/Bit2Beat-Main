@@ -9,7 +9,11 @@
  * Gemini, which writes out what was said in any language or accent.
  *
  *   const ear = B.voiceEar.create({ onPhrase(base64Wav, seconds), onLevel(0…1) });
- *   await ear.start();  ear.pause(true / false);  ear.stop();
+ *   await ear.start();  ear.pause(true / false);  ear.hold(true / false);  ear.send();  ear.stop();
+ *
+ * hold(true) (push to talk: a key is held down): the phrase starts at once and pauses do not end
+ * it. send(): the key was let go, so the phrase ends 0.3 s later. hold(false) alone: it ends at the
+ * next short pause.
  */
 (function (root) {
   'use strict';
@@ -19,6 +23,7 @@
   const LEAD = 0.3; // seconds kept before the voice starts
   const QUIET = 0.7; // seconds of quiet that end a phrase
   const LONGEST = 7; // seconds
+  const HELD_LONGEST = 15; // seconds, while a key is held down
   const SHORTEST = 0.25; // seconds of voice; anything shorter is a click or a cough
 
   /** Mean of each group of samples: from the microphone's rate down to 16 kHz. */
@@ -47,6 +52,8 @@
     let stream = null;
     let node = null;
     let paused = false;
+    let holding = false;
+    let tail = 0; // seconds left before a sent phrase ends
     let floor = 0.004; // the room's own noise level (RMS)
     let lead = []; // recent blocks, for the lead-in
     let phrase = null; // { blocks, voiced, quiet }
@@ -54,6 +61,7 @@
     function finish() {
       const p = phrase;
       phrase = null;
+      tail = 0;
       if (!p || p.voiced < SHORTEST) return;
       const n = p.blocks.reduce((a, b) => a + b.length, 0);
       const all = new Float32Array(n);
@@ -85,7 +93,7 @@
         floor = rms < threshold ? floor * 0.97 + rms * 0.03 : floor; // learn the room while nobody speaks
         lead.push(copy);
         while (lead.length * dt > LEAD) lead.shift();
-        if (rms > threshold) phrase = { blocks: [...lead], voiced: dt, quiet: 0, length: lead.length * dt };
+        if (rms > threshold || holding) phrase = { blocks: [...lead], voiced: rms > threshold ? dt : 0, quiet: 0, length: lead.length * dt };
         return;
       }
       phrase.blocks.push(copy);
@@ -94,7 +102,7 @@
         phrase.voiced += dt;
         phrase.quiet = 0;
       } else phrase.quiet += dt;
-      if (phrase.quiet >= QUIET || phrase.length >= LONGEST) {
+      if ((tail > 0 && (tail -= dt) <= 0) || (!holding && phrase.quiet >= QUIET) || phrase.length >= (holding ? HELD_LONGEST : LONGEST)) {
         lead = [];
         finish();
       }
@@ -131,7 +139,16 @@
       stop,
       pause: (p) => {
         paused = !!p;
-        if (p) phrase = null;
+        if (p) [phrase, holding, tail] = [null, false, 0];
+      },
+      hold: (h) => {
+        holding = !!h;
+        tail = 0;
+        if (h) paused = false;
+      },
+      send: () => {
+        holding = false;
+        if (phrase) tail = 0.3;
       },
       get running() {
         return !!ctx;

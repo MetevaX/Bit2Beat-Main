@@ -624,7 +624,7 @@ body.pointer-mode main {
   left: 50%;
   bottom: 140px;
   transform: translateX(-50%);
-  max-width: min(640px, calc(100vw - 32px));
+  max-width: min(860px, calc(100vw - 32px));
   display: flex;
   align-items: center;
   gap: 10px;
@@ -639,9 +639,42 @@ body.pointer-mode main {
   display: none;
 }
 .voice-bar #voiceHeard {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.voice-bar .btn.voice-talk {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--amber);
+  border-color: var(--amber);
+  color: var(--navy);
+  font-weight: 700;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.voice-bar .voice-talk[hidden] {
+  display: none;
+}
+.voice-bar .voice-talk .i {
+  width: 15px;
+  height: 15px;
+}
+/* listening (push to talk): the label says so, and the Talk button turns light */
+.voice-bar.is-talking .btn.voice-talk {
+  background: var(--cream);
+  border-color: var(--cream);
+  color: var(--navy);
+}
+.voice-bar.is-talking .voice-state b {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .voice-bar .btn {
   color: var(--cream);
@@ -661,6 +694,23 @@ body.pointer-mode main {
   height: 16px;
 }
 @media (max-width: 760px) {
+  .voice-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: 18px;
+    bottom: 132px;
+    width: calc(100vw - 24px);
+  }
+  .voice-bar #voiceHeard {
+    flex-basis: 100%;
+    order: -1;
+    white-space: normal;
+    text-align: center;
+  }
+  .voice-bar .voice-talk {
+    min-height: 44px;
+    padding-inline: 18px;
+  }
   .topbar .voice-btn span {
     position: absolute;
     width: 1px;

@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.7.0 — 14 November 2026
+- **Push to talk.** Voice control no longer listens all the time. Once it is on (`V`), hold `V` while you speak and let go to send it; a quick tap listens for one command (up to 8 seconds). On phones and with a mouse, hold the new **Hold to talk** button in the voice bar (Enter or Space on it: one command). A short high tone means it is listening and a low tone that it stopped, so it works without a screen. Talking over an answer stops the answer. `Shift`+`V` turns voice control off.
+- **Always listen** in the voice bar (or saying “always listen”) brings back the old way, listening to every phrase; “push to talk” switches back. The choice is remembered.
+- New voice command: *push to talk* / *always listen* (Gemini knows it too).
+
 ## 3.6.1 — 14 November 2026
 - **NASA's TIFF files open as pictures.** The GeoTIFFs in NASA's visualization gallery are rendered maps (colours, not measured values). Those saved with 16 bits per colour, like GEDI forest height and the Dixie fire, opened as grey bands of numbers; they now show as the picture and play like one. See-through parts show as white, as on NASA's page, and the three colours are read in one pass over the file, so large files open about three times faster.
 - **No more colour bars on their own.** File type search skipped past a page's maps to its colour bar file (GEDI forest height opened "GEDI_colorbar_0to50_01.tif"). It now opens the map with the colour bar, and a page that only has a colour bar file is not listed.

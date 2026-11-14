@@ -480,6 +480,7 @@
       <h2><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg>Without a screen</h2>
       <ul>
         <li><b>Voice</b> (top right, or V): say <i>play</i>, <i>pause</i>, <i>explain</i>, <i>search for sea ice</i>, <i>result 2</i>, <i>violin</i>, <i>default mood</i> or <i>help</i>, in any language.</li>
+        <li><b>Push to talk</b>: once voice is on, it listens only while you <b>hold V</b> (or the <b>Hold to talk</b> button on a phone), so music and talk in the room are not taken as commands. A quick tap listens for one command. A high tone means it is listening, a low tone that it stopped. Prefer it always listening? Press <b>Always listen</b> in the voice bar, or say “always listen”.</li>
         <li><b>Accessibility</b>: bigger text, high contrast, dark theme, calmer motion, larger buttons, mono sound.</li>
         <li>Every control works with the keyboard and a screen reader; captions describe each note.</li>
       </ul>
@@ -504,7 +505,7 @@
         <dt>T</dt><dd>Readings table</dd>
         <dt>B</dt><dd>Score in braille</dd>
         <dt>L</dt><dd>Repeat on or off</dd>
-        <dt>V</dt><dd>Voice control</dd>
+        <dt>V</dt><dd>Voice on; then hold V and speak (tap: one command). Shift+V: voice off</dd>
         <dt>G</dt><dd>Bitty's guide</dd>
         <dt>?</dt><dd>All shortcuts</dd>
       </dl>
@@ -604,8 +605,10 @@
   </div>
 </div>
 <div class="voice-bar" id="voiceBar" hidden>
-  <span class="voice-state" aria-hidden="true"><svg class="i"><use href="#i-mic"/></svg><b>Voice on</b></span>
-  <span id="voiceHeard">Listening… say “help” for the commands.</span>
+  <span class="voice-state" aria-hidden="true"><svg class="i"><use href="#i-mic"/></svg><b id="voiceStateText">Push to talk</b></span>
+  <span id="voiceHeard">Hold V and speak, or tap V for one command.</span>
+  <button type="button" class="btn btn-small voice-talk" id="voiceTalk" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg>Hold to talk</button>
+  <button type="button" class="btn btn-quiet btn-small" id="voiceMode">Always listen</button>
   <button type="button" class="btn btn-quiet btn-small" id="voiceHelp">Commands</button>
   <button type="button" class="btn btn-quiet btn-small" id="voiceOff">Turn off</button>
 </div>
@@ -683,7 +686,7 @@
     <dt><kbd>T</kbd></dt><dd>Readings table</dd>
     <dt><kbd>B</kbd></dt><dd>Download the score in braille music (BRF, for embossers and braille displays)</dd>
     <dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Scientific maps: zoom in, zoom out, whole map (also the mouse wheel; drag to move)</dd>
-    <dt><kbd>V</kbd></dt><dd>Voice control on / off: say “play”, “pause”, “next”, “where am I”, “explain”, “search for sea ice”, “result 2”, “go to video”, “violin”, “default mood”, “how to use”, “help” or “stop voice control”</dd>
+    <dt><kbd>V</kbd></dt><dd>Voice control on. Then <b>hold V</b> while you speak (push to talk; a quick tap listens for one command), and <kbd>Shift</kbd>+<kbd>V</kbd> turns it off. Say “play”, “pause”, “next”, “where am I”, “explain”, “search for sea ice”, “result 2”, “go to video”, “violin”, “default mood”, “how to use”, “help” or “stop voice control”</dd>
     <dt><kbd>Tab</kbd> then <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd></dt><dd>Follow pointer (Image tab): move the pointer over the picture and hear what is under it; Bit2Beat says which data it is and where you are</dd>
     <dt><kbd>?</kbd></dt><dd>This help</dd>
   </dl>
