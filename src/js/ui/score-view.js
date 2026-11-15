@@ -1,5 +1,5 @@
 /**
- * Bit2Beat ui · score rendering with abcjs (preview, full score dialog, PNG / ABC download).
+ * Bit2Beat ui · score rendering with abcjs (preview, full score dialog, whole-score PNG / ABC download).
  * Notes come straight from the plan, so the score always matches the sound.
  */
 (function (root) {
@@ -178,57 +178,89 @@
     return b;
   }
 
-  /** Render (up to 64 steps of) the score off-screen and save it as a PNG. */
-  function downloadPng(plan, pos) {
-    const start = Math.floor(pos / 64) * 64;
+  /** One tune (some steps of the channels that are on) drawn off-screen → PNG blob (SVG blob if the browser cannot paint it). */
+  function tuneBlob(plan, start, end, { scale = 2 } = {}) {
     const holder = document.createElement('div');
-    holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:1000px;background:#fff';
+    holder.style.cssText = 'position:fixed;left:-20000px;top:0;width:1000px;background:#fff';
     document.body.append(holder);
     try {
+      const last = Math.min(plan.count, end) - 1;
       const abc = B.score.tune({
         title: plan.source.name,
-        subtitle: `${plan.labels[start] ?? ''} – ${plan.labels[Math.min(plan.count, start + 64) - 1] ?? ''} · ${plan.settings.tempo} BPM`,
+        subtitle: `${plan.labels[start] ?? ''} – ${plan.labels[last] ?? ''} · ${plan.settings.tempo} BPM${start > 0 || end < plan.count ? ` · bars ${start / 8 + 1}–${Math.ceil((last + 1) / 8)} of ${Math.ceil(plan.count / 8)}` : ''}`,
         tempo: plan.settings.tempo,
         flats: flatsFor(plan),
-        voices: voices(plan).map((v) => ({ name: v.c.name, midis: v.c.midi.slice(start, start + 64) })),
+        voices: voices(plan).map((v) => ({ name: v.c.name, midis: v.c.midi.slice(start, end) })),
       });
       ABCJS.renderAbc(holder, abc, { staffwidth: 940, paddingtop: 20, paddingbottom: 20, paddingleft: 20, paddingright: 20, foregroundColor: '#14213d' });
       const svg = holder.querySelector('svg');
-      if (!svg) throw new Error('nothing rendered');
+      if (!svg) throw new Error('Nothing to engrave.');
       svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
       const vb = svg.viewBox.baseVal;
       const W = Math.round(vb?.width || svg.clientWidth || 1000);
       const H = Math.round(vb?.height || svg.clientHeight || 400);
       svg.setAttribute('width', W);
       svg.setAttribute('height', H);
-      const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const img = new Image();
-      img.onload = () => {
-        const c = document.createElement('canvas');
-        c.width = W * 2;
-        c.height = H * 2;
-        const g = c.getContext('2d');
-        g.fillStyle = '#fff';
-        g.fillRect(0, 0, c.width, c.height);
-        g.scale(2, 2);
-        g.drawImage(img, 0, 0, W, H);
-        URL.revokeObjectURL(url);
-        c.toBlob((png) => {
-          if (png) download(png, slug(plan.source.name) + '-score.png');
-          toast('Score saved as PNG.');
-        }, 'image/png');
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        download(blob, slug(plan.source.name) + '-score.svg');
-        toast('Score saved as SVG.');
-      };
-      img.src = url;
-    } catch {
-      downloadAbc(plan);
+      const svgBlob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml;charset=utf-8' });
+      const k = Math.min(scale, 30000 / H, 8000 / W); // browsers draw canvases up to about 32k pixels a side
+      return new Promise((resolve) => {
+        const url = URL.createObjectURL(svgBlob);
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = Math.round(W * k);
+          c.height = Math.round(H * k);
+          const g = c.getContext('2d');
+          g.fillStyle = '#fff';
+          g.fillRect(0, 0, c.width, c.height);
+          g.scale(k, k);
+          g.drawImage(img, 0, 0, W, H);
+          URL.revokeObjectURL(url);
+          c.toBlob((png) => resolve(png ? { blob: png, ext: 'png', height: H } : { blob: svgBlob, ext: 'svg', height: H }), 'image/png');
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          resolve({ blob: svgBlob, ext: 'svg', height: H });
+        };
+        img.src = url;
+      });
     } finally {
       holder.remove();
+    }
+  }
+
+  /**
+   * The whole piece as pictures: one tall PNG when it fits, otherwise pages of whole bars
+   * (each under about 12 000 px), named …-score.png or …-score-page-01.png …
+   */
+  async function scorePictures(plan) {
+    const base = slug(plan.source.name) + '-score';
+    const one = await tuneBlob(plan, 0, plan.count);
+    if (one.height <= 14000) return [{ name: `${base}.${one.ext}`, blob: one.blob }];
+    const pages = Math.ceil(one.height / 12000);
+    const per = Math.ceil(plan.count / pages / 32) * 32; // four bars per line, whole lines per page
+    const out = [];
+    for (let s = 0, k = 1; s < plan.count; s += per, k++) {
+      const p = await tuneBlob(plan, s, s + per);
+      out.push({ name: `${base}-page-${String(k).padStart(2, '0')}.${p.ext}`, blob: p.blob });
+    }
+    return out;
+  }
+
+  /** Save the whole score: one PNG, or a ZIP of PNG pages for a very long piece. */
+  async function downloadPng(plan) {
+    try {
+      const pics = await scorePictures(plan);
+      if (pics.length === 1) {
+        download(pics[0].blob, pics[0].name);
+        toast(`The whole score saved as ${pics[0].name.split('.').pop().toUpperCase()} (${Math.ceil(plan.count / 8)} bars).`);
+      } else {
+        const files = await Promise.all(pics.map(async (p) => ({ name: p.name, data: new Uint8Array(await p.blob.arrayBuffer()) })));
+        download(B.bundle.zipBlob(files), slug(plan.source.name) + '-score-pages.zip');
+        toast(`The whole score saved as ${pics.length} PNG pages in a ZIP.`);
+      }
+    } catch {
+      downloadAbc(plan);
     }
   }
 
@@ -237,5 +269,5 @@
     paperKey = '';
   };
 
-  B.scoreView = { preview, open, paper, turn, downloadAbc, downloadPng, downloadBraille, brailleOf, fullAbc, invalidate };
+  B.scoreView = { preview, open, paper, turn, downloadAbc, downloadPng, scorePictures, downloadBraille, brailleOf, fullAbc, invalidate };
 })(typeof self !== 'undefined' ? self : this);

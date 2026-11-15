@@ -1255,3 +1255,67 @@ test('3.7: push to talk — hold V to speak, tap for one command, or always list
   const ear = fs.readFileSync(path.join(root, 'src/js/ui/voice-ear.js'), 'utf8');
   assert.match(ear, /hold: \(h\)/);
 });
+
+test('3.9: the MP4 writer — fast start, interleaved H.264 + AAC/Opus, correct timing tables', () => {
+  const mp4 = require('../src/js/core/mp4.js');
+  const avcC = Uint8Array.from([1, 0x64, 0, 0x28, 0xff, 0xe1, 0, 4, 0x67, 0x64, 0, 0x28, 1, 0, 2, 0x68, 0xee]);
+  const mux = mp4.createMuxer({ video: { width: 1920, height: 1080, description: avcC }, audio: { codec: 'aac', sampleRate: 48000, channels: 2 } });
+  for (let f = 0; f < 60; f++) mux.add('video', new Uint8Array([f, 1, 2, 3]), Math.round((f / 30) * 1e6), 1e6 / 30, f % 30 === 0);
+  for (let k = 0; k < 94; k++) mux.add('audio', new Uint8Array([9, k]), (k * 1024 * 1e6) / 48000, (1024 * 1e6) / 48000);
+  const out = mux.finish();
+  const bytes = new Uint8Array(out.parts.reduce((n, p) => n + p.length, 0));
+  let o = 0;
+  for (const p of out.parts) (bytes.set(p, o), (o += p.length));
+  assert.equal(bytes.length, out.size);
+  const top = mp4.boxes(bytes);
+  assert.deepEqual(top.map((b) => b.type), ['ftyp', 'moov', 'mdat'], 'index first: plays while it downloads');
+  const dv = new DataView(bytes.buffer);
+  const find = (list, t) => list.find((b) => b.type === t);
+  const traks = find(top, 'moov').children.filter((b) => b.type === 'trak');
+  assert.equal(traks.length, 2);
+  const stbl = (tr) => find(find(find(tr.children, 'mdia').children, 'minf').children, 'stbl').children;
+  const [v, a] = traks.map(stbl);
+  // stts: one run of 60 frames of 3000 ticks (90 kHz)
+  const stts = find(v, 'stts');
+  assert.deepEqual([dv.getUint32(stts.start + 12), dv.getUint32(stts.start + 16), dv.getUint32(stts.start + 20)], [1, 60, 3000]);
+  const stss = find(v, 'stss');
+  assert.equal(dv.getUint32(stss.start + 12), 2, 'two key frames');
+  // every stco offset points at that sample's bytes
+  const stco = find(v, 'stco');
+  for (let f = 0; f < 60; f += 17) assert.equal(bytes[dv.getUint32(stco.start + 16 + f * 4)], f);
+  const astco = find(a, 'stco');
+  assert.equal(bytes[dv.getUint32(astco.start + 16 + 5 * 4) + 1], 5);
+  // samples are interleaved in time, not all video then all audio
+  const firstA = dv.getUint32(astco.start + 16);
+  const lastV = dv.getUint32(stco.start + 16 + 59 * 4);
+  assert.ok(firstA < lastV);
+  const stsd = find(a, 'stsd');
+  assert.equal(String.fromCharCode(...bytes.subarray(stsd.start + 20, stsd.start + 24)), 'mp4a');
+  assert.deepEqual([...mp4.ascFor(48000, 2)], [0x11, 0x90], 'AAC-LC, 48 kHz, stereo');
+  const opus = mp4.createMuxer({ audio: { codec: 'opus', sampleRate: 48000, channels: 2 } });
+  opus.add('audio', new Uint8Array([1]), 0, 20000);
+  const ob = opus.finish().parts.map((p) => Buffer.from(p));
+  assert.ok(Buffer.concat(ob).includes('dOps'), 'Opus in MP4 carries its dOps box');
+});
+
+test('3.9: Export uses your settings; Record and Everything save one ZIP; the full score scrolls', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  for (const id of ['exportVideo', 'exportAudio', 'exportAll', 'exportUses', 'exportProgress', 'exportCancel', 'exportAudioAs', 'exportPng'])
+    assert.ok(html.includes(`id="${id}"`), id);
+  const order = ['core/mp4.js', 'ui/bundle.js', 'ui/composer.js', 'ui/video-export.js', 'ui/export-view.js'].map((f) => html.indexOf(`src/js/${f}`));
+  assert.ok(order.every((i) => i > 0), 'all new modules are loaded');
+  assert.ok(html.indexOf('ui/export-view.js') < html.indexOf('src/js/app.js'));
+  assert.match(html, /how-export[\s\S]*Download video[\s\S]*Everything \(ZIP\)[\s\S]*Record/, 'How to use explains the new Export and Record');
+  const ev = fs.readFileSync(path.join(root, 'src/js/ui/export-view.js'), 'utf8');
+  assert.match(ev, /state\.audio\.output/, 'audio follows the sound output you chose');
+  assert.doesNotMatch(ev, /scientific maps only\)/, 'no greyed-out formats any more: only what this source can make');
+  const rec = fs.readFileSync(path.join(root, 'src/js/ui/recorder.js'), 'utf8');
+  assert.match(rec, /captureStream/);
+  assert.match(rec, /bundle\.build/);
+  const sv = fs.readFileSync(path.join(root, 'src/js/ui/score-view.js'), 'utf8');
+  assert.match(sv, /scorePictures/);
+  assert.doesNotMatch(sv, /slice\(start, start \+ 64\)/, 'the PNG is the whole piece, not 64 steps');
+  const css = fs.readFileSync(path.join(root, 'src/styles/dialogs.css'), 'utf8');
+  assert.match(css, /#scoreDialog\[open\][\s\S]*flex-direction: column/);
+  assert.match(css, /#scoreDialog \.score-paper[\s\S]*min-height/);
+});

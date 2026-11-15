@@ -1535,6 +1535,27 @@ tbody tr:focus {
   padding: 8px;
   max-height: 64vh;
   overflow: auto;
+  scrollbar-gutter: stable;
+}
+/* Full score: the dialog fits the window and the paper takes the rest, scrolling, so every staff
+   can be reached however many channels are on and however small the window is. */
+#scoreDialog[open] {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+}
+#scoreDialog .score-paper {
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: none;
+  overscroll-behavior: contain;
+}
+#scoreDialog > * {
+  flex-shrink: 0;
+}
+#scoreDialog > .score-paper {
+  flex-shrink: 1;
 }
 .access-list {
   display: grid;
@@ -1587,6 +1608,59 @@ tbody tr:focus {
 .session-list .empty {
   color: var(--muted);
   justify-content: center;
+}
+
+/* Export: three big buttons that use your settings as they are */
+.export-uses {
+  color: var(--muted);
+}
+.export-main {
+  display: grid;
+  gap: 10px;
+}
+.export-big {
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  justify-content: flex-start;
+  text-align: left;
+  min-height: 56px;
+  padding: 10px 14px;
+  gap: 12px;
+}
+.export-big span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.export-main {
+  min-width: 0;
+}
+.export-big small {
+  font-weight: 400;
+  opacity: 0.85;
+  font-size: 0.82rem;
+}
+.export-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.export-progress[hidden] {
+  display: none;
+}
+.export-progress progress {
+  flex: 1;
+  height: 10px;
+  accent-color: var(--amber);
+}
+.export-more summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 4px 0;
+}
+.export-more > * + * {
+  margin-top: 10px;
 }
 
 </style>
@@ -4512,8 +4586,9 @@ THE SOFTWARE.
     <section class="howto-sec" id="how-export">
       <h2><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Export and share</h2>
       <ul>
-        <li><b>Export</b>: audio (stereo, headphone 3D, surround, Dolby Atmos ADM), the notes as CSV, the score as ABC or PNG, and the score in <b>braille</b> (BRF) for embossers and braille displays.</li>
-        <li><b>Record</b> captures what you play. <b>Sessions</b> saves your setup.</li>
+        <li><b>Export</b> uses the settings you have now (instrument, tempo, mood, channels and sound output), so there is nothing to choose first. <b>Download video</b> saves the whole piece as an MP4 with the sound on it: the picture or map with its moving cursor, the melody and what is playing. <b>Download audio</b> saves a WAV in your sound output. <b>Everything (ZIP)</b> puts the video, the audio, the whole score (PNG, ABC and braille), the notes, the readings and your settings in one file.</li>
+        <li>Under <b>Other formats and files</b>: another audio format (stereo, headphone 3D, and for scientific maps surround and Dolby Atmos ADM), the notes as CSV, the score as ABC or as a PNG of the whole piece, and the score in <b>braille</b> (BRF) for embossers and braille displays.</li>
+        <li><b>Record</b> captures what you see and hear while it plays. Press it again to stop: you get one ZIP with the video of the take, its sound, the whole score, braille, notes and settings. <b>Sessions</b> saves your setup.</li>
         <li>The address bar remembers everything: a shared link opens the same view.</li>
       </ul>
     </section>
@@ -4641,15 +4716,26 @@ THE SOFTWARE.
 <dialog id="exportDialog" aria-labelledby="exportTitle">
   <div class="dlg-head"><h2 id="exportTitle">Export</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
   <p class="dlg-note" id="exportSummary"></p>
-  <label class="field">Audio format<select id="exportFormat"></select></label>
-  <p class="dlg-note" id="exportHint"></p>
-  <div class="btn-row">
-    <button type="button" class="btn btn-primary" id="exportAudio"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Download audio</button>
-    <button type="button" class="btn" id="exportCsv">Notes as CSV</button>
-    <button type="button" class="btn" id="exportAbc">Score as ABC</button>
-    <button type="button" class="btn" id="exportBraille" title="Braille music (BRF) for braille embossers and braille displays">Score in braille</button>
+  <p class="dlg-note export-uses" id="exportUses"></p>
+  <div class="export-main">
+    <button type="button" class="btn btn-primary export-big" id="exportVideo"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span><b>Download video</b><small id="exportVideoWhat">MP4 · 1080p · with the sound</small></span></button>
+    <button type="button" class="btn export-big" id="exportAudio"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span><b>Download audio</b><small id="exportAudioWhat">Stereo WAV</small></span></button>
+    <button type="button" class="btn export-big" id="exportAll"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span><b>Everything (ZIP)</b><small>Video, audio, the whole score, braille, notes, readings and settings</small></span></button>
   </div>
+  <div class="export-progress" id="exportProgress" hidden><progress id="exportBar" max="1" value="0" aria-label="Export progress"></progress><button type="button" class="btn btn-quiet" id="exportCancel">Stop</button></div>
   <p class="dlg-status" id="exportStatus" role="status"></p>
+  <details class="export-more">
+    <summary>Other formats and files</summary>
+    <label class="field">Audio format<select id="exportFormat"></select></label>
+    <p class="dlg-note" id="exportHint"></p>
+    <div class="btn-row">
+      <button type="button" class="btn" id="exportAudioAs">Download in this format</button>
+      <button type="button" class="btn" id="exportCsv">Notes as CSV</button>
+      <button type="button" class="btn" id="exportAbc">Score as ABC</button>
+      <button type="button" class="btn" id="exportPng">Score as PNG</button>
+      <button type="button" class="btn" id="exportBraille" title="Braille music (BRF) for braille embossers and braille displays">Score in braille</button>
+    </div>
+  </details>
 </dialog>
 
 <dialog id="tableDialog" class="dlg-wide" aria-labelledby="tableTitle">
@@ -4694,7 +4780,7 @@ THE SOFTWARE.
     <li><b>Find something to hear.</b> Search NASA’s Earth Information Center above the tabs, or pick from the menu (the Space Apps challenge data works offline). Image turns a map or picture into sound, Video follows a NASA animation or time-lapse, Earth events plays natural events and earthquakes across the map, Data plays climate series and your own CSV.</li>
     <li><b>Press Play.</b> Higher values play higher. The Melody panel and the score show the same notes.</li>
     <li><b>Shape the sound.</b> Pick a mood (default, sad, happy or excited), change instrument, scale and tempo, mute or solo channels, or press Smart Tuning.</li>
-    <li><b>Export.</b> Download audio, the notes as CSV, the score, or the score in braille.</li>
+    <li><b>Export.</b> With your settings as they are: a video of the whole piece with the sound, the audio, or everything in one ZIP (score, braille, notes, settings). Record saves a ZIP of what you play.</li>
   </ol>
   <div class="btn-row help-bitty"><button type="button" class="btn btn-primary" id="helpTour">Let Bitty guide me</button><button type="button" class="btn" id="helpStory">Listen to Bitty’s story</button><button type="button" class="btn" id="helpHowto">The How to use page</button></div>
   <h3>Keyboard</h3>
@@ -12525,9 +12611,10 @@ THE SOFTWARE.
    * @param {object} plan   from plan.build
    * @param {string} format key of FORMATS
    * @param {{volume:number, eq:object, room:number, mono:boolean}} mix
-   * @returns {Promise<{bytes:ArrayBuffer, seconds:number, objects?:number}>}
+   * @param {{raw?:boolean}} [opts]  raw: return the normalised channels (for the video export) instead of a file
+   * @returns {Promise<{bytes?:ArrayBuffer, channels?:Float32Array[], seconds:number, objects?:number}>}
    */
-  async function render(plan, format, mix) {
+  async function render(plan, format, mix, opts = {}) {
     const { audio: engine, spatial, wav, adm } = ns;
     const spec = FORMATS[format];
     if (!spec) throw new Error('Unknown export format.');
@@ -12574,6 +12661,7 @@ THE SOFTWARE.
       const g = 0.891 / peak;
       for (const c of chans) for (let i = 0; i < c.length; i++) c[i] *= g;
     }
+    if (opts.raw) return { channels: chans, seconds: total, rate: RATE };
     let bytes;
     if (keys) {
       bytes = adm.encodeAdmBwf({
@@ -12589,6 +12677,184 @@ THE SOFTWARE.
   }
 
   return { FORMATS, RATE, render };
+});
+
+</script>
+<script>/* src/js/core/mp4.js */
+/**
+ * Bit2Beat core · a small MP4 writer for the video export.
+ *
+ * WebCodecs gives us encoded H.264 frames and AAC (or Opus) packets; this puts them in an ordinary
+ * .mp4 that plays everywhere (Windows, macOS, phones, YouTube, WhatsApp). Not fragmented: the
+ * index (moov) goes first, so the file starts playing at once ("fast start"). Every sample is its own
+ * chunk, written in time order, so picture and sound stay interleaved.
+ */
+(function (root, factory) {
+  const mod = factory();
+  if (typeof module === 'object' && module.exports) module.exports = mod;
+  else (root.Bit2Beat = root.Bit2Beat || {}).mp4 = mod;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const ascii = (s) => Uint8Array.from(s, (c) => c.charCodeAt(0));
+  const cat = (parts) => {
+    const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+    let o = 0;
+    for (const p of parts) {
+      out.set(p, o);
+      o += p.length;
+    }
+    return out;
+  };
+  const u8 = (v) => Uint8Array.of(v & 255);
+  const u16 = (v) => Uint8Array.of((v >>> 8) & 255, v & 255);
+  const u32 = (v) => Uint8Array.of((v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255);
+  const zeros = (n) => new Uint8Array(n);
+  const box = (type, ...parts) => {
+    const body = cat(parts.flat(Infinity));
+    return cat([u32(body.length + 8), ascii(type), body]);
+  };
+  const full = (type, version, flags, ...parts) => box(type, u8(version), u8(flags >>> 16), u16(flags & 0xffff), ...parts);
+  const MATRIX = [0x10000, 0, 0, 0, 0x10000, 0, 0, 0, 0x40000000].map(u32);
+
+  /** MPEG-4 descriptor: tag + length (4-byte form) + body. */
+  const desc = (tag, ...parts) => {
+    const body = cat(parts.flat(Infinity));
+    const n = body.length;
+    return cat([u8(tag), Uint8Array.of(0x80 | ((n >>> 21) & 127), 0x80 | ((n >>> 14) & 127), 0x80 | ((n >>> 7) & 127), n & 127), body]);
+  };
+
+  function sampleEntry(t) {
+    if (t.kind === 'video') {
+      return box(
+        'avc1',
+        zeros(6), u16(1), zeros(16), u16(t.width), u16(t.height), u32(0x480000), u32(0x480000), zeros(4), u16(1),
+        zeros(32), u16(0x18), u16(0xffff),
+        box('avcC', t.description),
+      );
+    }
+    const audio = [zeros(6), u16(1), zeros(8), u16(t.channels), u16(16), zeros(4), u32(t.sampleRate * 65536 >>> 0)];
+    if (t.codec === 'opus') {
+      // dOps: version, channels, pre-skip, input rate, gain, mapping family 0
+      return box('Opus', ...audio, box('dOps', u8(0), u8(t.channels), u16(t.preSkip ?? 312), u32(t.sampleRate), u16(0), u8(0)));
+    }
+    const asc = t.description || ascFor(t.sampleRate, t.channels);
+    const es = desc(3, u16(t.id), u8(0), desc(4, u8(0x40), u8(0x15), zeros(3), u32(t.bitrate || 192000), u32(t.bitrate || 192000), desc(5, asc)), desc(6, u8(2)));
+    return box('mp4a', ...audio, full('esds', 0, 0, es));
+  }
+
+  /** AAC-LC AudioSpecificConfig, for encoders that do not hand one over. */
+  function ascFor(rate, channels) {
+    const rates = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000];
+    const i = Math.max(0, rates.indexOf(rate));
+    return Uint8Array.of((2 << 3) | (i >> 1), ((i & 1) << 7) | (channels << 3));
+  }
+
+  /** Run-length list of sample durations. */
+  function stts(durs) {
+    const runs = [];
+    for (const d of durs) {
+      const last = runs[runs.length - 1];
+      if (last && last[1] === d) last[0]++;
+      else runs.push([1, d]);
+    }
+    return full('stts', 0, 0, u32(runs.length), runs.flatMap(([n, d]) => [u32(n), u32(d)]));
+  }
+
+  /**
+   * @param {{video?:{width,height,timescale?,description:Uint8Array}, audio?:{codec:'aac'|'opus', sampleRate, channels, description?, bitrate?, preSkip?}}} spec
+   */
+  function createMuxer(spec) {
+    const tracks = [];
+    if (spec.video) tracks.push({ kind: 'video', ...spec.video, timescale: spec.video.timescale || 90000, samples: [] });
+    if (spec.audio) tracks.push({ kind: 'audio', ...spec.audio, timescale: spec.audio.sampleRate, samples: [] });
+    tracks.forEach((t, k) => (t.id = k + 1));
+    const byKind = (k) => tracks.find((t) => t.kind === k);
+
+    /** time and duration in microseconds (as WebCodecs gives them) */
+    function add(kind, data, timestampUs, durationUs, key = true) {
+      const t = byKind(kind);
+      if (!t) throw new Error(`No ${kind} track.`);
+      const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
+      t.samples.push({ data: bytes, ts: Math.round((timestampUs * t.timescale) / 1e6), dur: Math.max(1, Math.round((durationUs * t.timescale) / 1e6)), key });
+    }
+
+    function finish() {
+      for (const t of tracks) {
+        t.samples.sort((a, b) => a.ts - b.ts);
+        // durations from the start times, so the track has no gaps; the last keeps its own
+        for (let i = 0; i < t.samples.length - 1; i++) t.samples[i].dur = Math.max(1, t.samples[i + 1].ts - t.samples[i].ts);
+        t.duration = t.samples.reduce((n, s) => n + s.dur, 0);
+        if (t.kind === 'video' && !t.description) throw new Error('The video encoder gave no decoder configuration.');
+      }
+      // interleave by time
+      const order = [];
+      for (const t of tracks) t.samples.forEach((s) => order.push({ t, s, at: s.ts / t.timescale }));
+      order.sort((a, b) => a.at - b.at || a.t.id - b.t.id);
+
+      const movieMs = Math.round(Math.max(...tracks.map((t) => (t.duration / t.timescale) * 1000), 0));
+      const build = (offsets) => {
+        const traks = tracks.map((t) => {
+          const isV = t.kind === 'video';
+          const durMs = Math.round((t.duration / t.timescale) * 1000);
+          const stbl = box(
+            'stbl',
+            full('stsd', 0, 0, u32(1), sampleEntry(t)),
+            stts(t.samples.map((s) => s.dur)),
+            isV ? full('stss', 0, 0, u32(t.samples.filter((s) => s.key).length), t.samples.flatMap((s, i) => (s.key ? [u32(i + 1)] : []))) : [],
+            full('stsc', 0, 0, u32(1), u32(1), u32(1), u32(1)),
+            full('stsz', 0, 0, u32(0), u32(t.samples.length), t.samples.map((s) => u32(s.data.length))),
+            full('stco', 0, 0, u32(t.samples.length), t.samples.map((s) => u32(offsets.get(s) || 0))),
+          );
+          return box(
+            'trak',
+            full('tkhd', 0, 3, u32(0), u32(0), u32(t.id), u32(0), u32(durMs), zeros(8), u16(0), u16(isV ? 0 : 1), u16(isV ? 0 : 0x100), u16(0), MATRIX, u32(isV ? t.width * 65536 : 0), u32(isV ? t.height * 65536 : 0)),
+            box(
+              'mdia',
+              full('mdhd', 0, 0, u32(0), u32(0), u32(t.timescale), u32(t.duration), u16(0x55c4), u16(0)),
+              full('hdlr', 0, 0, u32(0), ascii(isV ? 'vide' : 'soun'), zeros(12), ascii(isV ? 'Bit2Beat video\0' : 'Bit2Beat sound\0')),
+              box('minf', isV ? full('vmhd', 0, 1, zeros(8)) : full('smhd', 0, 0, zeros(4)), box('dinf', full('dref', 0, 0, u32(1), full('url ', 0, 1))), stbl),
+            ),
+          );
+        });
+        const mvhd = full('mvhd', 0, 0, u32(0), u32(0), u32(1000), u32(movieMs), u32(0x10000), u16(0x100), zeros(10), MATRIX, zeros(24), u32(tracks.length + 1));
+        return box('moov', mvhd, ...traks);
+      };
+      const ftyp = box('ftyp', ascii('isom'), u32(0x200), ascii('isomiso2avc1mp41'));
+      // the moov size does not depend on the offset values, so build it once to measure
+      const moovSize = build(new Map()).length;
+      const dataSize = order.reduce((n, o) => n + o.s.data.length, 0);
+      const offsets = new Map();
+      let at = ftyp.length + moovSize + 8;
+      for (const o of order) {
+        offsets.set(o.s, at);
+        at += o.s.data.length;
+      }
+      const parts = [ftyp, build(offsets), cat([u32(dataSize + 8), ascii('mdat')]), ...order.map((o) => o.s.data)];
+      return { parts, size: at, duration: movieMs / 1000 };
+    }
+
+    return { add, finish, tracks };
+  }
+
+  /** Walk the top-level (and nested container) boxes of an mp4: [{type, size, start, children?}]. Used by tests. */
+  function boxes(bytes, start = 0, end = bytes.length) {
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const out = [];
+    const containers = new Set(['moov', 'trak', 'mdia', 'minf', 'stbl', 'dinf']);
+    for (let o = start; o + 8 <= end; ) {
+      const size = dv.getUint32(o);
+      const type = String.fromCharCode(...bytes.subarray(o + 4, o + 8));
+      if (size < 8) break;
+      const b = { type, size, start: o };
+      if (containers.has(type)) b.children = boxes(bytes, o + 8, o + size);
+      out.push(b);
+      o += size;
+    }
+    return out;
+  }
+
+  return { createMuxer, boxes, ascFor };
 });
 
 </script>
@@ -13505,7 +13771,7 @@ THE SOFTWARE.
 </script>
 <script>/* src/js/ui/score-view.js */
 /**
- * Bit2Beat ui · score rendering with abcjs (preview, full score dialog, PNG / ABC download).
+ * Bit2Beat ui · score rendering with abcjs (preview, full score dialog, whole-score PNG / ABC download).
  * Notes come straight from the plan, so the score always matches the sound.
  */
 (function (root) {
@@ -13684,57 +13950,89 @@ THE SOFTWARE.
     return b;
   }
 
-  /** Render (up to 64 steps of) the score off-screen and save it as a PNG. */
-  function downloadPng(plan, pos) {
-    const start = Math.floor(pos / 64) * 64;
+  /** One tune (some steps of the channels that are on) drawn off-screen → PNG blob (SVG blob if the browser cannot paint it). */
+  function tuneBlob(plan, start, end, { scale = 2 } = {}) {
     const holder = document.createElement('div');
-    holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:1000px;background:#fff';
+    holder.style.cssText = 'position:fixed;left:-20000px;top:0;width:1000px;background:#fff';
     document.body.append(holder);
     try {
+      const last = Math.min(plan.count, end) - 1;
       const abc = B.score.tune({
         title: plan.source.name,
-        subtitle: `${plan.labels[start] ?? ''} – ${plan.labels[Math.min(plan.count, start + 64) - 1] ?? ''} · ${plan.settings.tempo} BPM`,
+        subtitle: `${plan.labels[start] ?? ''} – ${plan.labels[last] ?? ''} · ${plan.settings.tempo} BPM${start > 0 || end < plan.count ? ` · bars ${start / 8 + 1}–${Math.ceil((last + 1) / 8)} of ${Math.ceil(plan.count / 8)}` : ''}`,
         tempo: plan.settings.tempo,
         flats: flatsFor(plan),
-        voices: voices(plan).map((v) => ({ name: v.c.name, midis: v.c.midi.slice(start, start + 64) })),
+        voices: voices(plan).map((v) => ({ name: v.c.name, midis: v.c.midi.slice(start, end) })),
       });
       ABCJS.renderAbc(holder, abc, { staffwidth: 940, paddingtop: 20, paddingbottom: 20, paddingleft: 20, paddingright: 20, foregroundColor: '#14213d' });
       const svg = holder.querySelector('svg');
-      if (!svg) throw new Error('nothing rendered');
+      if (!svg) throw new Error('Nothing to engrave.');
       svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
       const vb = svg.viewBox.baseVal;
       const W = Math.round(vb?.width || svg.clientWidth || 1000);
       const H = Math.round(vb?.height || svg.clientHeight || 400);
       svg.setAttribute('width', W);
       svg.setAttribute('height', H);
-      const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const img = new Image();
-      img.onload = () => {
-        const c = document.createElement('canvas');
-        c.width = W * 2;
-        c.height = H * 2;
-        const g = c.getContext('2d');
-        g.fillStyle = '#fff';
-        g.fillRect(0, 0, c.width, c.height);
-        g.scale(2, 2);
-        g.drawImage(img, 0, 0, W, H);
-        URL.revokeObjectURL(url);
-        c.toBlob((png) => {
-          if (png) download(png, slug(plan.source.name) + '-score.png');
-          toast('Score saved as PNG.');
-        }, 'image/png');
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        download(blob, slug(plan.source.name) + '-score.svg');
-        toast('Score saved as SVG.');
-      };
-      img.src = url;
-    } catch {
-      downloadAbc(plan);
+      const svgBlob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml;charset=utf-8' });
+      const k = Math.min(scale, 30000 / H, 8000 / W); // browsers draw canvases up to about 32k pixels a side
+      return new Promise((resolve) => {
+        const url = URL.createObjectURL(svgBlob);
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = Math.round(W * k);
+          c.height = Math.round(H * k);
+          const g = c.getContext('2d');
+          g.fillStyle = '#fff';
+          g.fillRect(0, 0, c.width, c.height);
+          g.scale(k, k);
+          g.drawImage(img, 0, 0, W, H);
+          URL.revokeObjectURL(url);
+          c.toBlob((png) => resolve(png ? { blob: png, ext: 'png', height: H } : { blob: svgBlob, ext: 'svg', height: H }), 'image/png');
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          resolve({ blob: svgBlob, ext: 'svg', height: H });
+        };
+        img.src = url;
+      });
     } finally {
       holder.remove();
+    }
+  }
+
+  /**
+   * The whole piece as pictures: one tall PNG when it fits, otherwise pages of whole bars
+   * (each under about 12 000 px), named …-score.png or …-score-page-01.png …
+   */
+  async function scorePictures(plan) {
+    const base = slug(plan.source.name) + '-score';
+    const one = await tuneBlob(plan, 0, plan.count);
+    if (one.height <= 14000) return [{ name: `${base}.${one.ext}`, blob: one.blob }];
+    const pages = Math.ceil(one.height / 12000);
+    const per = Math.ceil(plan.count / pages / 32) * 32; // four bars per line, whole lines per page
+    const out = [];
+    for (let s = 0, k = 1; s < plan.count; s += per, k++) {
+      const p = await tuneBlob(plan, s, s + per);
+      out.push({ name: `${base}-page-${String(k).padStart(2, '0')}.${p.ext}`, blob: p.blob });
+    }
+    return out;
+  }
+
+  /** Save the whole score: one PNG, or a ZIP of PNG pages for a very long piece. */
+  async function downloadPng(plan) {
+    try {
+      const pics = await scorePictures(plan);
+      if (pics.length === 1) {
+        download(pics[0].blob, pics[0].name);
+        toast(`The whole score saved as ${pics[0].name.split('.').pop().toUpperCase()} (${Math.ceil(plan.count / 8)} bars).`);
+      } else {
+        const files = await Promise.all(pics.map(async (p) => ({ name: p.name, data: new Uint8Array(await p.blob.arrayBuffer()) })));
+        download(B.bundle.zipBlob(files), slug(plan.source.name) + '-score-pages.zip');
+        toast(`The whole score saved as ${pics.length} PNG pages in a ZIP.`);
+      }
+    } catch {
+      downloadAbc(plan);
     }
   }
 
@@ -13743,7 +14041,7 @@ THE SOFTWARE.
     paperKey = '';
   };
 
-  B.scoreView = { preview, open, paper, turn, downloadAbc, downloadPng, downloadBraille, brailleOf, fullAbc, invalidate };
+  B.scoreView = { preview, open, paper, turn, downloadAbc, downloadPng, scorePictures, downloadBraille, brailleOf, fullAbc, invalidate };
 })(typeof self !== 'undefined' ? self : this);
 
 </script>
@@ -14826,7 +15124,7 @@ ${m.mouth}
 </script>
 <script>/* src/js/ui/dialogs.js */
 /**
- * Bit2Beat ui · dialogs: export, readings table, full score, sessions, accessibility, help.
+ * Bit2Beat ui · dialogs: readings table, full score, sessions, accessibility, help (Export is ui/export-view.js).
  */
 (function (root) {
   'use strict';
@@ -14945,6 +15243,14 @@ ${m.mouth}
     toast(`Opened “${s.name}”.`);
   }
 
+  /** Save the score in braille; returns the message to show. */
+  function braille(app) {
+    const b = B.scoreView.downloadBraille(app.plan);
+    const msg = `Braille music saved: ${b.pages} page${b.pages > 1 ? 's' : ''} of BRF, one eighth note per reading, for an embosser or a braille display.`;
+    B.dom.announce(msg);
+    return msg;
+  }
+
   // ------------------------------------------------------------------ init
   function init(app) {
     $$('dialog').forEach((d) => {
@@ -14953,56 +15259,6 @@ ${m.mouth}
       });
       $$('[data-close]', d).forEach((b) => (b.onclick = () => d.close()));
     });
-
-    // export
-    Object.entries(B.exporter.FORMATS).forEach(([k, v]) => $('exportFormat').append(new Option(v.label, k)));
-    const describe = () => {
-      const f = B.exporter.FORMATS[$('exportFormat').value];
-      $('exportHint').textContent = f.detail + ($('exportFormat').value === 'adm' ? '. For Dolby Atmos tools such as the Dolby Atmos Renderer, Pro Tools, Logic Pro, Nuendo or DaVinci Resolve. Bit2Beat is not affiliated with Dolby.' : '.');
-      $('exportSummary').textContent = `${app.src.name} · ${app.plan.count} steps · ${music.seconds(app.plan.duration)} · ${app.plan.channels.filter((c) => c.active).length} channel(s) on`;
-    };
-    $('exportFormat').onchange = describe;
-    $('exportBtn').onclick = () => {
-      // surround and Atmos (ADM) masters are for scientific maps only
-      const sci = !!app.src?.science;
-      [...$('exportFormat').options].forEach((o) => {
-        if (!['5.1', '7.1', '7.1.4', 'adm'].includes(o.value)) return;
-        o.dataset.name ||= o.textContent;
-        o.disabled = !sci;
-        o.textContent = sci ? o.dataset.name : `${o.dataset.name} (scientific maps only)`;
-      });
-      $('exportFormat').value = B.exporter.FORMATS[app.state.audio.output] && !$('exportFormat').querySelector(`option[value="${app.state.audio.output}"]`)?.disabled ? app.state.audio.output : 'stereo';
-      $('exportStatus').textContent = '';
-      describe();
-      $('exportDialog').showModal();
-    };
-    $('exportAudio').onclick = async () => {
-      const fmt = $('exportFormat').value;
-      const btn = $('exportAudio');
-      btn.disabled = true;
-      app.setExporting(true);
-      $('exportStatus').textContent = 'Rendering…';
-      await new Promise((r) => setTimeout(r, 30));
-      try {
-        const res = await B.exporter.render(app.plan, fmt, { ...app.state.audio, mono: app.state.prefs.mono });
-        const name = `${slug(app.src.name)}-${fmt === 'adm' ? 'adm-bwf' : fmt.replace(/\./g, '')}.wav`;
-        download(new Blob([res.bytes], { type: 'audio/wav' }), name);
-        $('exportStatus').textContent = `Saved ${name} (${music.seconds(res.seconds)}${res.objects ? `, ${res.objects} objects` : ''}).`;
-      } catch (e) {
-        $('exportStatus').textContent = e.message;
-      } finally {
-        btn.disabled = false;
-        app.setExporting(false);
-      }
-    };
-    $('exportCsv').onclick = () => {
-      download(new Blob(['﻿' + planCsv(app.plan)], { type: 'text/csv;charset=utf-8' }), slug(app.src.name) + '-notes.csv');
-      $('exportStatus').textContent = 'Notes saved as CSV (every step, value, note, frequency and 3D position).';
-    };
-    $('exportAbc').onclick = () => {
-      B.scoreView.downloadAbc(app.plan);
-      $('exportStatus').textContent = 'Score saved as ABC notation (opens in MuseScore with an ABC import plugin, or abcjs.net).';
-    };
 
     // table
     $('tableBtn').onclick = () => openTable(app);
@@ -15014,15 +15270,8 @@ ${m.mouth}
 
     // score
     $('fullScoreBtn').onclick = () => B.scoreView.open(app.plan, app.state.position);
-    $('scorePngBtn').onclick = () => B.scoreView.downloadPng(app.plan, app.state.position);
-    const braille = () => {
-      const b = B.scoreView.downloadBraille(app.plan);
-      const msg = `Braille music saved: ${b.pages} page${b.pages > 1 ? 's' : ''} of BRF, one eighth note per reading, for an embosser or a braille display.`;
-      B.dom.announce(msg);
-      return msg;
-    };
-    $('scoreBrailleBtn').onclick = () => B.dom.toast(braille(), 5000);
-    $('exportBraille').onclick = () => ($('exportStatus').textContent = braille());
+    $('scorePngBtn').onclick = () => B.scoreView.downloadPng(app.plan);
+    $('scoreBrailleBtn').onclick = () => B.dom.toast(braille(app), 5000);
     $('scoreVoices').onchange = () => B.scoreView.paper(app.plan, app.state.position, false);
     $('scorePrev').onclick = () => B.scoreView.turn(app.plan, app.state.position, -1);
     $('scoreNext').onclick = () => B.scoreView.turn(app.plan, app.state.position, 1);
@@ -15078,7 +15327,665 @@ ${m.mouth}
     $('helpBtn').onclick = () => $('helpDialog').showModal();
   }
 
-  B.dialogs = { init, openTable, planCsv, planXlsx };
+  B.dialogs = { init, openTable, planCsv, planXlsx, braille };
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>/* src/js/ui/bundle.js */
+/**
+ * Bit2Beat ui · everything about one piece in one ZIP: the score (whole-piece PNG, ABC, braille),
+ * the notes (CSV), the readings (Excel), and the settings with a link that opens this exact view.
+ * Record and Export add the video and the sound to it.
+ */
+(function (root) {
+  'use strict';
+  const B = root.Bit2Beat;
+  const { slug } = B.dom;
+  const enc = new TextEncoder();
+
+  /** ZIP ("stored": no compression, so a large video costs no time) built from parts, as a Blob. */
+  function zipBlob(files) {
+    const parts = [];
+    const central = [];
+    let offset = 0;
+    const le = (n, v) => {
+      const b = new Uint8Array(n);
+      for (let i = 0; i < n; i++) b[i] = (v >>> (8 * i)) & 255;
+      return b;
+    };
+    const now = new Date();
+    const time = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+    const date = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+    for (const f of files) {
+      const name = enc.encode(f.name);
+      const data = f.data;
+      const crc = B.xlsx.crc32(data);
+      const common = [le(2, 20), le(2, 0x0800), le(2, 0), le(2, time), le(2, date), le(4, crc), le(4, data.length), le(4, data.length), le(2, name.length), le(2, 0)];
+      const head = [le(4, 0x04034b50), ...common];
+      parts.push(...head, name, data);
+      central.push(le(4, 0x02014b50), le(2, 20), ...common, le(2, 0), le(2, 0), le(2, 0), le(4, 0), le(4, offset), name);
+      offset += head.reduce((n, b) => n + b.length, 0) + name.length + data.length;
+    }
+    const size = central.reduce((n, b) => n + b.length, 0);
+    const end = [le(4, 0x06054b50), le(2, 0), le(2, 0), le(2, files.length), le(2, files.length), le(4, size), le(4, offset), le(2, 0)];
+    return new Blob([...parts, ...central, ...end], { type: 'application/zip' });
+  }
+
+  const bytesOf = async (blob) => new Uint8Array(await blob.arrayBuffer());
+
+  /** What the settings were, as people (and the app, from the link) read them. */
+  function settingsText(app) {
+    const p = app.plan;
+    const s = p.settings;
+    const m = B.music;
+    const opt = (id) => document.querySelector(`#${id} option:checked`)?.textContent || '';
+    const on = p.channels.filter((c) => c.active).map((c) => c.name);
+    const lines = [
+      'Bit2Beat · ' + app.src.name,
+      '',
+      `Source: ${app.src.origin?.source || ''}${app.src.origin?.url ? ' · ' + app.src.origin.url : ''}`,
+      `Steps: ${p.count} (${p.labels[0] ?? ''} – ${p.labels[p.count - 1] ?? ''}), ${m.seconds(p.duration)} long`,
+      `Tempo: ${s.tempo} BPM, one step = one eighth note`,
+      `Key and scale: ${m.KEYS?.[s.key] || ''} ${m.SCALES[s.scale]?.name || s.scale}`,
+      `Instrument: ${opt('instrument') || s.instrument}`,
+      `Channels on: ${on.join(', ')}`,
+      `Sound: ${opt('output') || app.state.audio.output}, room ${Math.round((app.state.audio.room ?? 0) * 100)}%`,
+      '',
+      'Open this exact view again:',
+      location.href,
+      '',
+      `Made ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC with Bit2Beat (bit2beat.vercel.app) · NASA Space Apps 2026`,
+    ];
+    return lines.join('\r\n');
+  }
+
+  /**
+   * The files that describe the piece. `extra`: [{name, blob|data}] to add first (the video, the sound).
+   * @returns {Promise<Blob>} the ZIP
+   */
+  async function build(app, extra = []) {
+    const p = app.plan;
+    const base = slug(app.src.name);
+    const files = [];
+    for (const f of extra) files.push({ name: f.name, data: f.data || (await bytesOf(f.blob)) });
+    try {
+      for (const pic of await B.scoreView.scorePictures(p)) files.push({ name: 'score/' + pic.name, data: await bytesOf(pic.blob) });
+    } catch {
+      /* the ABC and braille scores below still describe every note */
+    }
+    files.push({ name: `score/${base}.abc`, data: enc.encode(B.scoreView.fullAbc(p)) });
+    files.push({ name: `score/${base}-braille-music.brf`, data: enc.encode(B.scoreView.brailleOf(p).brf) });
+    files.push({ name: `data/${base}-notes.csv`, data: enc.encode('﻿' + B.dialogs.planCsv(p)) });
+    files.push({ name: `data/${base}-readings.xlsx`, data: B.dialogs.planXlsx(p) });
+    files.push({ name: 'settings.txt', data: enc.encode(settingsText(app)) });
+    return zipBlob(files);
+  }
+
+  B.bundle = { zipBlob, build, settingsText };
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>/* src/js/ui/composer.js */
+/**
+ * Bit2Beat ui · one video frame of what you hear: the picture or map with its cursor, the melody,
+ * what is playing, and the settings. Used by the video export (frames drawn off-screen, step by step)
+ * and by Record (drawn live from the canvases on the page).
+ *
+ * 1920 × 1080 layout (scaled for other sizes):
+ *   title and source · main panel (picture | chart, or the source view) · melody roll · caption · settings
+ */
+(function (root) {
+  'use strict';
+  const B = root.Bit2Beat;
+  const { slug } = B.dom;
+
+  const INK = '#f6f1e7';
+  const MUTED = '#a7a39a';
+  const AMBER = '#e8a33d';
+  const BG = '#0f1115';
+  const PANEL = '#191c22';
+
+  const font = (px, weight = 400) => `${weight} ${px}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+  function fit(g, s, maxW) {
+    s = String(s ?? '');
+    if (g.measureText(s).width <= maxW) return s;
+    while (s.length > 1 && g.measureText(s + '…').width > maxW) s = s.slice(0, -1);
+    return s + '…';
+  }
+  function rounded(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  }
+  function cover(g, img, x, y, w, h) {
+    const iw = img.videoWidth || img.naturalWidth || img.width;
+    const ih = img.videoHeight || img.naturalHeight || img.height;
+    if (!iw || !ih) return;
+    const R = B.draw.fitRect(iw, ih, w, h);
+    g.drawImage(img, x + R.x, y + R.y, R.w, R.h);
+  }
+
+  /** Seconds of video for step i (the same rule as the studio's video view). */
+  function videoTime(src, i, duration) {
+    if (Array.isArray(src.times) && src.times[i] != null) return src.times[i];
+    const n = src.labels?.length || 1;
+    return ((src.duration || duration || 0) * (i + 0.5)) / n;
+  }
+
+  /**
+   * @param {object} app
+   * @param {{width?:number, height?:number, live?:boolean}} o
+   *   live: copy the canvases and video on the page (Record). Otherwise draw off-screen (Export).
+   */
+  function create(app, { width = 1920, height = 1080, live = false } = {}) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const g = canvas.getContext('2d');
+    const k = width / 1920;
+    const src = app.src;
+    const plan = app.plan;
+    const hasPicture = !!(src.videoUrl || src.frames?.length);
+    const M = { x: 64, y: 130, w: 1792, h: 640 };
+    const pic = hasPicture ? { x: M.x, y: M.y, w: 1040, h: M.h } : null;
+    const view = hasPicture ? { x: M.x + 1064, y: M.y, w: M.w - 1064, h: M.h } : M;
+    const roll = { x: 64, y: 794, w: 1792, h: 150 };
+    const logo = document.querySelector('.brand img');
+
+    // off-screen copies of the studio's canvases, sized like the panels they fill
+    let holder = null;
+    let viewCanvas = live ? document.getElementById('sourceCanvas') : null;
+    let rollCanvas = live ? document.getElementById('pitchCanvas') : null;
+    if (!live) {
+      holder = document.createElement('div');
+      holder.setAttribute('aria-hidden', 'true');
+      holder.style.cssText = 'position:fixed;left:-30000px;top:0;pointer-events:none;';
+      viewCanvas = document.createElement('canvas');
+      viewCanvas.style.cssText = `display:block;width:${Math.round(view.w * 0.6)}px;height:${Math.round(view.h * 0.6)}px`;
+      rollCanvas = document.createElement('canvas');
+      rollCanvas.style.cssText = `display:block;width:${Math.round(roll.w * 0.6)}px;height:${Math.round(roll.h * 0.6)}px`;
+      holder.append(viewCanvas, rollCanvas);
+      document.body.append(holder);
+    }
+
+    // the picture of a video source (off-screen: a second, hidden video we can seek frame by frame)
+    let video = null;
+    let frameImgs = null;
+    let lastVideoTime = -1;
+    let pictureOk = true;
+    const ready = (async () => {
+      if (!hasPicture || live) return;
+      if (src.frames?.length) {
+        frameImgs = src.frames.map((u) => {
+          const im = new Image();
+          im.crossOrigin = 'anonymous';
+          im.src = u;
+          return im;
+        });
+        await Promise.all(frameImgs.map((im) => im.decode().catch(() => {})));
+        return;
+      }
+      video = document.createElement('video');
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = 'auto';
+      if (!/^(blob:|data:)/.test(src.videoUrl) && new URL(src.videoUrl, location.href).origin !== location.origin) video.crossOrigin = 'anonymous';
+      video.src = src.videoUrl;
+      await new Promise((res) => {
+        video.onloadeddata = res;
+        video.onerror = () => {
+          pictureOk = false;
+          res();
+        };
+        setTimeout(res, 15000);
+      });
+    })();
+
+    /** Seek the hidden video for (fractional) step p; resolves when the frame is there. */
+    async function prepare(p) {
+      await ready;
+      if (!video || !pictureOk) return;
+      const i = Math.floor(p);
+      const f = p - i;
+      const a = videoTime(src, i, video.duration);
+      const b = i + 1 < plan.count ? videoTime(src, i + 1, video.duration) : a;
+      const t = Math.min(video.duration || a, a + (b - a) * f);
+      if (Math.abs(t - lastVideoTime) < 1 / 40) return;
+      lastVideoTime = t;
+      await new Promise((res) => {
+        const done = () => {
+          video.removeEventListener('seeked', done);
+          res();
+        };
+        video.addEventListener('seeked', done);
+        video.currentTime = t;
+        setTimeout(done, 2000);
+      });
+    }
+
+    function pictureFor(i) {
+      if (live) {
+        const pv = document.getElementById('framePreview');
+        const vv = document.getElementById('videoPreview');
+        if (pv && !pv.hidden) return pv;
+        // a video from another site without CORS would make the recording unreadable: leave it out
+        const own = (u) => /^(blob:|data:)/.test(u) || (u && new URL(u, location.href).origin === location.origin);
+        return vv && !vv.hidden && (own(vv.currentSrc) || vv.crossOrigin) ? vv : null;
+      }
+      if (frameImgs) return frameImgs[Math.max(0, Math.min(frameImgs.length - 1, i))];
+      return pictureOk ? video : null;
+    }
+
+    function text(s, x, y, px, color, { weight = 400, align = 'left', maxW = 1792 } = {}) {
+      g.font = font(px * k, weight);
+      g.fillStyle = color;
+      g.textAlign = align;
+      g.textBaseline = 'alphabetic';
+      g.fillText(fit(g, s, maxW * k), x * k, y * k);
+    }
+
+    function panel(r, draw) {
+      g.save();
+      rounded(g, r.x * k, r.y * k, r.w * k, r.h * k, 16 * k);
+      g.fillStyle = PANEL;
+      g.fill();
+      g.clip();
+      draw();
+      g.restore();
+    }
+
+    /** Draw the frame for step i (p: the same with a fraction, for smooth video pictures). */
+    function draw(i) {
+      if (!plan || !plan.count) return;
+      i = Math.max(0, Math.min(plan.count - 1, i | 0));
+      g.fillStyle = BG;
+      g.fillRect(0, 0, width, height);
+      // title
+      const lw = 190;
+      if (logo?.complete && logo.naturalWidth) {
+        try {
+          g.drawImage(logo, (1920 - 64 - lw) * k, 40 * k, lw * k, (lw * 41) / 168 * k);
+        } catch {
+          /* a logo that cannot be drawn is not worth stopping for */
+        }
+      }
+      text(src.name, 64, 74, 38, INK, { weight: 600, maxW: 1792 - lw - 40 });
+      const origin = [src.origin?.source, plan.labels[0] != null && plan.count > 1 ? `${plan.labels[0]} – ${plan.labels[plan.count - 1]}` : ''].filter(Boolean).join(' · ');
+      text(origin, 64, 110, 22, MUTED, { maxW: 1792 - lw - 40 });
+      // main view
+      if (pic)
+        panel(pic, () => {
+          g.fillStyle = '#000';
+          g.fillRect(pic.x * k, pic.y * k, pic.w * k, pic.h * k);
+          const im = pictureFor(i);
+          try {
+            if (im) cover(g, im, pic.x * k, pic.y * k, pic.w * k, pic.h * k);
+          } catch {
+            pictureOk = false;
+          }
+        });
+      if (!live) B.draw.source(viewCanvas, src, plan, i, { scan: app.state.image.scan, pointer: app.state.pointer }, () => {});
+      panel(view, () => cover(g, viewCanvas, view.x * k, view.y * k, view.w * k, view.h * k));
+      if (!live) B.draw.pitchRoll(rollCanvas, plan, i);
+      panel(roll, () => g.drawImage(rollCanvas, roll.x * k, roll.y * k, roll.w * k, roll.h * k));
+      // what is playing
+      const notes = (plan.steps[i] || []).filter((n) => n.active).map((n) => B.music.noteName(n.midi));
+      text(B.panels.stepSummary(app, i), 64, 994, 28, INK, { weight: 500, maxW: 1792 - 420 });
+      text(notes.length ? '♪ ' + notes.join('  ') : 'rest', 1856, 994, 28, AMBER, { weight: 600, align: 'right', maxW: 400 });
+      const s = plan.settings;
+      const inst = document.querySelector('#instrument option:checked')?.textContent || s.instrument || '';
+      text([`${s.tempo} BPM`, inst, B.music.SCALES[s.scale]?.name, `step ${i + 1} of ${plan.count}`, 'bit2beat.vercel.app'].filter(Boolean).join('  ·  '), 64, 1040, 20, MUTED);
+      // progress
+      g.fillStyle = 'rgba(246,241,231,0.12)';
+      g.fillRect(0, height - 6 * k, width, 6 * k);
+      g.fillStyle = AMBER;
+      g.fillRect(0, height - 6 * k, width * ((i + 1) / plan.count), 6 * k);
+    }
+
+    function dispose() {
+      holder?.remove();
+      if (video) {
+        video.removeAttribute('src');
+        video.load();
+      }
+    }
+
+    return { canvas, draw, prepare, ready, dispose, hasPicture, get pictureOk() {
+      return pictureOk;
+    }, name: slug(src.name) };
+  }
+
+  B.composer = { create, videoTime };
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>/* src/js/ui/video-export.js */
+/**
+ * Bit2Beat ui · the video export: the whole piece as an MP4 (1080p, 30 fps) with the sound on it,
+ * made with the settings you have now. Nothing has to play: frames are drawn off-screen and encoded
+ * with the browser's own encoders (WebCodecs), much faster than real time on most computers.
+ * The sound is the same render as Download audio (stereo, or binaural when that is your output).
+ * Browsers without WebCodecs fall back to Record, which captures in real time.
+ */
+(function (root) {
+  'use strict';
+  const B = root.Bit2Beat;
+
+  const FPS = 30;
+  const LEAD = 0.05; // the export starts the first note 50 ms in (audio/exporter.js)
+
+  const supported = () => typeof VideoEncoder === 'function' && typeof AudioEncoder === 'function' && typeof VideoFrame === 'function' && typeof AudioData === 'function';
+
+  async function pickVideo(width, height) {
+    for (const codec of ['avc1.640028', 'avc1.4d0028', 'avc1.42e028', 'avc1.42001f']) {
+      const cfg = { codec, width, height, bitrate: 6_000_000, framerate: FPS, avc: { format: 'avc' } };
+      try {
+        if ((await VideoEncoder.isConfigSupported(cfg)).supported) return cfg;
+      } catch {
+        /* try the next profile */
+      }
+    }
+    return null;
+  }
+  async function pickAudio(channels) {
+    for (const [kind, codec] of [['aac', 'mp4a.40.2'], ['opus', 'opus']]) {
+      const cfg = { codec, sampleRate: 48000, numberOfChannels: channels, bitrate: 192_000 };
+      try {
+        if ((await AudioEncoder.isConfigSupported(cfg)).supported) return { kind, cfg };
+      } catch {
+        /* next */
+      }
+    }
+    return null;
+  }
+
+  /** The step heard at time t (seconds), with the fraction of the way to the next one. */
+  function stepAt(plan, t) {
+    const T = plan.times;
+    let lo = 0;
+    let hi = plan.count - 1;
+    if (t < LEAD + T[0]) return 0;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (LEAD + T[mid] <= t) lo = mid;
+      else hi = mid - 1;
+    }
+    const next = lo + 1 < plan.count ? LEAD + T[lo + 1] : LEAD + T[lo] + plan.step;
+    return lo + Math.min(0.999, Math.max(0, (t - LEAD - T[lo]) / Math.max(1e-6, next - LEAD - T[lo])));
+  }
+
+  /**
+   * @param {object} app
+   * @param {{onProgress?:(f:number, text:string)=>void, signal?:AbortSignal, width?:number, height?:number}} o
+   * @returns {Promise<{blob:Blob, name:string, seconds:number, audio:string}>}
+   */
+  async function render(app, { onProgress = () => {}, signal, width = 1920, height = 1080 } = {}) {
+    if (!supported()) throw new Error('This browser cannot make video files. Use Record instead (it records while the piece plays).');
+    const plan = app.plan;
+    const vcfg = await pickVideo(width, height);
+    if (!vcfg) throw new Error('This browser has no H.264 video encoder. Use Record instead.');
+    const output = app.state.prefs.mono ? 'stereo' : app.state.audio.output === 'binaural' ? 'binaural' : 'stereo';
+
+    // 1 · the sound (the same render as Download audio)
+    onProgress(0, 'Rendering the sound…');
+    const snd = await B.exporter.render(plan, output, { ...app.state.audio, mono: app.state.prefs.mono }, { raw: true });
+    if (signal?.aborted) throw new DOMException('Stopped', 'AbortError');
+    const chans = snd.channels;
+    const acfg = await pickAudio(chans.length);
+    if (!acfg) throw new Error('This browser has no audio encoder for video. Use Record instead.');
+
+    const vChunks = [];
+    const aChunks = [];
+    let vDesc = null;
+    let aDesc = null;
+    let failure = null;
+    const venc = new VideoEncoder({
+      output: (chunk, meta) => {
+        if (meta?.decoderConfig?.description) vDesc = new Uint8Array(meta.decoderConfig.description);
+        const d = new Uint8Array(chunk.byteLength);
+        chunk.copyTo(d);
+        vChunks.push({ d, ts: chunk.timestamp, dur: chunk.duration || 1e6 / FPS, key: chunk.type === 'key' });
+      },
+      error: (e) => (failure = e),
+    });
+    venc.configure(vcfg);
+    const aenc = new AudioEncoder({
+      output: (chunk, meta) => {
+        if (meta?.decoderConfig?.description) aDesc = new Uint8Array(meta.decoderConfig.description);
+        const d = new Uint8Array(chunk.byteLength);
+        chunk.copyTo(d);
+        aChunks.push({ d, ts: chunk.timestamp, dur: chunk.duration });
+      },
+      error: (e) => (failure = e),
+    });
+    aenc.configure(acfg.cfg);
+
+    // 2 · encode the sound in 0.1 s blocks
+    const RATE = snd.rate;
+    const total = chans[0].length;
+    for (let at = 0; at < total; at += 4800) {
+      const n = Math.min(4800, total - at);
+      const data = new Float32Array(n * chans.length);
+      chans.forEach((c, k) => data.set(c.subarray(at, at + n), k * n));
+      const ad = new AudioData({ format: 'f32-planar', sampleRate: RATE, numberOfFrames: n, numberOfChannels: chans.length, timestamp: Math.round((at / RATE) * 1e6), data });
+      aenc.encode(ad);
+      ad.close();
+    }
+    await aenc.flush();
+    aenc.close();
+
+    // 3 · draw and encode every frame
+    const comp = B.composer.create(app, { width, height });
+    await comp.ready;
+    const seconds = total / RATE;
+    const frames = Math.ceil(seconds * FPS);
+    const t0 = performance.now();
+    try {
+      for (let f = 0; f < frames; f++) {
+        if (signal?.aborted) throw new DOMException('Stopped', 'AbortError');
+        if (failure) throw failure;
+        const p = stepAt(plan, f / FPS);
+        if (comp.hasPicture) await comp.prepare(p);
+        comp.draw(Math.floor(p));
+        const vf = new VideoFrame(comp.canvas, { timestamp: Math.round((f / FPS) * 1e6), duration: Math.round(1e6 / FPS) });
+        venc.encode(vf, { keyFrame: f % (FPS * 2) === 0 });
+        vf.close();
+        while (venc.encodeQueueSize > 6) await new Promise((r) => setTimeout(r, 4));
+        if (f % 15 === 0) {
+          const el = (performance.now() - t0) / 1000;
+          const left = f > 30 ? Math.round((el / f) * (frames - f)) : null;
+          onProgress(f / frames, `Making the video: ${Math.round((f / frames) * 100)}%${left != null ? ` · about ${B.music.seconds(left)} left` : ''}`);
+          await new Promise((r) => setTimeout(r, 0)); // let the page breathe
+        }
+      }
+      await venc.flush();
+    } finally {
+      venc.state !== 'closed' && venc.close();
+      comp.dispose();
+      app.drawAll(); // the studio's own view again (some sources keep the frame they last drew)
+    }
+    if (failure) throw failure;
+
+    // 4 · put it in an MP4
+    onProgress(1, 'Saving…');
+    const mux = B.mp4.createMuxer({
+      video: { width, height, description: vDesc },
+      audio: { codec: acfg.kind, sampleRate: RATE, channels: chans.length, description: acfg.kind === 'aac' ? aDesc : null, bitrate: 192000 },
+    });
+    vChunks.forEach((c) => mux.add('video', c.d, c.ts, c.dur, c.key));
+    aChunks.forEach((c) => mux.add('audio', c.d, c.ts, c.dur));
+    const out = mux.finish();
+    const name = `${B.dom.slug(app.src.name)}-video.mp4`;
+    return { blob: new Blob(out.parts, { type: 'video/mp4' }), name, seconds, audio: output, codec: acfg.kind };
+  }
+
+  B.videoExport = { render, supported, stepAt, FPS };
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>/* src/js/ui/export-view.js */
+/**
+ * Bit2Beat ui · the Export dialog. Everything is made with the settings you have now (instrument,
+ * tempo, mood, channels, sound output): nothing to choose before downloading.
+ *   Download video  – the whole piece as MP4 with the sound (ui/video-export.js)
+ *   Download audio  – WAV in your sound output (stereo, binaural; surround and ADM for scientific maps)
+ *   Everything      – one ZIP: video, audio, the whole score (PNG, ABC, braille), notes, readings, settings
+ * Other formats and single files are under "Other formats and files".
+ */
+(function (root) {
+  'use strict';
+  const B = root.Bit2Beat;
+  const { $, download, slug, toast } = B.dom;
+  const { music } = B;
+  const SURROUND = ['5.1', '7.1', '7.1.4', 'adm'];
+
+  function init(app) {
+    const F = B.exporter.FORMATS;
+    let busy = null; // AbortController while working
+
+    const allowed = (fmt) => !!F[fmt] && (!SURROUND.includes(fmt) || !!app.src?.science);
+    /** The audio format your current settings ask for. */
+    function audioFormat() {
+      const out = app.state.prefs.mono ? 'stereo' : app.state.audio.output;
+      if (allowed(out)) return out;
+      return out === 'stereo' ? 'stereo' : 'binaural'; // surround outside scientific maps: keep the 3D sound for headphones
+    }
+    const fileName = (fmt) => `${slug(app.src.name)}-${fmt === 'adm' ? 'adm-bwf' : fmt.replace(/\./g, '')}.wav`;
+
+    function fill() {
+      const p = app.plan;
+      const opt = (id) => document.querySelector(`#${id} option:checked`)?.textContent || '';
+      $('exportSummary').textContent = `${app.src.name} · ${p.count} steps · ${music.seconds(p.duration)} · ${p.channels.filter((c) => c.active).length} channel(s) on`;
+      const fmt = audioFormat();
+      const want = app.state.audio.output;
+      $('exportUses').textContent = `With your settings now: ${[opt('instrument'), `${p.settings.tempo} BPM`, B.music.SCALES[p.settings.scale]?.name, opt('output') || want].filter(Boolean).join(' · ')}.`;
+      $('exportAudioWhat').textContent = F[fmt].label + (fmt !== want && !app.state.prefs.mono ? ` (${want} is for scientific maps)` : '');
+      $('exportVideoWhat').textContent = B.videoExport.supported() ? `MP4 · 1080p · ${fmt === 'binaural' ? 'binaural' : 'stereo'} sound` : 'Plays the piece once and records it (this browser has no fast video encoder)';
+      // other formats: only the ones this source can make
+      const sel = $('exportFormat');
+      sel.replaceChildren(...Object.entries(F).filter(([k]) => allowed(k)).map(([k, v]) => new Option(v.label, k)));
+      sel.value = fmt;
+      describe();
+    }
+    function describe() {
+      const v = $('exportFormat').value;
+      $('exportHint').textContent = F[v].detail + (v === 'adm' ? '. For Dolby Atmos tools such as the Dolby Atmos Renderer, Pro Tools, Logic Pro, Nuendo or DaVinci Resolve. Bit2Beat is not affiliated with Dolby.' : '.') + (app.src?.science ? '' : ' Surround and ADM masters are made for scientific maps.');
+    }
+
+    const status = (t) => ($('exportStatus').textContent = t);
+    function working(on, label = '') {
+      ['exportVideo', 'exportAudio', 'exportAll', 'exportAudioAs'].forEach((id) => ($(id).disabled = on));
+      $('exportProgress').hidden = !on;
+      $('exportBar').value = 0;
+      app.setExporting(on);
+      if (on) status(label);
+    }
+    const progress = (f, t) => {
+      $('exportBar').value = f;
+      status(t);
+    };
+
+    async function audioFile(fmt) {
+      const res = await B.exporter.render(app.plan, fmt, { ...app.state.audio, mono: app.state.prefs.mono });
+      return { name: fileName(fmt), blob: new Blob([res.bytes], { type: 'audio/wav' }), res };
+    }
+
+    async function run(label, job) {
+      if (busy) return;
+      busy = new AbortController();
+      working(true, label);
+      await new Promise((r) => setTimeout(r, 30));
+      try {
+        await job(busy.signal);
+      } catch (e) {
+        status(e.name === 'AbortError' ? 'Stopped.' : e.message || String(e));
+      } finally {
+        busy = null;
+        working(false);
+      }
+    }
+
+    // ------------------------------------------------------------ the three main buttons
+    $('exportVideo').onclick = () => {
+      if (!B.videoExport.supported()) {
+        // real time: play from the start and record; Record saves the ZIP when the piece ends
+        $('exportDialog').close();
+        app.seek(0);
+        $('recBtn').click();
+        return;
+      }
+      run('Getting ready…', async (signal) => {
+        const v = await B.videoExport.render(app, { signal, onProgress: progress });
+        download(v.blob, v.name);
+        status(`Saved ${v.name} (${music.seconds(v.seconds)}, 1080p, ${v.audio} sound).`);
+      });
+    };
+    $('exportAudio').onclick = () =>
+      run('Rendering the sound…', async () => {
+        const a = await audioFile(audioFormat());
+        download(a.blob, a.name);
+        status(`Saved ${a.name} (${music.seconds(a.res.seconds)}${a.res.objects ? `, ${a.res.objects} objects` : ''}).`);
+      });
+    $('exportAll').onclick = () =>
+      run('Getting ready…', async (signal) => {
+        const extra = [];
+        let note = '';
+        if (B.videoExport.supported()) {
+          try {
+            const v = await B.videoExport.render(app, { signal, onProgress: (f, t) => progress(f * 0.85, t) });
+            extra.push({ name: v.name, blob: v.blob });
+          } catch (e) {
+            if (e.name === 'AbortError') throw e;
+            note = ` No video: ${e.message}`;
+          }
+        } else note = ' No video: this browser records video only in real time (use Record).';
+        progress(0.9, 'Rendering the sound…');
+        const a = await audioFile(audioFormat());
+        extra.push({ name: a.name, blob: a.blob });
+        progress(0.95, 'Writing the score, braille, notes and settings…');
+        const zip = await B.bundle.build(app, extra);
+        download(zip, `${slug(app.src.name)}-bit2beat.zip`);
+        status(`Saved ${slug(app.src.name)}-bit2beat.zip: ${extra.map((x) => x.name).join(', ')}, the whole score (PNG, ABC, braille), notes, readings and settings.${note}`);
+      });
+    $('exportCancel').onclick = () => busy?.abort();
+
+    // ------------------------------------------------------------ other formats and files
+    $('exportFormat').onchange = describe;
+    $('exportAudioAs').onclick = () =>
+      run('Rendering…', async () => {
+        const a = await audioFile($('exportFormat').value);
+        download(a.blob, a.name);
+        status(`Saved ${a.name} (${music.seconds(a.res.seconds)}${a.res.objects ? `, ${a.res.objects} objects` : ''}).`);
+      });
+    $('exportCsv').onclick = () => {
+      download(new Blob(['﻿' + B.dialogs.planCsv(app.plan)], { type: 'text/csv;charset=utf-8' }), slug(app.src.name) + '-notes.csv');
+      status('Notes saved as CSV (every step, value, note, frequency and 3D position).');
+    };
+    $('exportAbc').onclick = () => {
+      B.scoreView.downloadAbc(app.plan);
+      status('Score saved as ABC notation (opens in MuseScore with an ABC import plugin, or abcjs.net).');
+    };
+    $('exportPng').onclick = async () => {
+      status('Engraving the whole score…');
+      await B.scoreView.downloadPng(app.plan);
+      status('The whole score saved as a picture.');
+    };
+    $('exportBraille').onclick = () => status(B.dialogs.braille(app));
+
+    $('exportBtn').onclick = () => {
+      if (!app.plan) return;
+      if (!busy) status('');
+      fill();
+      $('exportDialog').showModal();
+    };
+    $('exportDialog').addEventListener('close', () => busy && toast('The export keeps going; open Export to see how far it is.'));
+  }
+
+  B.exportView = { init };
 })(typeof self !== 'undefined' ? self : this);
 
 </script>
@@ -15292,8 +16199,11 @@ ${m.mouth}
 </script>
 <script>/* src/js/ui/recorder.js */
 /**
- * Bit2Beat ui · live recording of what you hear (MediaRecorder, the browser's own codec).
- * For exact, uncompressed files use Export instead.
+ * Bit2Beat ui · Record: captures what you see and hear while it plays, then saves one ZIP with
+ * the video of the take (picture, cursor, melody and sound), the sound alone, the whole score
+ * (PNG pages, ABC, braille), the notes, the readings and the settings with a link back.
+ * Recording uses the browser's own codecs in real time (MediaRecorder). For the whole piece
+ * without playing it, Export → Download video is faster and exact.
  */
 (function (root) {
   'use strict';
@@ -15301,48 +16211,91 @@ ${m.mouth}
   const { $, toast } = B.dom;
   const { music } = B;
 
+  const pick = (list) => list.find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || '';
+  const extOf = (type, audio) => (type.includes('mp4') ? (audio ? 'm4a' : 'mp4') : type.includes('ogg') ? 'ogg' : 'webm');
+
   function init(app) {
     const player = app.player;
-      let recorder = null;
-    let recChunks = [];
-    let recTimer = 0;
-    async function toggleRecording() {
-      if (recorder) return stopRecording();
-      try {
-        await player.init();
-        const stream = player.recordStream;
-        if (!window.MediaRecorder || !stream) throw new Error('Recording is not supported here. Use Export for a WAV file.');
-        recChunks = [];
-        recorder = new MediaRecorder(stream);
-        recorder.ondataavailable = (e) => e.data.size && recChunks.push(e.data);
-        const r = recorder;
-        recorder.onstop = () => {
-          const type = r.mimeType || 'audio/webm';
-          const ext = type.includes('mp4') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
-          B.dom.download(new Blob(recChunks, { type }), `${B.dom.slug(app.src?.name || 'take')}-take.${ext}`);
-          toast('Recording saved.');
-        };
-        recorder.start();
-        const t0 = Date.now();
-        $('recBtn').setAttribute('aria-pressed', 'true');
-        recTimer = setInterval(() => ($('recLabel').textContent = 'Stop ' + music.seconds((Date.now() - t0) / 1000)), 500);
-        $('recLabel').textContent = 'Stop 0:00';
-        if (!player.playing) await app.play();
-      } catch (e) {
-        toast(e.message);
-        stopRecording();
+    let take = null; // { vrec, arec, chunks, comp, raf, timer, t0 }
+
+    async function start() {
+      await player.init();
+      const audio = player.recordStream;
+      if (!window.MediaRecorder || !audio) throw new Error('Recording is not supported in this browser. Use Export instead.');
+      const comp = B.composer.create(app, { width: 1280, height: 720, live: true });
+      const canvasStream = comp.canvas.captureStream?.(30);
+      const vtype = pick(['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']);
+      const atype = pick(['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg']);
+      const t = { chunks: { v: [], a: [] }, comp, t0: Date.now(), from: app.state.position };
+      if (canvasStream) {
+        const both = new MediaStream([...canvasStream.getVideoTracks(), ...audio.getAudioTracks()]);
+        t.vrec = new MediaRecorder(both, { ...(vtype && { mimeType: vtype }), videoBitsPerSecond: 5_000_000, audioBitsPerSecond: 192_000 });
+        t.vrec.ondataavailable = (e) => e.data.size && t.chunks.v.push(e.data);
       }
-    }
-    function stopRecording() {
-      clearInterval(recTimer);
-      if (recorder && recorder.state === 'recording') recorder.stop();
-      recorder = null;
-      $('recBtn').setAttribute('aria-pressed', 'false');
-      $('recLabel').textContent = 'Record';
+      t.arec = new MediaRecorder(audio, { ...(atype && { mimeType: atype }), audioBitsPerSecond: 192_000 });
+      t.arec.ondataavailable = (e) => e.data.size && t.chunks.a.push(e.data);
+      const paint = () => {
+        comp.draw(app.state.position);
+        t.raf = requestAnimationFrame(paint);
+      };
+      paint();
+      t.vrec?.start(1000);
+      t.arec.start(1000);
+      take = t;
+      $('recBtn').setAttribute('aria-pressed', 'true');
+      $('recLabel').textContent = 'Stop 0:00';
+      t.timer = setInterval(() => ($('recLabel').textContent = 'Stop ' + music.seconds((Date.now() - t.t0) / 1000)), 500);
+      if (!player.playing) await app.play();
     }
 
-    $('recBtn').onclick = toggleRecording;
-    return { stop: () => recorder && stopRecording() };
+    const stopped = (rec) => (rec && rec.state !== 'inactive' ? new Promise((r) => ((rec.onstop = r), rec.stop())) : Promise.resolve());
+
+    async function stop() {
+      const t = take;
+      if (!t) return;
+      take = null;
+      clearInterval(t.timer);
+      $('recBtn').setAttribute('aria-pressed', 'false');
+      $('recLabel').textContent = 'Saving…';
+      $('recBtn').disabled = true;
+      try {
+        await Promise.all([stopped(t.vrec), stopped(t.arec)]);
+        cancelAnimationFrame(t.raf);
+        t.comp.dispose();
+        const base = B.dom.slug(app.src?.name || 'take');
+        const extra = [];
+        if (t.chunks.v.length) {
+          const type = t.vrec.mimeType || 'video/webm';
+          extra.push({ name: `${base}-take.${extOf(type)}`, blob: new Blob(t.chunks.v, { type }) });
+        }
+        if (t.chunks.a.length) {
+          const type = t.arec.mimeType || 'audio/webm';
+          extra.push({ name: `${base}-take-sound.${extOf(type, true)}`, blob: new Blob(t.chunks.a, { type }) });
+        }
+        if (!extra.length) throw new Error('Nothing was recorded.');
+        const zip = await B.bundle.build(app, extra);
+        B.dom.download(zip, `${base}-recording.zip`);
+        toast(`Recording saved (${music.seconds((Date.now() - t.t0) / 1000)}): a ZIP with the video, the sound, the score, braille, notes and settings.`, 6000);
+      } catch (e) {
+        toast(e.message || 'The recording could not be saved.');
+      } finally {
+        $('recBtn').disabled = false;
+        $('recLabel').textContent = 'Record';
+      }
+    }
+
+    $('recBtn').onclick = async () => {
+      if (take) return stop();
+      try {
+        await start();
+      } catch (e) {
+        toast(e.message);
+        stop();
+      }
+    };
+    return { stop: () => take && stop(), get recording() {
+      return !!take;
+    } };
   }
 
   B.recorder = { init };
@@ -17599,7 +18552,7 @@ ${m.mouth}
           action: { type: 'mode', value: 'earth', show: 'Take me there' },
           done: 'See the map? Each dot is a real event: wildfires, storms, floods, ice and earthquakes (electric piano), played from west to east.',
         },
-        { id: 'export', mood: 'happy', target: '#exportBtn', title: 'Take it home', text: 'Export makes WAV files (stereo, binaural or surround), the notes as CSV, the score, and the score in braille (a BRF file for a braille embosser or display). The address bar remembers everything, so a refresh or a shared link opens this exact view.' },
+        { id: 'export', mood: 'happy', target: '#exportBtn', title: 'Take it home', text: 'Export uses your settings as they are: a video of the whole piece with the sound, the audio as WAV, or everything in one ZIP (the score, braille, notes and settings too). Record saves a ZIP of what you play. The address bar remembers everything, so a refresh or a shared link opens this exact view.' },
         { id: 'voice', mood: 'excited', target: '#voiceBtn', title: 'Talk to me', text: 'Voice (or V) lets you use Bit2Beat without a screen: say play, pause, next, explain, search for sea ice, result 2, violin or help. Speak in any language; I answer out loud.' },
         { id: 'access', mood: 'happy', target: '#accessBtn', title: 'Make it comfortable', text: 'Accessibility has bigger text, high contrast, calmer motion and the dark theme. Every control works with the keyboard and a screen reader.' },
         { id: 'guide', mood: 'happy', target: '#guideBtn', title: 'I’m always here', text: 'Press Guide (or G) whenever you want me to explain a tab. My card under the score also gives a tip when you open a tab for the first time.' },
@@ -20010,6 +20963,7 @@ ${m.mouth}
   B.panels.init(app);
   B.mixer.init(app);
   B.dialogs.init(app);
+  B.exportView.init(app);
 
   // start
   if (state.prefs.dark == null) state.prefs.dark = matchMedia('(prefers-color-scheme: dark)').matches;

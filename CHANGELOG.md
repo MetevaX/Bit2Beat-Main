@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.9.0 — 15 November 2026
+- **Download a video.** *Export → Download video* saves the whole piece as an MP4 (1080p, 30 fps) with the sound on it: the picture, map or chart with its moving cursor (a NASA video plays along at the speed of the music), the melody, what is playing and the settings. Nothing has to play: frames are drawn off-screen and encoded by the browser (WebCodecs, H.264 with AAC or Opus), usually faster than real time, with a progress bar and *Stop*. The sound is the same render as the audio download, binaural when that is your output.
+- **Export uses your settings.** No format to choose first: *Download video*, *Download audio* (in your sound output) and *Everything (ZIP)* use the instrument, tempo, mood, channels and sound you have now, and say so. Other formats and single files are under *Other formats and files*, which lists only what the source can make (no more greyed-out choices).
+- **Everything in one ZIP.** *Everything* saves the video, the audio, the whole score (PNG, ABC and braille), the notes (CSV), the readings (Excel) and `settings.txt` with a link that reopens this exact view.
+- **Record saves a ZIP.** Record now captures what you see as well as what you hear. Stop it (or let the piece end) and you get one ZIP with the video of the take, its sound, the whole score, braille, notes, readings and settings.
+- **The score PNG is the whole piece.** It used to save one or two pages (64 steps). A very long piece is saved as PNG pages in a ZIP.
+- **Full score: every staff can be reached.** With many channels on, or on a short window, the last staves were cut off with no scroll bar. The window now always fits the screen and the score scrolls inside it.
+- How to use, Help and Bitty's guide explain the new Export and Record.
+
 ## 3.8.0 — 14 November 2026
 - **Every challenge video is in the Video menu**, bundled and offline: *Night lights 2012–2023* (SVS 5313; NASA only has it as an H.265 video, so the bundled clip is H.264 and plays everywhere), *GEOS aerosols moving, 1 Aug – 14 Sep 2024* (SVS 5572, the moving version of the 5669 picture), *GEDI forest height* (4950) and *DYAMOND global carbon dioxide* (5196). GEDI and CO₂ still tell their two chapters of Bitty's story. The new videos are in the Data tab too.
 - **Smoother sound in the story (and everywhere).** Notes are now queued a quarter of a second ahead (was 0.12 s), so loading a chapter, a video seeking or speech starting can no longer make them late, and the audio uses the browser's *playback* buffer size, which stops crackles and drop-outs on slower computers. The playhead allows for the extra delay, so what you see still matches what you hear.

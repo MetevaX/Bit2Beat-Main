@@ -208,8 +208,13 @@ Press **Play**: the muted video follows the music. Click the picture to play or 
 
 - **The address bar remembers everything.** Page (Studio or Story), tab, source, sound settings, channel mix, image options and play position are kept in the link. Refresh and you are back where you were; send the link and others open the same view. (An uploaded file cannot travel in a link.)
 - **Sessions** saves named setups in this browser.
-- **Record** captures what you hear live (browser codec).
-- **Export** renders exact files from the same notes: stereo WAV or binaural WAV (with the drums when they are on), the notes as CSV, and the score as ABC or PNG. **Readings** downloads every value as an Excel workbook or CSV. Audio is normalised to −1 dBFS.
+- **Record** captures what you see and hear while it plays. Press it again (or let the piece end) and you get one ZIP: the video of the take (picture, cursor, melody and sound), its sound alone, the whole score (PNG, ABC and braille), the notes, the readings and a settings file with a link that reopens this view.
+- **Export** uses your settings as they are, so there is nothing to choose first:
+  - **Download video**: the whole piece as an MP4 (1080p, 30 fps) with the sound on it: the picture, map or chart with its moving cursor (a video source plays along), the melody, what is playing and the settings. It is drawn and encoded in the browser without playing, usually faster than real time; a progress bar shows how long is left and *Stop* cancels. The sound is binaural when that is your output, otherwise stereo. Browsers without a video encoder (WebCodecs) record it in real time instead.
+  - **Download audio**: a WAV in your sound output (stereo or binaural; 5.1, 7.1, 7.1.4 and ADM for scientific maps), with the drums when they are on.
+  - **Everything (ZIP)**: the video, the audio, the whole score (PNG, ABC and braille), the notes, the readings and the settings in one file.
+  - **Other formats and files**: any other audio format this source can make, the notes as CSV, the score as ABC, the whole score as PNG (a ZIP of PNG pages for very long pieces) and the score in braille.
+- **Readings** downloads every value as an Excel workbook or CSV. Audio is normalised to −1 dBFS.
 
 ## Keyboard shortcuts
 

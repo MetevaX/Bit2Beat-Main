@@ -607,6 +607,7 @@
   B.panels.init(app);
   B.mixer.init(app);
   B.dialogs.init(app);
+  B.exportView.init(app);
 
   // start
   if (state.prefs.dark == null) state.prefs.dark = matchMedia('(prefers-color-scheme: dark)').matches;

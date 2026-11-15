@@ -81,6 +81,27 @@ tbody tr:focus {
   padding: 8px;
   max-height: 64vh;
   overflow: auto;
+  scrollbar-gutter: stable;
+}
+/* Full score: the dialog fits the window and the paper takes the rest, scrolling, so every staff
+   can be reached however many channels are on and however small the window is. */
+#scoreDialog[open] {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+}
+#scoreDialog .score-paper {
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: none;
+  overscroll-behavior: contain;
+}
+#scoreDialog > * {
+  flex-shrink: 0;
+}
+#scoreDialog > .score-paper {
+  flex-shrink: 1;
 }
 .access-list {
   display: grid;
@@ -133,4 +154,57 @@ tbody tr:focus {
 .session-list .empty {
   color: var(--muted);
   justify-content: center;
+}
+
+/* Export: three big buttons that use your settings as they are */
+.export-uses {
+  color: var(--muted);
+}
+.export-main {
+  display: grid;
+  gap: 10px;
+}
+.export-big {
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  justify-content: flex-start;
+  text-align: left;
+  min-height: 56px;
+  padding: 10px 14px;
+  gap: 12px;
+}
+.export-big span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.export-main {
+  min-width: 0;
+}
+.export-big small {
+  font-weight: 400;
+  opacity: 0.85;
+  font-size: 0.82rem;
+}
+.export-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.export-progress[hidden] {
+  display: none;
+}
+.export-progress progress {
+  flex: 1;
+  height: 10px;
+  accent-color: var(--amber);
+}
+.export-more summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 4px 0;
+}
+.export-more > * + * {
+  margin-top: 10px;
 }
