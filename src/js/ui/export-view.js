@@ -51,16 +51,25 @@
       ['exportVideo', 'exportAudio', 'exportAll', 'exportAudioAs'].forEach((id) => ($(id).disabled = on));
       $('exportProgress').hidden = !on;
       $('exportBar').value = 0;
+      $('exportLabel').textContent = on ? 'Export 0%' : 'Export';
       app.setExporting(on);
       if (on) status(label);
     }
+    // the bar in the dialog, and the Export button in the player (so it shows with the dialog closed)
+    let shownPct = -1;
     const progress = (f, t) => {
       $('exportBar').value = f;
       status(t);
+      const pct = Math.floor(f * 100);
+      if (pct !== shownPct) {
+        shownPct = pct;
+        $('exportLabel').textContent = `Export ${pct}%`;
+        $('exportBtn').title = t;
+      }
     };
 
-    async function audioFile(fmt) {
-      const res = await B.exporter.render(app.plan, fmt, { ...app.state.audio, mono: app.state.prefs.mono });
+    async function audioFile(fmt, onProgress = () => {}) {
+      const res = await B.exporter.render(app.plan, fmt, { ...app.state.audio, mono: app.state.prefs.mono }, { onProgress });
       return { name: fileName(fmt), blob: new Blob([res.bytes], { type: 'audio/wav' }), res };
     }
 
@@ -71,10 +80,14 @@
       await new Promise((r) => setTimeout(r, 30));
       try {
         await job(busy.signal);
+        if (!$('exportDialog').open) toast($('exportStatus').textContent, 6000);
       } catch (e) {
         status(e.name === 'AbortError' ? 'Stopped.' : e.message || String(e));
+        if (!$('exportDialog').open) toast($('exportStatus').textContent, 8000);
       } finally {
         busy = null;
+        shownPct = -1;
+        $('exportBtn').title = '';
         working(false);
       }
     }
@@ -96,7 +109,7 @@
     };
     $('exportAudio').onclick = () =>
       run('Rendering the sound…', async () => {
-        const a = await audioFile(audioFormat());
+        const a = await audioFile(audioFormat(), (f) => progress(f, `Rendering the sound: ${Math.round(f * 100)}%`));
         download(a.blob, a.name);
         status(`Saved ${a.name} (${music.seconds(a.res.seconds)}${a.res.objects ? `, ${a.res.objects} objects` : ''}).`);
       });
@@ -113,8 +126,8 @@
             note = ` No video: ${e.message}`;
           }
         } else note = ' No video: this browser records video only in real time (use Record).';
-        progress(0.9, 'Rendering the sound…');
-        const a = await audioFile(audioFormat());
+        progress(0.85, 'Rendering the sound…');
+        const a = await audioFile(audioFormat(), (f) => progress(0.85 + f * 0.1, `Rendering the sound: ${Math.round(f * 100)}%`));
         extra.push({ name: a.name, blob: a.blob });
         progress(0.95, 'Writing the score, braille, notes and settings…');
         const zip = await B.bundle.build(app, extra);
@@ -127,7 +140,7 @@
     $('exportFormat').onchange = describe;
     $('exportAudioAs').onclick = () =>
       run('Rendering…', async () => {
-        const a = await audioFile($('exportFormat').value);
+        const a = await audioFile($('exportFormat').value, (f) => progress(f, `Rendering: ${Math.round(f * 100)}%`));
         download(a.blob, a.name);
         status(`Saved ${a.name} (${music.seconds(a.res.seconds)}${a.res.objects ? `, ${a.res.objects} objects` : ''}).`);
       });
@@ -152,7 +165,7 @@
       fill();
       $('exportDialog').showModal();
     };
-    $('exportDialog').addEventListener('close', () => busy && toast('The export keeps going; open Export to see how far it is.'));
+    $('exportDialog').addEventListener('close', () => busy && toast('The export keeps going: the Export button shows how far it is.'));
   }
 
   B.exportView = { init };

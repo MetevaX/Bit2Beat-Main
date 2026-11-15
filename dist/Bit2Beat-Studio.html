@@ -4676,7 +4676,7 @@ THE SOFTWARE.
     <input type="range" id="volume" min="0" max="100" value="70" aria-label="Volume" class="volume">
     <button type="button" class="btn btn-ghost" id="recBtn" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-rec"/></svg><span id="recLabel">Record</span></button>
     <button type="button" class="btn btn-ghost" id="tableBtn"><svg class="i" aria-hidden="true"><use href="#i-table"/></svg>Readings</button>
-    <button type="button" class="btn btn-primary" id="exportBtn"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Export</button>
+    <button type="button" class="btn btn-primary" id="exportBtn"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span id="exportLabel">Export</span></button>
   </div>
 </footer>
 
@@ -12611,7 +12611,7 @@ THE SOFTWARE.
    * @param {object} plan   from plan.build
    * @param {string} format key of FORMATS
    * @param {{volume:number, eq:object, room:number, mono:boolean}} mix
-   * @param {{raw?:boolean}} [opts]  raw: return the normalised channels (for the video export) instead of a file
+   * @param {{raw?:boolean, onProgress?:(f:number)=>void}} [opts]  raw: return the normalised channels (for the video export) instead of a file
    * @returns {Promise<{bytes?:ArrayBuffer, channels?:Float32Array[], seconds:number, objects?:number}>}
    */
   async function render(plan, format, mix, opts = {}) {
@@ -12646,7 +12646,29 @@ THE SOFTWARE.
       eq.output.connect(ctx.destination); // float render: no clipping before normalisation
     }
     const r = engine.createRenderer(ctx, out, cfg);
-    for (let i = 0; i < plan.count; i++) engine.scheduleStep(ctx, r, plan, i, 0.05 + plan.times[i]);
+    // Notes are added a few seconds at a time while the render runs (suspend → add → resume).
+    // Creating every note up front left thousands of idle nodes in the graph, processed for the whole
+    // piece: a six-minute piece took many minutes. This way the graph only holds what is sounding.
+    const WIN = 4;
+    let next = 0;
+    const scheduleUntil = (until) => {
+      while (next < plan.count && 0.05 + plan.times[next] < until) {
+        engine.scheduleStep(ctx, r, plan, next, 0.05 + plan.times[next]);
+        next++;
+      }
+    };
+    scheduleUntil(WIN);
+    const canSuspend = typeof ctx.suspend === 'function';
+    if (canSuspend) {
+      for (let k = 1; k * WIN < total; k++) {
+        const at = k * WIN;
+        ctx.suspend(at).then(() => {
+          scheduleUntil(at + WIN);
+          opts.onProgress?.(at / total);
+          ctx.resume();
+        });
+      }
+    } else scheduleUntil(Infinity);
     if (plan.drone) {
       const bus = r.bus('drone');
       bus.setPosition({ x: 0, y: 1, z: 0 }, 0);
@@ -15718,6 +15740,70 @@ ${m.mouth}
     return lo + Math.min(0.999, Math.max(0, (t - LEAD - T[lo]) / Math.max(1e-6, next - LEAD - T[lo])));
   }
 
+  // Yield to the page without timers: background tabs slow timers to once a second (or a minute),
+  // which made a long export look frozen when you switched tabs. Message events are not throttled.
+  const channel = typeof MessageChannel === 'function' ? new MessageChannel() : null;
+  const waiting = [];
+  if (channel) channel.port1.onmessage = () => waiting.shift()?.();
+  const breathe = () => new Promise((r) => (channel ? (waiting.push(r), channel.port2.postMessage(0)) : setTimeout(r, 0)));
+  const stopped = () => new DOMException('Stopped', 'AbortError');
+  /** A promise that gives up after ms (an encoder that stops answering must not hang the export). */
+  const within = (p, ms, what) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error(`${what} stopped responding. Please try again, or use Record.`)), ms))]);
+
+  /** Encode every frame with one encoder configuration; resolves with the chunks, or throws on a stall. */
+  async function encodeVideo(plan, comp, vcfg, frames, { signal, onFrame }) {
+    const chunks = [];
+    let desc = null;
+    let failure = null;
+    let lastOut = performance.now();
+    const enc = new VideoEncoder({
+      output: (chunk, meta) => {
+        lastOut = performance.now();
+        if (meta?.decoderConfig?.description) desc = new Uint8Array(meta.decoderConfig.description);
+        const d = new Uint8Array(chunk.byteLength);
+        chunk.copyTo(d);
+        chunks.push({ d, ts: chunk.timestamp, dur: chunk.duration || 1e6 / FPS, key: chunk.type === 'key' });
+      },
+      error: (e) => (failure = e),
+    });
+    enc.configure(vcfg);
+    let drawn = -1;
+    try {
+      for (let f = 0; f < frames; f++) {
+        if (signal?.aborted) throw stopped();
+        if (failure) throw failure;
+        const p = stepAt(plan, f / FPS);
+        const i = Math.floor(p);
+        if (comp.hasPicture) {
+          await comp.prepare(p);
+          comp.draw(i);
+        } else if (i !== drawn) comp.draw(i); // nothing moves between steps: draw once per step
+        drawn = i;
+        const vf = new VideoFrame(comp.canvas, { timestamp: Math.round((f / FPS) * 1e6), duration: Math.round(1e6 / FPS) });
+        enc.encode(vf, { keyFrame: f % (FPS * 2) === 0 });
+        vf.close();
+        while (enc.encodeQueueSize > 8) {
+          if (failure) throw failure;
+          if (signal?.aborted) throw stopped();
+          if (performance.now() - lastOut > 12000) throw Object.assign(new Error('The video encoder stopped responding.'), { stall: true });
+          await new Promise((r) => {
+            const t = setTimeout(r, 50);
+            enc.addEventListener('dequeue', () => (clearTimeout(t), r()), { once: true });
+          });
+        }
+        if (f % 10 === 0) {
+          onFrame(f);
+          await breathe();
+        }
+      }
+      await within(enc.flush(), 30000, 'The video encoder');
+      if (failure) throw failure;
+      return { chunks, desc };
+    } finally {
+      if (enc.state !== 'closed') enc.close();
+    }
+  }
+
   /**
    * @param {object} app
    * @param {{onProgress?:(f:number, text:string)=>void, signal?:AbortSignal, width?:number, height?:number}} o
@@ -15730,29 +15816,18 @@ ${m.mouth}
     if (!vcfg) throw new Error('This browser has no H.264 video encoder. Use Record instead.');
     const output = app.state.prefs.mono ? 'stereo' : app.state.audio.output === 'binaural' ? 'binaural' : 'stereo';
 
-    // 1 · the sound (the same render as Download audio)
+    // 1 · the sound (the same render as Download audio), about the first tenth of the bar
     onProgress(0, 'Rendering the sound…');
-    const snd = await B.exporter.render(plan, output, { ...app.state.audio, mono: app.state.prefs.mono }, { raw: true });
-    if (signal?.aborted) throw new DOMException('Stopped', 'AbortError');
+    const snd = await B.exporter.render(plan, output, { ...app.state.audio, mono: app.state.prefs.mono }, { raw: true, onProgress: (f) => onProgress(f * 0.1, `Rendering the sound: ${Math.round(f * 100)}%`) });
+    if (signal?.aborted) throw stopped();
     const chans = snd.channels;
     const acfg = await pickAudio(chans.length);
     if (!acfg) throw new Error('This browser has no audio encoder for video. Use Record instead.');
 
-    const vChunks = [];
+    // 2 · encode the sound in 0.1 s blocks
     const aChunks = [];
-    let vDesc = null;
     let aDesc = null;
-    let failure = null;
-    const venc = new VideoEncoder({
-      output: (chunk, meta) => {
-        if (meta?.decoderConfig?.description) vDesc = new Uint8Array(meta.decoderConfig.description);
-        const d = new Uint8Array(chunk.byteLength);
-        chunk.copyTo(d);
-        vChunks.push({ d, ts: chunk.timestamp, dur: chunk.duration || 1e6 / FPS, key: chunk.type === 'key' });
-      },
-      error: (e) => (failure = e),
-    });
-    venc.configure(vcfg);
+    let aFail = null;
     const aenc = new AudioEncoder({
       output: (chunk, meta) => {
         if (meta?.decoderConfig?.description) aDesc = new Uint8Array(meta.decoderConfig.description);
@@ -15760,11 +15835,9 @@ ${m.mouth}
         chunk.copyTo(d);
         aChunks.push({ d, ts: chunk.timestamp, dur: chunk.duration });
       },
-      error: (e) => (failure = e),
+      error: (e) => (aFail = e),
     });
     aenc.configure(acfg.cfg);
-
-    // 2 · encode the sound in 0.1 s blocks
     const RATE = snd.rate;
     const total = chans[0].length;
     for (let at = 0; at < total; at += 4800) {
@@ -15774,49 +15847,45 @@ ${m.mouth}
       const ad = new AudioData({ format: 'f32-planar', sampleRate: RATE, numberOfFrames: n, numberOfChannels: chans.length, timestamp: Math.round((at / RATE) * 1e6), data });
       aenc.encode(ad);
       ad.close();
+      if (aFail) throw aFail;
+      if (at % (4800 * 50) === 0) await breathe();
     }
-    await aenc.flush();
+    await within(aenc.flush(), 60000, 'The audio encoder');
     aenc.close();
+    if (aFail) throw aFail;
 
-    // 3 · draw and encode every frame
+    // 3 · draw and encode every frame (if the encoder stalls, once more with the software encoder)
     const comp = B.composer.create(app, { width, height });
     await comp.ready;
     const seconds = total / RATE;
     const frames = Math.ceil(seconds * FPS);
     const t0 = performance.now();
+    const onFrame = (f) => {
+      const el = (performance.now() - t0) / 1000;
+      const left = f > 60 ? Math.round((el / f) * (frames - f)) : null;
+      onProgress(0.1 + 0.9 * (f / frames), `Making the video: ${Math.round((f / frames) * 100)}%${left != null ? ` · about ${B.music.seconds(left)} left` : ''}`);
+    };
+    let video;
     try {
-      for (let f = 0; f < frames; f++) {
-        if (signal?.aborted) throw new DOMException('Stopped', 'AbortError');
-        if (failure) throw failure;
-        const p = stepAt(plan, f / FPS);
-        if (comp.hasPicture) await comp.prepare(p);
-        comp.draw(Math.floor(p));
-        const vf = new VideoFrame(comp.canvas, { timestamp: Math.round((f / FPS) * 1e6), duration: Math.round(1e6 / FPS) });
-        venc.encode(vf, { keyFrame: f % (FPS * 2) === 0 });
-        vf.close();
-        while (venc.encodeQueueSize > 6) await new Promise((r) => setTimeout(r, 4));
-        if (f % 15 === 0) {
-          const el = (performance.now() - t0) / 1000;
-          const left = f > 30 ? Math.round((el / f) * (frames - f)) : null;
-          onProgress(f / frames, `Making the video: ${Math.round((f / frames) * 100)}%${left != null ? ` · about ${B.music.seconds(left)} left` : ''}`);
-          await new Promise((r) => setTimeout(r, 0)); // let the page breathe
-        }
+      try {
+        video = await encodeVideo(plan, comp, vcfg, frames, { signal, onFrame });
+      } catch (e) {
+        if (e.name === 'AbortError') throw e;
+        onProgress(0.1, 'The video encoder had a problem; trying the software encoder…');
+        video = await encodeVideo(plan, comp, { ...vcfg, hardwareAcceleration: 'prefer-software' }, frames, { signal, onFrame });
       }
-      await venc.flush();
     } finally {
-      venc.state !== 'closed' && venc.close();
       comp.dispose();
       app.drawAll(); // the studio's own view again (some sources keep the frame they last drew)
     }
-    if (failure) throw failure;
 
     // 4 · put it in an MP4
     onProgress(1, 'Saving…');
     const mux = B.mp4.createMuxer({
-      video: { width, height, description: vDesc },
+      video: { width, height, description: video.desc },
       audio: { codec: acfg.kind, sampleRate: RATE, channels: chans.length, description: acfg.kind === 'aac' ? aDesc : null, bitrate: 192000 },
     });
-    vChunks.forEach((c) => mux.add('video', c.d, c.ts, c.dur, c.key));
+    video.chunks.forEach((c) => mux.add('video', c.d, c.ts, c.dur, c.key));
     aChunks.forEach((c) => mux.add('audio', c.d, c.ts, c.dur));
     const out = mux.finish();
     const name = `${B.dom.slug(app.src.name)}-video.mp4`;
@@ -15881,16 +15950,25 @@ ${m.mouth}
       ['exportVideo', 'exportAudio', 'exportAll', 'exportAudioAs'].forEach((id) => ($(id).disabled = on));
       $('exportProgress').hidden = !on;
       $('exportBar').value = 0;
+      $('exportLabel').textContent = on ? 'Export 0%' : 'Export';
       app.setExporting(on);
       if (on) status(label);
     }
+    // the bar in the dialog, and the Export button in the player (so it shows with the dialog closed)
+    let shownPct = -1;
     const progress = (f, t) => {
       $('exportBar').value = f;
       status(t);
+      const pct = Math.floor(f * 100);
+      if (pct !== shownPct) {
+        shownPct = pct;
+        $('exportLabel').textContent = `Export ${pct}%`;
+        $('exportBtn').title = t;
+      }
     };
 
-    async function audioFile(fmt) {
-      const res = await B.exporter.render(app.plan, fmt, { ...app.state.audio, mono: app.state.prefs.mono });
+    async function audioFile(fmt, onProgress = () => {}) {
+      const res = await B.exporter.render(app.plan, fmt, { ...app.state.audio, mono: app.state.prefs.mono }, { onProgress });
       return { name: fileName(fmt), blob: new Blob([res.bytes], { type: 'audio/wav' }), res };
     }
 
@@ -15901,10 +15979,14 @@ ${m.mouth}
       await new Promise((r) => setTimeout(r, 30));
       try {
         await job(busy.signal);
+        if (!$('exportDialog').open) toast($('exportStatus').textContent, 6000);
       } catch (e) {
         status(e.name === 'AbortError' ? 'Stopped.' : e.message || String(e));
+        if (!$('exportDialog').open) toast($('exportStatus').textContent, 8000);
       } finally {
         busy = null;
+        shownPct = -1;
+        $('exportBtn').title = '';
         working(false);
       }
     }
@@ -15926,7 +16008,7 @@ ${m.mouth}
     };
     $('exportAudio').onclick = () =>
       run('Rendering the sound…', async () => {
-        const a = await audioFile(audioFormat());
+        const a = await audioFile(audioFormat(), (f) => progress(f, `Rendering the sound: ${Math.round(f * 100)}%`));
         download(a.blob, a.name);
         status(`Saved ${a.name} (${music.seconds(a.res.seconds)}${a.res.objects ? `, ${a.res.objects} objects` : ''}).`);
       });
@@ -15943,8 +16025,8 @@ ${m.mouth}
             note = ` No video: ${e.message}`;
           }
         } else note = ' No video: this browser records video only in real time (use Record).';
-        progress(0.9, 'Rendering the sound…');
-        const a = await audioFile(audioFormat());
+        progress(0.85, 'Rendering the sound…');
+        const a = await audioFile(audioFormat(), (f) => progress(0.85 + f * 0.1, `Rendering the sound: ${Math.round(f * 100)}%`));
         extra.push({ name: a.name, blob: a.blob });
         progress(0.95, 'Writing the score, braille, notes and settings…');
         const zip = await B.bundle.build(app, extra);
@@ -15957,7 +16039,7 @@ ${m.mouth}
     $('exportFormat').onchange = describe;
     $('exportAudioAs').onclick = () =>
       run('Rendering…', async () => {
-        const a = await audioFile($('exportFormat').value);
+        const a = await audioFile($('exportFormat').value, (f) => progress(f, `Rendering: ${Math.round(f * 100)}%`));
         download(a.blob, a.name);
         status(`Saved ${a.name} (${music.seconds(a.res.seconds)}${a.res.objects ? `, ${a.res.objects} objects` : ''}).`);
       });
@@ -15982,7 +16064,7 @@ ${m.mouth}
       fill();
       $('exportDialog').showModal();
     };
-    $('exportDialog').addEventListener('close', () => busy && toast('The export keeps going; open Export to see how far it is.'));
+    $('exportDialog').addEventListener('close', () => busy && toast('The export keeps going: the Export button shows how far it is.'));
   }
 
   B.exportView = { init };

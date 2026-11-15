@@ -26,7 +26,7 @@
    * @param {object} plan   from plan.build
    * @param {string} format key of FORMATS
    * @param {{volume:number, eq:object, room:number, mono:boolean}} mix
-   * @param {{raw?:boolean}} [opts]  raw: return the normalised channels (for the video export) instead of a file
+   * @param {{raw?:boolean, onProgress?:(f:number)=>void}} [opts]  raw: return the normalised channels (for the video export) instead of a file
    * @returns {Promise<{bytes?:ArrayBuffer, channels?:Float32Array[], seconds:number, objects?:number}>}
    */
   async function render(plan, format, mix, opts = {}) {
@@ -61,7 +61,29 @@
       eq.output.connect(ctx.destination); // float render: no clipping before normalisation
     }
     const r = engine.createRenderer(ctx, out, cfg);
-    for (let i = 0; i < plan.count; i++) engine.scheduleStep(ctx, r, plan, i, 0.05 + plan.times[i]);
+    // Notes are added a few seconds at a time while the render runs (suspend → add → resume).
+    // Creating every note up front left thousands of idle nodes in the graph, processed for the whole
+    // piece: a six-minute piece took many minutes. This way the graph only holds what is sounding.
+    const WIN = 4;
+    let next = 0;
+    const scheduleUntil = (until) => {
+      while (next < plan.count && 0.05 + plan.times[next] < until) {
+        engine.scheduleStep(ctx, r, plan, next, 0.05 + plan.times[next]);
+        next++;
+      }
+    };
+    scheduleUntil(WIN);
+    const canSuspend = typeof ctx.suspend === 'function';
+    if (canSuspend) {
+      for (let k = 1; k * WIN < total; k++) {
+        const at = k * WIN;
+        ctx.suspend(at).then(() => {
+          scheduleUntil(at + WIN);
+          opts.onProgress?.(at / total);
+          ctx.resume();
+        });
+      }
+    } else scheduleUntil(Infinity);
     if (plan.drone) {
       const bus = r.bus('drone');
       bus.setPosition({ x: 0, y: 1, z: 0 }, 0);

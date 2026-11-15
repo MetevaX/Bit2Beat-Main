@@ -1319,3 +1319,15 @@ test('1.3.0: Export uses your settings; Record and Everything save one ZIP; the 
   assert.match(css, /#scoreDialog\[open\][\s\S]*flex-direction: column/);
   assert.match(css, /#scoreDialog \.score-paper[\s\S]*min-height/);
 });
+
+test('1.3.1: exports add notes while rendering (not all up front) and never wait forever', () => {
+  const ex = fs.readFileSync(path.join(root, 'src/js/audio/exporter.js'), 'utf8');
+  assert.match(ex, /ctx\.suspend\(at\)/, 'notes are scheduled window by window');
+  assert.doesNotMatch(ex, /for \(let i = 0; i < plan\.count; i\+\+\) engine\.scheduleStep/, 'no longer every note before rendering');
+  const ve = fs.readFileSync(path.join(root, 'src/js/ui/video-export.js'), 'utf8');
+  assert.match(ve, /MessageChannel/, 'yields without timers, so background tabs keep going');
+  assert.match(ve, /prefer-software/, 'a stalled encoder is retried in software');
+  assert.match(ve, /i !== drawn/, 'one drawing per step');
+  const ev = fs.readFileSync(path.join(root, 'src/js/ui/export-view.js'), 'utf8');
+  assert.match(ev, /exportLabel/, 'progress on the Export button');
+});
