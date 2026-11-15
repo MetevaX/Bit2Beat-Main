@@ -26,9 +26,10 @@
    * @param {object} plan   from plan.build
    * @param {string} format key of FORMATS
    * @param {{volume:number, eq:object, room:number, mono:boolean}} mix
-   * @returns {Promise<{bytes:ArrayBuffer, seconds:number, objects?:number}>}
+   * @param {{raw?:boolean}} [opts]  raw: return the normalised channels (for the video export) instead of a file
+   * @returns {Promise<{bytes?:ArrayBuffer, channels?:Float32Array[], seconds:number, objects?:number}>}
    */
-  async function render(plan, format, mix) {
+  async function render(plan, format, mix, opts = {}) {
     const { audio: engine, spatial, wav, adm } = ns;
     const spec = FORMATS[format];
     if (!spec) throw new Error('Unknown export format.');
@@ -75,6 +76,7 @@
       const g = 0.891 / peak;
       for (const c of chans) for (let i = 0; i < c.length; i++) c[i] *= g;
     }
+    if (opts.raw) return { channels: chans, seconds: total, rate: RATE };
     let bytes;
     if (keys) {
       bytes = adm.encodeAdmBwf({

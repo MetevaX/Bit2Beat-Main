@@ -1,5 +1,5 @@
 /**
- * Bit2Beat ui · dialogs: export, readings table, full score, sessions, accessibility, help.
+ * Bit2Beat ui · dialogs: readings table, full score, sessions, accessibility, help (Export is ui/export-view.js).
  */
 (function (root) {
   'use strict';
@@ -118,6 +118,14 @@
     toast(`Opened “${s.name}”.`);
   }
 
+  /** Save the score in braille; returns the message to show. */
+  function braille(app) {
+    const b = B.scoreView.downloadBraille(app.plan);
+    const msg = `Braille music saved: ${b.pages} page${b.pages > 1 ? 's' : ''} of BRF, one eighth note per reading, for an embosser or a braille display.`;
+    B.dom.announce(msg);
+    return msg;
+  }
+
   // ------------------------------------------------------------------ init
   function init(app) {
     $$('dialog').forEach((d) => {
@@ -126,56 +134,6 @@
       });
       $$('[data-close]', d).forEach((b) => (b.onclick = () => d.close()));
     });
-
-    // export
-    Object.entries(B.exporter.FORMATS).forEach(([k, v]) => $('exportFormat').append(new Option(v.label, k)));
-    const describe = () => {
-      const f = B.exporter.FORMATS[$('exportFormat').value];
-      $('exportHint').textContent = f.detail + ($('exportFormat').value === 'adm' ? '. For Dolby Atmos tools such as the Dolby Atmos Renderer, Pro Tools, Logic Pro, Nuendo or DaVinci Resolve. Bit2Beat is not affiliated with Dolby.' : '.');
-      $('exportSummary').textContent = `${app.src.name} · ${app.plan.count} steps · ${music.seconds(app.plan.duration)} · ${app.plan.channels.filter((c) => c.active).length} channel(s) on`;
-    };
-    $('exportFormat').onchange = describe;
-    $('exportBtn').onclick = () => {
-      // surround and Atmos (ADM) masters are for scientific maps only
-      const sci = !!app.src?.science;
-      [...$('exportFormat').options].forEach((o) => {
-        if (!['5.1', '7.1', '7.1.4', 'adm'].includes(o.value)) return;
-        o.dataset.name ||= o.textContent;
-        o.disabled = !sci;
-        o.textContent = sci ? o.dataset.name : `${o.dataset.name} (scientific maps only)`;
-      });
-      $('exportFormat').value = B.exporter.FORMATS[app.state.audio.output] && !$('exportFormat').querySelector(`option[value="${app.state.audio.output}"]`)?.disabled ? app.state.audio.output : 'stereo';
-      $('exportStatus').textContent = '';
-      describe();
-      $('exportDialog').showModal();
-    };
-    $('exportAudio').onclick = async () => {
-      const fmt = $('exportFormat').value;
-      const btn = $('exportAudio');
-      btn.disabled = true;
-      app.setExporting(true);
-      $('exportStatus').textContent = 'Rendering…';
-      await new Promise((r) => setTimeout(r, 30));
-      try {
-        const res = await B.exporter.render(app.plan, fmt, { ...app.state.audio, mono: app.state.prefs.mono });
-        const name = `${slug(app.src.name)}-${fmt === 'adm' ? 'adm-bwf' : fmt.replace(/\./g, '')}.wav`;
-        download(new Blob([res.bytes], { type: 'audio/wav' }), name);
-        $('exportStatus').textContent = `Saved ${name} (${music.seconds(res.seconds)}${res.objects ? `, ${res.objects} objects` : ''}).`;
-      } catch (e) {
-        $('exportStatus').textContent = e.message;
-      } finally {
-        btn.disabled = false;
-        app.setExporting(false);
-      }
-    };
-    $('exportCsv').onclick = () => {
-      download(new Blob(['﻿' + planCsv(app.plan)], { type: 'text/csv;charset=utf-8' }), slug(app.src.name) + '-notes.csv');
-      $('exportStatus').textContent = 'Notes saved as CSV (every step, value, note, frequency and 3D position).';
-    };
-    $('exportAbc').onclick = () => {
-      B.scoreView.downloadAbc(app.plan);
-      $('exportStatus').textContent = 'Score saved as ABC notation (opens in MuseScore with an ABC import plugin, or abcjs.net).';
-    };
 
     // table
     $('tableBtn').onclick = () => openTable(app);
@@ -187,15 +145,8 @@
 
     // score
     $('fullScoreBtn').onclick = () => B.scoreView.open(app.plan, app.state.position);
-    $('scorePngBtn').onclick = () => B.scoreView.downloadPng(app.plan, app.state.position);
-    const braille = () => {
-      const b = B.scoreView.downloadBraille(app.plan);
-      const msg = `Braille music saved: ${b.pages} page${b.pages > 1 ? 's' : ''} of BRF, one eighth note per reading, for an embosser or a braille display.`;
-      B.dom.announce(msg);
-      return msg;
-    };
-    $('scoreBrailleBtn').onclick = () => B.dom.toast(braille(), 5000);
-    $('exportBraille').onclick = () => ($('exportStatus').textContent = braille());
+    $('scorePngBtn').onclick = () => B.scoreView.downloadPng(app.plan);
+    $('scoreBrailleBtn').onclick = () => B.dom.toast(braille(app), 5000);
     $('scoreVoices').onchange = () => B.scoreView.paper(app.plan, app.state.position, false);
     $('scorePrev').onclick = () => B.scoreView.turn(app.plan, app.state.position, -1);
     $('scoreNext').onclick = () => B.scoreView.turn(app.plan, app.state.position, 1);
@@ -251,5 +202,5 @@
     $('helpBtn').onclick = () => $('helpDialog').showModal();
   }
 
-  B.dialogs = { init, openTable, planCsv, planXlsx };
+  B.dialogs = { init, openTable, planCsv, planXlsx, braille };
 })(typeof self !== 'undefined' ? self : this);

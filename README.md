@@ -57,7 +57,7 @@ One **search** above the Image, Video and Data tabs: Image and Video search the 
 
 ## Export
 
-Stereo, binaural, 5.1, 7.1 and 7.1.4 WAV, ADM BWF (Dolby Atmos-ready objects), the readings as an **Excel workbook** or CSV, the notes as CSV (every step, value, note, Hz, start time, x/y/z) and the score as ABC, PNG or **braille music (BRF)** for an embosser or braille display. Files are rendered offline from the same plan you hear and normalised to −1 dBFS peak.
+Export uses the settings you have now: **Download video** (the whole piece as an MP4 with its sound, made in the browser with WebCodecs and a small MP4 writer, `core/mp4.js`), **Download audio** in your sound output, or **Everything (ZIP)** (video, audio, the whole score, braille, notes, readings and settings). **Record** saves a ZIP of what you play, with the video of the take. Other formats: stereo, binaural, 5.1, 7.1 and 7.1.4 WAV, ADM BWF (Dolby Atmos-ready objects), the readings as an **Excel workbook** or CSV, the notes as CSV (every step, value, note, Hz, start time, x/y/z) and the score as ABC, a PNG of the whole piece or **braille music (BRF)** for an embosser or braille display. Files are rendered offline from the same plan you hear and normalised to −1 dBFS peak.
 
 
 ## Code layout

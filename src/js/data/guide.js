@@ -91,7 +91,7 @@
           action: { type: 'mode', value: 'earth', show: 'Take me there' },
           done: 'See the map? Each dot is a real event: wildfires, storms, floods, ice and earthquakes (electric piano), played from west to east.',
         },
-        { id: 'export', mood: 'happy', target: '#exportBtn', title: 'Take it home', text: 'Export makes WAV files (stereo, binaural or surround), the notes as CSV, the score, and the score in braille (a BRF file for a braille embosser or display). The address bar remembers everything, so a refresh or a shared link opens this exact view.' },
+        { id: 'export', mood: 'happy', target: '#exportBtn', title: 'Take it home', text: 'Export uses your settings as they are: a video of the whole piece with the sound, the audio as WAV, or everything in one ZIP (the score, braille, notes and settings too). Record saves a ZIP of what you play. The address bar remembers everything, so a refresh or a shared link opens this exact view.' },
         { id: 'voice', mood: 'excited', target: '#voiceBtn', title: 'Talk to me', text: 'Voice (or V) lets you use Bit2Beat without a screen: say play, pause, next, explain, search for sea ice, result 2, violin or help. Speak in any language; I answer out loud.' },
         { id: 'access', mood: 'happy', target: '#accessBtn', title: 'Make it comfortable', text: 'Accessibility has bigger text, high contrast, calmer motion and the dark theme. Every control works with the keyboard and a screen reader.' },
         { id: 'guide', mood: 'happy', target: '#guideBtn', title: 'I’m always here', text: 'Press Guide (or G) whenever you want me to explain a tab. My card under the score also gives a tip when you open a tab for the first time.' },

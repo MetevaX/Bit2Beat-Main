@@ -489,8 +489,9 @@
     <section class="howto-sec" id="how-export">
       <h2><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Export and share</h2>
       <ul>
-        <li><b>Export</b>: audio (stereo, headphone 3D, surround, Dolby Atmos ADM), the notes as CSV, the score as ABC or PNG, and the score in <b>braille</b> (BRF) for embossers and braille displays.</li>
-        <li><b>Record</b> captures what you play. <b>Sessions</b> saves your setup.</li>
+        <li><b>Export</b> uses the settings you have now (instrument, tempo, mood, channels and sound output), so there is nothing to choose first. <b>Download video</b> saves the whole piece as an MP4 with the sound on it: the picture or map with its moving cursor, the melody and what is playing. <b>Download audio</b> saves a WAV in your sound output. <b>Everything (ZIP)</b> puts the video, the audio, the whole score (PNG, ABC and braille), the notes, the readings and your settings in one file.</li>
+        <li>Under <b>Other formats and files</b>: another audio format (stereo, headphone 3D, and for scientific maps surround and Dolby Atmos ADM), the notes as CSV, the score as ABC or as a PNG of the whole piece, and the score in <b>braille</b> (BRF) for embossers and braille displays.</li>
+        <li><b>Record</b> captures what you see and hear while it plays. Press it again to stop: you get one ZIP with the video of the take, its sound, the whole score, braille, notes and settings. <b>Sessions</b> saves your setup.</li>
         <li>The address bar remembers everything: a shared link opens the same view.</li>
       </ul>
     </section>
@@ -618,15 +619,26 @@
 <dialog id="exportDialog" aria-labelledby="exportTitle">
   <div class="dlg-head"><h2 id="exportTitle">Export</h2><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-close"/></svg></button></div>
   <p class="dlg-note" id="exportSummary"></p>
-  <label class="field">Audio format<select id="exportFormat"></select></label>
-  <p class="dlg-note" id="exportHint"></p>
-  <div class="btn-row">
-    <button type="button" class="btn btn-primary" id="exportAudio"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Download audio</button>
-    <button type="button" class="btn" id="exportCsv">Notes as CSV</button>
-    <button type="button" class="btn" id="exportAbc">Score as ABC</button>
-    <button type="button" class="btn" id="exportBraille" title="Braille music (BRF) for braille embossers and braille displays">Score in braille</button>
+  <p class="dlg-note export-uses" id="exportUses"></p>
+  <div class="export-main">
+    <button type="button" class="btn btn-primary export-big" id="exportVideo"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span><b>Download video</b><small id="exportVideoWhat">MP4 · 1080p · with the sound</small></span></button>
+    <button type="button" class="btn export-big" id="exportAudio"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span><b>Download audio</b><small id="exportAudioWhat">Stereo WAV</small></span></button>
+    <button type="button" class="btn export-big" id="exportAll"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg><span><b>Everything (ZIP)</b><small>Video, audio, the whole score, braille, notes, readings and settings</small></span></button>
   </div>
+  <div class="export-progress" id="exportProgress" hidden><progress id="exportBar" max="1" value="0" aria-label="Export progress"></progress><button type="button" class="btn btn-quiet" id="exportCancel">Stop</button></div>
   <p class="dlg-status" id="exportStatus" role="status"></p>
+  <details class="export-more">
+    <summary>Other formats and files</summary>
+    <label class="field">Audio format<select id="exportFormat"></select></label>
+    <p class="dlg-note" id="exportHint"></p>
+    <div class="btn-row">
+      <button type="button" class="btn" id="exportAudioAs">Download in this format</button>
+      <button type="button" class="btn" id="exportCsv">Notes as CSV</button>
+      <button type="button" class="btn" id="exportAbc">Score as ABC</button>
+      <button type="button" class="btn" id="exportPng">Score as PNG</button>
+      <button type="button" class="btn" id="exportBraille" title="Braille music (BRF) for braille embossers and braille displays">Score in braille</button>
+    </div>
+  </details>
 </dialog>
 
 <dialog id="tableDialog" class="dlg-wide" aria-labelledby="tableTitle">
@@ -671,7 +683,7 @@
     <li><b>Find something to hear.</b> Search NASA’s Earth Information Center above the tabs, or pick from the menu (the Space Apps challenge data works offline). Image turns a map or picture into sound, Video follows a NASA animation or time-lapse, Earth events plays natural events and earthquakes across the map, Data plays climate series and your own CSV.</li>
     <li><b>Press Play.</b> Higher values play higher. The Melody panel and the score show the same notes.</li>
     <li><b>Shape the sound.</b> Pick a mood (default, sad, happy or excited), change instrument, scale and tempo, mute or solo channels, or press Smart Tuning.</li>
-    <li><b>Export.</b> Download audio, the notes as CSV, the score, or the score in braille.</li>
+    <li><b>Export.</b> With your settings as they are: a video of the whole piece with the sound, the audio, or everything in one ZIP (score, braille, notes, settings). Record saves a ZIP of what you play.</li>
   </ol>
   <div class="btn-row help-bitty"><button type="button" class="btn btn-primary" id="helpTour">Let Bitty guide me</button><button type="button" class="btn" id="helpStory">Listen to Bitty’s story</button><button type="button" class="btn" id="helpHowto">The How to use page</button></div>
   <h3>Keyboard</h3>
@@ -738,6 +750,7 @@
 <script src="src/js/audio/engine.js"></script>
 <script src="src/js/audio/player.js"></script>
 <script src="src/js/audio/exporter.js"></script>
+<script src="src/js/core/mp4.js"></script>
 <script src="src/js/ui/dom.js"></script>
 <script src="src/js/ui/illustrations.js"></script>
 <script src="src/js/ui/draw.js"></script>
@@ -749,6 +762,10 @@
 <script src="src/js/ui/panels.js"></script>
 <script src="src/js/ui/mixer.js"></script>
 <script src="src/js/ui/dialogs.js"></script>
+<script src="src/js/ui/bundle.js"></script>
+<script src="src/js/ui/composer.js"></script>
+<script src="src/js/ui/video-export.js"></script>
+<script src="src/js/ui/export-view.js"></script>
 <script src="src/js/ui/canvas-input.js"></script>
 <script src="src/js/ui/recorder.js"></script>
 <script src="src/js/ui/url-state.js"></script>
