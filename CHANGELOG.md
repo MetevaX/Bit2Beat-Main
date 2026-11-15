@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.9.1 — 15 November 2026
+- **Exports are many times faster, and Everything (ZIP) finishes.** Making the sound added every note of the piece to the browser's audio graph before rendering, so the browser processed thousands of waiting notes for the whole length of the piece. A six-minute piece took many minutes, and the ZIP seemed never to arrive. Notes are now added a few seconds ahead while the sound renders. The six-minute, 800-step Earth events piece now renders in about 20 seconds instead of more than five minutes, with the same sound. Download audio is faster too.
+- **The video is drawn once per step** (nothing moves in between), so it is encoded several times faster than real time.
+- **Progress you can see with the dialog closed:** the Export button shows the percentage, and a message says when the file is saved (or what went wrong). Rendering the sound now shows its percentage too.
+- **No more endless waiting:** the export keeps going in a background tab, an encoder that stops answering is retried with the software encoder, and if it still fails you get a clear message instead of a bar that never moves.
+
 ## 3.9.0 — 15 November 2026
 - **Download a video.** *Export → Download video* saves the whole piece as an MP4 (1080p, 30 fps) with the sound on it: the picture, map or chart with its moving cursor (a NASA video plays along at the speed of the music), the melody, what is playing and the settings. Nothing has to play: frames are drawn off-screen and encoded by the browser (WebCodecs, H.264 with AAC or Opus), usually faster than real time, with a progress bar and *Stop*. The sound is the same render as the audio download, binaural when that is your output.
 - **Export uses your settings.** No format to choose first: *Download video*, *Download audio* (in your sound output) and *Everything (ZIP)* use the instrument, tempo, mood, channels and sound you have now, and say so. Other formats and single files are under *Other formats and files*, which lists only what the source can make (no more greyed-out choices).
